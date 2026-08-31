@@ -35,7 +35,7 @@ Nothing else can land until the three-package split exists, and the split is the
 
 **In scope:**
 
-- `git init`, a `.gitignore` covering `.build/`, `DerivedData/`, `xcuserdata/`, `.DS_Store`, and the first commit. **This is the first acceptance criterion and it is not optional** — the whole "commit the slice document alongside the code" discipline this project runs on is inert without a repository.
+- **The repository already exists** — the owner ran `git init` and committed after this slice was drafted (`4b340f7`, on `main`), so the Drift Log row about the missing repository is resolved and this bullet is no longer about creating one. What is outstanding is the part that was bundled in with it: a `.gitignore` covering `.build/`, `DerivedData/`, `**/xcuserdata/`, `.DS_Store` — **and untracking the files that were committed before it existed.** `.gitignore` does not untrack anything already in the index, so this needs an explicit `git rm --cached`. Currently tracked and forbidden: `.DS_Store`, `docs/slices/.DS_Store`, and all three files under `app/mixtape.xcodeproj/**/xcuserdata/` — `UserInterfaceState.xcuserstate`, `xcschememanagement.plist` and `Breakpoints_v2.xcbkptlist`. Per the project's no-auto-commit rule, hand the command over rather than running it.
 - `Shared/Package.swift` and `Sources/Shared/`, declaring **zero external dependencies**, with `VersionResponseDTO`, `APIErrorCode`, `ErrorResponseDTO` and `MixTapeJSON`.
 - `Server/Package.swift` depending on Hummingbird 2, JWTKit and `.package(path: "../Shared")`; `Sources/Server/` with the router, configuration loading and `GET /version`; an empty `Tests/ServerTests/`.
 - Rename `app/` to `App/` and `app/mixtape.xcodeproj` to `App/MixTape.xcodeproj`. Keep `app/mixtape/mixtape.entitlements` and its existing `com.apple.developer.applesignin` entitlement — it is already correct and re-creating it means re-doing the capability in the signing portal.
@@ -71,17 +71,18 @@ For **each id in `depends_on`**, in order — do not summarise, walk the list:
 
 - [ ] **S002** — opened. It is a soft dependency: part 1 of that spike *is* this slice's macOS verification step, so this slice proceeds and writes the result into S002's Section 6 rather than waiting on it. If part 1 comes back negative, stop and take S002's fallback before continuing to 002.
 - [ ] Architecture standards doc re-read: `docs/app-architecture-template.md` and `docs/plan/v1-architecture.md` sections 1, 3 and 7.
-- [ ] Confirm the Swift toolchain is 6.2 and the language mode is Swift 6. The plan's **C5** resolves the Dockerfile to `swift:6.2-noble`; the local toolchain must match or `Shared` compiles at two different language levels.
+- [ ] Confirm the **language mode is Swift 6**, and record the local toolchain and Xcode versions in the commit. **Do not require the toolchain to be exactly 6.2** — it is 6.4 / Xcode 27 on this machine, which is the Drift Log row dated 2026-08-31. **C5**'s principle is the invariant, not its version number: one language level covers the whole repository, so `Shared/` and `Server/` must stay within the feature set the Docker build stage provides. Until slice 003 pins that image, hold both to Swift 6.2 features. `App/` is Mac-only, but it is constrained by whatever Xcode `app.yml` pins — also slice 003's job — not by the local toolchain.
 - [ ] Confirm `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` and `SWIFT_APPROACHABLE_CONCURRENCY = YES` are set at project level in `MixTape.xcodeproj`, per the template.
 
-**Drift found:** Two items, both already logged in the checklist's Drift Log.
+**Drift found:** Three items, all logged in the checklist's Drift Log.
 
 1. The plan's Context section states the repository holds `api/` (empty) and `app/`. **`api/` does not exist.** Phase 2's "rename `api/` to `Server/`" is therefore a create, not a rename. No consequence beyond the wording.
-2. **The working directory is not a git repository.** Logged, and resolved by this slice's first acceptance criterion.
+2. **The working directory was not a git repository when this slice was drafted. It is now** — the owner initialised it and committed (`4b340f7`). That part of the drift is closed, but it closed in a way that created a new one: the first commit predates any `.gitignore`, so `.DS_Store` and three `xcuserdata` files are tracked. See the third item.
+3. **Five files are tracked that this slice's first acceptance criterion forbids**, and `.gitignore` alone cannot fix it. Logged in the checklist's Drift Log; Section 3 and the first acceptance criterion have been corrected to ask for the untracking rather than for a `git init` that has already happened.
 
 ## 5. Acceptance Criteria
 
-- [ ] `git init` has run, `.gitignore` excludes `.build/`, `DerivedData/`, `**/xcuserdata/`, `.DS_Store`, and there is at least one commit. `app/mixtape.xcodeproj/.../UserInterfaceState.xcuserstate` is **not** in it.
+- [ ] `.gitignore` excludes `.build/`, `DerivedData/`, `**/xcuserdata/` and `.DS_Store`. **The repository and its first commit already exist, so the check that matters is the untracking, not the init** — `git ls-files` returns no `.DS_Store` and nothing under `xcuserdata/`. Assert it with `git ls-files`, not by reading `.gitignore`: ignoring a path does nothing to a path already in the index, and this criterion previously read as passing while five forbidden files sat in the tree.
 - [ ] `cd Shared && swift build` succeeds and resolves **zero** external packages. Verified by `Shared/Package.resolved` being absent or empty, not by reading the manifest.
 - [ ] `cd Server && swift build && swift test` succeeds.
 - [ ] `swift run Server` on macOS, then `curl -i localhost:8080/version` returns `200` and a body decoding to `VersionResponseDTO` with `apiVersion == 1`. The result is written into **S002** Section 6.

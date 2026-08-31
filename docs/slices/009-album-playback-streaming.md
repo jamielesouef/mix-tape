@@ -81,8 +81,10 @@ For **each id in `depends_on`**, in order — do not summarise, walk the list:
   - Favourable: `FileMiddleware` rooted at the music directory, mounted at `/audio`.
   - **Fallback taken:** one `FileMiddleware` at the cache root with music beneath it. The URL shape changes, `AudioURLProvider` changes with it, and ladder **L1**'s seam was already recorded as weakened in slice 003.
   - Confirm the pass-through behaviour S001 measured. If the middleware terminates on a miss, route registration order in this slice matters and every route must be registered **before** the catch-all.
-- [ ] **004** — confirm `TrackDTO.relativePath` is stored exactly as it appears under the music root, with no normalisation applied at scan time. If the scanner normalised unicode, the id hash and the served path have already diverged and fork **F5** is a bigger problem than it looks.
-- [ ] **005** — confirm the middleware can accept a query-parameter token, or that adding that path is in this slice's scope. Slice 005 built header-only.
+Then two **transitive** checks. Neither **004** nor **005** is in this page's `depends_on` and neither should be added — each is already reachable through a declared edge, and restating it here would put a dependency fact in a second home. They are walked anyway because this slice reads a specific field from each, and the chain is named so a reader can see the front matter is complete rather than short:
+
+- [ ] **004**, reached via `008 → 004a → 004` — confirm `TrackDTO.relativePath` is stored exactly as it appears under the music root, with no normalisation applied at scan time. If the scanner normalised unicode, the id hash and the served path have already diverged and fork **F5** is a bigger problem than it looks.
+- [ ] **005**, reached via `008 → 007 → 006 → 005` — confirm the middleware can accept a query-parameter token, or that adding that path is in this slice's scope. Slice 005 built header-only.
 - [ ] Re-read the Apple documentation for the three behaviours named in Section 3.
 - [ ] Architecture standards doc re-read: `docs/plan/v1-architecture.md` sections 3 and 6.
 
