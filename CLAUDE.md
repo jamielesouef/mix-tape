@@ -170,6 +170,7 @@ Work is delivered as **slices** in [`docs/slices/`](docs/slices/), in number ord
 - Never hard-wrap markdown prose at a column limit — one line per paragraph. Never reflow tables, fenced code blocks, headings or list items.
 - Swift file headers use the standard Xcode format, **below** the SPDX line — see the exact shape below. Date `DD/MM/YYYY`, two spaces after `//` on the `Created by` line, name `Jamie Le Souëf`.
 - **Do not auto-commit.** Leave work in the working tree and hand over the command.
+- **`main` is a protected branch and refuses a direct push, administrators included.** Work lands through a pull request — branch, commit, push the branch, open the PR with `gh`. No approving review is required, so a solo change is not blocked, but the pull request itself is. Force pushes and branch deletion are refused, and history must stay linear. The two CI workflows are **not** required checks, deliberately: their path filters mean a docs-only change runs neither, and a required check that never runs would leave that pull request unmergeable forever.
 - **Never add `Co-Authored-By` trailers or any AI attribution** to a commit, PR, issue or any other artefact.
 - Use the `gh` CLI for GitHub operations, never the REST API directly.
 
