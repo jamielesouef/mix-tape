@@ -132,7 +132,9 @@ Download file paths are stored **relative** to the downloads root, never absolut
 | `App/` | MIT |
 | `Server/` | AGPL-3.0-only |
 
-`Shared` **must** stay permissive. MIT flows into AGPL; AGPL does not flow into MIT. An AGPL `Shared` would make the MIT client claim invalid. `SPDX-License-Identifier` is the **first line** of every source file, matching that file's directory, and `scripts/check-spdx.sh` greps line 1 and fails on a miss. It therefore sits **above** the Xcode header block — see [Conventions](#conventions) for the exact combined form. No AGPL code is reachable from the app target.
+`Shared` **must** stay permissive. MIT flows into AGPL; AGPL does not flow into MIT. An AGPL `Shared` would make the MIT client claim invalid. `SPDX-License-Identifier` is the **first line** of every source file, matching that file's directory, and it sits **above** the Xcode header block — see [Conventions](#conventions) for the exact combined form. No AGPL code is reachable from the app target.
+
+**The one exception, and it is mechanical, not discretionary: a package manifest.** Swift parses `// swift-tools-version:` positionally and will not build a `Package.swift` that does not carry it on line 1. So in a manifest the tools-version line is line 1 and the SPDX line is **line 2**. `Shared/Package.swift` is `MIT`; `Server/Package.swift` is `AGPL-3.0-only`. `scripts/check-spdx.sh` encodes exactly this — for a file named `Package.swift` it asserts line 1 matches `swift-tools-version` and line 2 is the directory's SPDX; for every other `.swift` file it asserts line 1 is the SPDX. No other file is exempt, and the exemption is keyed on the filename so the script can express it. An exemption a script cannot check is not an exemption, it is a hole.
 
 ## Settled decisions
 
@@ -176,6 +178,19 @@ Copy this header shape exactly. The SPDX line must be line 1 or `check-spdx.sh` 
 // SPDX-License-Identifier: MIT
 //
 //  AlbumDTO.swift
+//  Shared
+//
+//  Created by Jamie Le Souëf on 31/08/2026.
+//
+```
+
+A `Package.swift` is the sole exception, because Swift requires the tools-version line first — SPDX moves to line 2 and nothing else changes:
+
+```swift
+// swift-tools-version: 6.2
+// SPDX-License-Identifier: MIT
+//
+//  Package.swift
 //  Shared
 //
 //  Created by Jamie Le Souëf on 31/08/2026.
