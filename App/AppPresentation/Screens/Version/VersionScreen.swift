@@ -75,3 +75,5 @@ struct VersionScreen: View {
       VersionService(useCase: FetchServerVersionUseCase(repository: MockVersionRepository(outcome: .failure)))
     )
 }
+
+// ci-proof: touches App only, to prove server.yml does not trigger. Never merged.
