@@ -38,8 +38,8 @@ Spikes are not deliverables and are not in the linked list, so they get their ow
 
 | # | Question | Timebox | Unblocks | Status | Answer |
 |---|---|---|---|---|---|
-| S001 | Can two `FileMiddleware` instances on two roots under two path prefixes coexist in Hummingbird 2, and pass through on a miss? | 3h | 003, 008, 009 | Not started | — |
-| S002 | Does `swift run Server` serve a local music folder on macOS with no container, and are `ffprobe`/`ffmpeg` reachable from a `Process`? | 2h | 001, 004 | Not started | — |
+| S001 | Can two `FileMiddleware` instances on two roots under two path prefixes coexist in Hummingbird 2, and pass through on a miss? | 3h | 003, 008, 009 | **Answered** | **Yes, and the pass-through worry was inverted.** Two instances coexist with no interference on Hummingbird 2.26.0. `FileMiddleware` calls `next` **first** and serves a file only when the downstream handler threw or returned `404` — it is a fallback, not an interceptor, so no route can be shadowed by it at any registration order. `Range` gives `206` with `Content-Range`; `/health` after both middlewares gives `200`; both traversal forms give `400`, not `404`, and never a file. **One unlooked-for finding for 009: a `.flac` is served with no `Content-Type` header at all** |
+| S002 | Does `swift run Server` serve a local music folder on macOS with no container, and are `ffprobe`/`ffmpeg` reachable from a `Process`? | 2h | 001, 004 | **Answered** | **Part 1 yes, part 2 no.** `swift run Server` boots Hummingbird on macOS with no container and answers `GET /version` — the dev loop the handoff preserves holds. But the tools sit at `/opt/homebrew/bin`, off the PATH a non-login-shell process inherits: `/usr/bin/env ffprobe` works from a terminal and exits `127` under a scrubbed PATH, while an absolute path works in both. The pre-decided fallback applies — 004 gains `MIXTAPE_FFPROBE_PATH` and `MIXTAPE_FFMPEG_PATH`. **The failure is silent**: `env` exits `127` rather than throwing, so 004 must check `terminationStatus` |
 | S003 | Does the plan's tag-mapping table match real `ffprobe` output across the owner's actual library? | 4h | 004, 004a | **Answered** | **No, in two places that matter.** 1175 files. The table is missing **`TPA`**, the ID3v2.2 disc-number frame, on 122 mp3s that would otherwise all become disc 1. And question 4 inverted: FLAC embedded artwork is perfect (107/107), mp3 has none at all (0/340), and **171 of 196 album directories have no artwork source of any kind**. Also: album-artist coverage is 40.8%, `discCount` is always populated so 004's reconciliation never fires, disc markers in titles are rare and the one real case defeats **F6**, and the `compilation` tag is wrong in 57 of 196 directories |
 
 Status: `Not started` · `In progress` · `Answered` · `Abandoned`
@@ -50,7 +50,11 @@ Status: `Not started` · `In progress` · `Answered` · `Abandoned`
 
 **S003 grew a fifth question when B1 was resolved**: how many albums carry the disc marker in the title rather than in a disc tag. That number sized fork **F6** — and the answer narrowed F6's claim rather than confirming it. The addition did not change the spike's timebox, its assignment or what it unblocks; the same probe output answered it.
 
-**Run S001 and S002 before slice 003.** Neither is in the linked list, but S001's fallback changes the volume layout that slice 003 ships, and S002's part 2 changes slice 004's configuration surface. Answering them after those slices land means reworking both.
+**S001 and S002 have both run — 2026-09-01, before slice 003, as this section required.** Neither is in the linked list, but S001's fallback would have changed the volume layout slice 003 ships, and S002's part 2 changes slice 004's configuration surface. Both landed in time for 003 to be planned against the answers rather than around them.
+
+**S001 came back favourable, so nothing moves.** Slice 003's volume layout, ladder **L1**'s seam and the independence of `MIXTAPE_MUSIC_DIR` from `MIXTAPE_CACHE_DIR` all stand exactly as written. What changed is that they are now proven rather than assumed, and 008 and 009 each carry a decision row saying so.
+
+**S002's part 2 came back unfavourable, and cost two lines rather than a redesign — which is the whole argument for having run it now.** 004 gains two configuration variables and a `terminationStatus` check. Discovered during 004 instead, it would have been a debugging session against a scan that produced an empty manifest and no error.
 
 ## 3. Active Blockers
 
