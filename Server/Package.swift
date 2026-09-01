@@ -1,4 +1,12 @@
 // swift-tools-version: 6.2
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+//  Package.swift
+//  Server
+//
+//  Created by Jamie Le Souëf on 31/08/2026.
+//
+
 import PackageDescription
 
 let package = Package(

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 //
 //  MixTapeJSON.swift
 //  Shared
