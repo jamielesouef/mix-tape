@@ -82,7 +82,7 @@ For **each id in `depends_on`**, in order — do not summarise, walk the list:
 
 ## 5. Acceptance Criteria
 
-- [ ] `.gitignore` excludes `.build/`, `DerivedData/`, `**/xcuserdata/` and `.DS_Store` — **done**, file written. `git ls-files` still lists the five forbidden paths (`.DS_Store`, `docs/slices/.DS_Store`, three under `App/MixTape.xcodeproj/**/xcuserdata/`) because per the project's no-auto-commit rule the untracking `git rm --cached` was **not run** — it is handed to the owner in this slice's report. Box left unticked until he runs it; `.gitignore` alone cannot satisfy this criterion by design.
+- [x] `.gitignore` excludes `.build/`, `DerivedData/`, `**/xcuserdata/` and `.DS_Store`, **and the five previously-tracked forbidden paths are no longer in the index.** The owner ran the handed-over `git rm --cached` (per the no-auto-commit rule this agent did not run it). Asserted the way the criterion requires — with `git ls-files`, not by reading `.gitignore`: `git ls-files -- .DS_Store 'docs/slices/.DS_Store' 'App/MixTape.xcodeproj/*xcuserdata*'` returns nothing on 2026-09-01.
 - [x] `cd Shared && swift build` succeeds and resolves **zero** external packages. `Shared/Package.resolved` is absent.
 - [x] `cd Server && swift build && swift test` succeeds. `swift test` runs 0 tests (target created empty per Section 3/8 — test content is `apple-tester`'s job).
 - [x] `swift run Server` on macOS, then a GET to `localhost:8080/version` returns `200` and a body decoding to `VersionResponseDTO` with `apiVersion == 1`. `curl` itself was blocked by this session's sandbox; verified instead with `python3 -m urllib.request` against the same running server. Result written into **S002** Section 6.
@@ -144,11 +144,11 @@ Nothing checks any of this. That is the point of putting the writes first — a 
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met — all but one: the `.gitignore`/untracking criterion is blocked on the owner running the handed-over `git rm --cached` (not run by this agent, per the no-auto-commit rule)
+- [x] Acceptance criteria met — the last one closed on 2026-09-01 when the owner ran the handed-over `git rm --cached` and `git ls-files` came back clean
 - [x] Tests passing, in a target that exists — `Server/Tests/ServerTests` (0 tests, empty by design), `App/Tests/MixTapeTests`, `App/Tests/MixTapeUITests` all exist and build; test content is `apple-tester`'s job, not this slice's
 - [x] Every `covers:` requirement satisfied, or forked with a decision row
 - [x] Decision log written as you went, not reconstructed — 9 rows, four of them added mid-build as real build failures forced real decisions
 - [x] Pre-flight completed and drift resolved
-- [x] Master checklist row current (status `In progress`, owner `apple-engineer` — left short of `Done` pending the owner's commit and review)
+- [x] Master checklist row current (status `Done`, owner `apple-engineer` — flipped on 2026-09-01 once the untracking landed)
 - [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned — unchanged, nothing shipped here changes what 002 needs
 - [x] Both link directions checked: this page's `next_slice` and `002`'s `previous_slice` — both already correctly wired to `002` / `001`
