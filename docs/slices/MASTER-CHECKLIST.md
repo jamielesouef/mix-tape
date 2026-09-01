@@ -18,7 +18,7 @@ Ordered by delivery sequence — the same order as the linked list.
 |---|---|---|---|---|---|---|
 | 001 | Monorepo skeleton and the /version handshake | P0 | L | apple-engineer | Done | [001-repo-skeleton-and-version.md](001-repo-skeleton-and-version.md) |
 | 002 | Licence split, DCO and the quickstart | P0 | S | apple-engineer | In review | [002-licence-split-and-contribution-docs.md](002-licence-split-and-contribution-docs.md) |
-| 003 | Docker image, compose quickstart and CI pipelines | P0 | M | apple-engineer | In progress | [003-docker-image-and-ci.md](003-docker-image-and-ci.md) |
+| 003 | Docker image, compose quickstart and CI pipelines | P0 | M | apple-engineer | In review | [003-docker-image-and-ci.md](003-docker-image-and-ci.md) |
 | 004 | Library scan to a manifest on disk | P0 | L | | Not started | [004-library-scan-to-manifest.md](004-library-scan-to-manifest.md) |
 | 004a | Album artwork extraction | P1 | M | | Not started | [004a-album-artwork-extraction.md](004a-album-artwork-extraction.md) |
 | 005 | Server pairing, the owner claim and the bearer middleware | P0 | L | | Not started | [005-server-pairing-and-owner-claim.md](005-server-pairing-and-owner-claim.md) |
