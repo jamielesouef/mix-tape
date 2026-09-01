@@ -2,3 +2,7 @@
 .build/
 DerivedData/
 **/xcuserdata/
+
+# Editor state. The Swift extension regenerates launch.json on demand, and the
+# one it writes hardcodes a workspace name that is local to whoever opened it.
+.vscode/
