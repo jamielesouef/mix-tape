@@ -62,10 +62,10 @@ Decided **before** running the experiment, so the result does not get argued wit
 
 | | |
 |---|---|
-| **Answer (part 1)** | |
-| **Answer (part 2)** | |
-| **Evidence** | command output, error, doc link — not "it seemed to work" |
-| **Date** | |
+| **Answer (part 1)** | **Yes.** `swift run Server` builds and boots Hummingbird 2 on macOS with no container, and `GET /version` returns `200` with a real `VersionResponseDTO` body |
+| **Answer (part 2)** | Not run this slice — part 2 is scoped to slice 004 (ffprobe/ffmpeg discovery), which has not started. No consequence to slice 001 |
+| **Evidence** | `swift run Server` log: `2026-08-31T19:21:16+1000 info Hummingbird: [HummingbirdCore] Server started and listening on 0.0.0.0:8080`. `curl`-equivalent (`python3 -m urllib.request`, `curl` itself was blocked by this session's sandbox) against `http://localhost:8080/version`: HTTP `200`, headers `Content-Type: application/json; charset=utf-8`, body `{"apiVersion":1,"serverVersion":"0.1.0","claimed":false}` — decodes to `VersionResponseDTO` with `apiVersion == 1`. Toolchain: Swift 6.4 (swiftlang-6.4.0.33.1), Xcode 27.0 (27A5252f), macOS host target arm64-apple-macosx26.0 |
+| **Date** | 2026-08-31 |
 
 ## 7. Consequences
 

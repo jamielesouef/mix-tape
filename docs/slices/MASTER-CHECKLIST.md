@@ -16,7 +16,7 @@ Ordered by delivery sequence — the same order as the linked list.
 
 | # | Slice | Priority | Cx | Owner | Status | Link |
 |---|---|---|---|---|---|---|
-| 001 | Monorepo skeleton and the /version handshake | P0 | L | | Not started | [001-repo-skeleton-and-version.md](001-repo-skeleton-and-version.md) |
+| 001 | Monorepo skeleton and the /version handshake | P0 | L | apple-engineer | In progress | [001-repo-skeleton-and-version.md](001-repo-skeleton-and-version.md) |
 | 002 | Licence split, DCO and the quickstart | P0 | S | | Not started | [002-licence-split-and-contribution-docs.md](002-licence-split-and-contribution-docs.md) |
 | 003 | Docker image, compose quickstart and CI pipelines | P0 | M | | Not started | [003-docker-image-and-ci.md](003-docker-image-and-ci.md) |
 | 004 | Library scan to a manifest on disk | P0 | L | | Not started | [004-library-scan-to-manifest.md](004-library-scan-to-manifest.md) |
