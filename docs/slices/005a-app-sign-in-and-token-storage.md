@@ -34,6 +34,7 @@ The load-bearing detail is the Keychain accessibility class: **`kSecAttrAccessib
 
 **In scope:**
 
+- `App/Tests/MixTapeTests/TestTags.swift` — the app-side half of the same `Tag` extension slice 004 adds for the server. The two test trees are separate targets in separate packages and cannot share a file, so the four layer tags are declared once on each side. **There is an existing violation to clear at the same time:** slice 003 wrote `App/Tests/MixTapeTests/VersionResponseDTOTests.swift` with an untagged `@Suite`, because no tag existed to apply. Tag it `.domain` when the extension lands — it tests a `Shared` DTO
 - `SignInScreen` in `AppPresentation/Screens/Auth/`, with a server-address field and `SignInWithAppleButton`
 - `SignInWithAppleUseCase` in `AppUseCase/UseCases/Auth/`, and `AuthRepositoryProtocol` alongside it
 - `AuthRepository` in `AppData/`, a stateless `Sendable` struct calling `APIClient`
@@ -78,6 +79,7 @@ For **each id in `depends_on`**, in order — do not summarise, walk the list:
 
 ## 5. Acceptance Criteria
 
+- [ ] **Every suite in `App/Tests/MixTapeTests/` carries a layer tag, including `VersionResponseDTOTests` inherited untagged from slice 003.** Checked by reading the suites, and by running a tag filter and confirming it selects the expected set rather than nothing.
 - [ ] A clean install against an **unclaimed** server shows claim-this-server wording; against a **claimed** server it shows sign-in wording. Two different first runs, both checked.
 - [ ] Signing in stores a token and moves to the app's main screen.
 - [ ] Force-quitting and relaunching stays signed in. No second sign-in prompt.
@@ -116,6 +118,7 @@ This *is* a sub-slice of [005](005-server-pairing-and-owner-claim.md). Not split
 - **Unit:** `KeychainStore` round trip, plus reading the stored item's attributes back to assert the accessibility class. That assertion is the whole reason this test exists.
 - **UI:** one XCUITest for the happy path, driven off accessibility identifiers, never visible text. Sign in with Apple itself cannot be automated, so the test drives the app with an injected already-paired state and asserts the main screen appears.
 - **Test targets required:** `App/Tests/MixTapeTests/` and `App/Tests/MixTapeUITests/`, created by slice 001. Swift Testing for units, tagged `.useCase` and `.service`; XCTest for the XCUITest only.
+- **This slice creates the app-side `Tag` extension**, `App/Tests/MixTapeTests/TestTags.swift`, mirroring the one slice 004 adds under `Server/`. It also retro-tags the one untagged suite already sitting there — `VersionResponseDTOTests`, left that way by slice 003 because the vocabulary did not exist. After this slice, an untagged suite anywhere in the app target is a defect rather than an unavoidable gap.
 
 ## 9. Keeping this document true
 
