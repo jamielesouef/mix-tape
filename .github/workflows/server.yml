@@ -4,6 +4,11 @@ name: Server
 # and a change under Shared/** must run BOTH. Shared compiles on the server side
 # and the app side, so it is the one tree neither workflow may ignore.
 on:
+  # Manual trigger. Earns its place twice over: a path-filtered push cannot
+  # fire on branch creation, so the very first run of this workflow has no
+  # other way to happen, and re-running CI after a runner-image change needs
+  # no throwaway commit.
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
