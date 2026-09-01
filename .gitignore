@@ -6,3 +6,7 @@ DerivedData/
 # Editor state. The Swift extension regenerates launch.json on demand, and the
 # one it writes hardcodes a workspace name that is local to whoever opened it.
 .vscode/
+
+# Your Apple signing team. Needed only for macOS and real-device builds.
+# App/Signing.xcconfig explains what to put in it.
+App/Local.xcconfig

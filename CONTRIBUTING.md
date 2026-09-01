@@ -30,6 +30,18 @@ Signed-off-by: Jane Citizen <jane@example.com>
 
 Signing off means you agree to the DCO: that you wrote the change, or have the right to submit it under the licence of the directory it lands in.
 
+## Signing, if you build for macOS or a device
+
+Simulator builds need no signing, so `xcodebuild -destination 'generic/platform=iOS Simulator'` and CI both work straight from a clone.
+
+A macOS build or a build to a real device does need a signing team, because the app's entitlements require a development certificate. `DEVELOPMENT_TEAM` is deliberately not committed — it identifies whoever owns the signing account, and this is a public repository. Create `App/Local.xcconfig`, which is gitignored, containing one line:
+
+```
+DEVELOPMENT_TEAM = YOURTEAMID
+```
+
+`App/Signing.xcconfig` includes it optionally, so a clone without that file builds for the simulator with no warning.
+
 ## Before you open a pull request
 
 - `cd Shared && swift build` — this must resolve **zero** external packages.

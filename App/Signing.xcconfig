@@ -1,0 +1,20 @@
+// Signing configuration.
+//
+// DEVELOPMENT_TEAM is deliberately NOT committed. The repository is public, and
+// a team identifier is a personal identifier of whoever owns the signing
+// account — not a secret, but not something a public project should carry
+// either.
+//
+// Simulator builds need no team, so CI and `xcodebuild -destination
+// 'generic/platform=iOS Simulator'` work with nothing set here.
+//
+// A macOS build or a build to a real device DOES need one, because the app's
+// entitlements require a development certificate. To set yours, create
+// App/Local.xcconfig — it is gitignored — containing one line:
+//
+//     DEVELOPMENT_TEAM = YOURTEAMID
+//
+// The include below is the optional form (`#include?`), so a clone without
+// that file builds for the simulator with no warning and no error.
+
+#include? "Local.xcconfig"
