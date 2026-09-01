@@ -3,6 +3,11 @@ name: App
 # Shared appears here as well as in server.yml on purpose — it compiles on both
 # sides, so a change to it must be proven on both.
 on:
+  # Manual trigger. Earns its place twice over: a path-filtered push cannot
+  # fire on branch creation, so the very first run of this workflow has no
+  # other way to happen, and re-running CI after a runner-image change needs
+  # no throwaway commit.
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
