@@ -26,17 +26,46 @@ Early. Work is delivered as numbered slices, and [`docs/slices/MASTER-CHECKLIST.
 
 ## Quickstart
 
-**Not here yet.** The `Dockerfile` and `docker-compose.yml` land in [slice 003](docs/slices/003-docker-image-and-ci.md), and this section will be replaced with a real `docker compose up` walkthrough at that point. It is deliberately empty rather than aspirational — a quickstart that describes files which do not exist is worse than none.
+You need Docker, a folder of music, and about two minutes.
 
-Until then, you can run the server directly on a Mac:
+```bash
+git clone <this repository>
+cd mixtape
+MIXTAPE_HOST_MUSIC_DIR=/path/to/your/music docker compose up -d
+```
+
+Then check it answered:
+
+```bash
+curl -i localhost:8080/version
+```
+
+You should get `200` and a small JSON body — `{"apiVersion":1,"serverVersion":"0.1.0","claimed":false}`. `claimed: false` means no owner has paired with this server yet, which is correct on a first run.
+
+Your music is mounted **read-only**. Mix Tape never writes to your library. Everything the server creates — the owner claim, the library index, extracted artwork — goes in a Docker volume instead.
+
+To stop it: `docker compose down`. To stop it and throw away the server's state as well: `docker compose down -v`.
+
+### Configuration
+
+Every setting is an environment variable, and `docker-compose.yml` documents each one where it is declared.
+
+| Variable | What it does |
+| --- | --- |
+| `MIXTAPE_HOST_MUSIC_DIR` | The folder on **your** machine holding the music. Defaults to `./music` |
+| `MIXTAPE_APPLE_BUNDLE_ID` | The bundle identifier of your build of the app. Needed once pairing exists |
+| `MIXTAPE_TOKEN_SECRET` | Signs the token the server issues after pairing. Leave it unset and the server generates and stores one |
+
+### Running the server without Docker
+
+Docker is how Mix Tape is packaged, not how it is developed. On a Mac the same binary runs directly:
 
 ```bash
 cd Server
 swift run Server
-curl -i localhost:8080/version
 ```
 
-Docker is a packaging step, not the development loop.
+The moment a container rebuild is needed to test a change, iteration speed dies — so it deliberately is not needed.
 
 ## Repository layout
 
@@ -48,6 +77,8 @@ mixtape/
 ├── docs/        plan, handoff, architecture template, slices
 └── scripts/     check-layer-imports.sh, check-spdx.sh
 ```
+
+The image is built from the `Dockerfile` at the root and published to GHCR by `.github/workflows/server.yml`.
 
 ## Licence
 

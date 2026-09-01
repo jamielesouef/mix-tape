@@ -1,0 +1,43 @@
+# Mix Tape — the quickstart. See README.md.
+#
+# Ladder L1 ships the crude rung here: ONE bind mount for the server's own
+# state, with MIXTAPE_DATA_DIR and MIXTAPE_CACHE_DIR pointing at two
+# subdirectories of it. v2 — wiping the cache without losing the server claim —
+# points those two variables at two separate mounts and changes no code.
+#
+# Music is a mount of its own and is read-only. Spike S001 confirmed the server
+# can serve artwork and audio from two independent roots, so the music
+# directory never has to live underneath the cache.
+
+services:
+  mixtape:
+    build: .
+    image: mixtape:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Your music. Read-only: Mix Tape never writes to your library.
+      - ${MIXTAPE_HOST_MUSIC_DIR:-./music}:/music:ro
+      # The server's own state — the owner claim, the library index, artwork.
+      - mixtape-state:/var/lib/mixtape
+    environment:
+      MIXTAPE_MUSIC_DIR: /music
+      MIXTAPE_DATA_DIR: /var/lib/mixtape/data
+      MIXTAPE_CACHE_DIR: /var/lib/mixtape/cache
+      # The bundle identifier of your build of the iOS app. Verifying an Apple
+      # identity token checks this as the token's `aud` claim.
+      MIXTAPE_APPLE_BUNDLE_ID: ${MIXTAPE_APPLE_BUNDLE_ID:-}
+      # Signs the long-lived token the server issues after pairing. Leave it
+      # unset and the server generates one and stores it 0600 under the data
+      # directory. Rotating it revokes every device — that is v1's whole
+      # revoke story (ladder L5).
+      MIXTAPE_TOKEN_SECRET: ${MIXTAPE_TOKEN_SECRET:-}
+      # READ BY NOTHING IN v1, and documented here on purpose (plan conflict
+      # C6). Verifying an identity token needs only the bundle ID. Team ID is
+      # for generating an Apple client secret, which v1 deliberately avoids by
+      # issuing its own token after a single pairing.
+      MIXTAPE_APPLE_TEAM_ID: ${MIXTAPE_APPLE_TEAM_ID:-}
+
+volumes:
+  mixtape-state:

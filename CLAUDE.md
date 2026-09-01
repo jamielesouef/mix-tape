@@ -69,8 +69,9 @@ Wire with `@Entry`, never a hand-rolled `EnvironmentKey`. Build the whole object
 
 ## Swift rules
 
-- Swift 6 strict concurrency throughout, non-negotiable. Swift 6 language mode is the invariant; the local toolchain is currently Swift 6.4 / Xcode 27, ahead of the template's stated 6.2 / Xcode 26.
-- **Until slice 003 pins the Docker build-stage image, write no language or standard-library feature newer than Swift 6.2 into `Shared/` or `Server/`.** Those two compile inside the container as well as on the Mac, so a 6.4-only construct passes locally and fails a build nobody runs until CI. `App/` is Mac-only, but it is not unconstrained: it also builds in `app.yml` on a hosted macOS runner, so it is limited to whatever Xcode that workflow pins — which slice 003 sets.
+- Swift 6 strict concurrency throughout, non-negotiable. Swift 6 language mode is the invariant. The local toolchain runs ahead of what CI pins — Xcode 27 / Swift 6.4 on the machine, Xcode 26.6 and `swift:6.2-noble` in CI — so the pins below, not the local compiler, are what the code is really held to.
+- **Write no language or standard-library feature newer than Swift 6.2, anywhere in the repository.** Not an interim measure — slice 003 pinned both sides and this is the standing rule. `Shared/` and `Server/` compile inside `swift:6.2-noble`, and `App/` builds on GitHub's `macos-26` runner under **Xcode 26.6**, which is a Swift 6.2 toolchain. A 6.4-only construct passes on the local machine and fails a build nobody runs until CI, on either side.
+- **The app project stays at `objectVersion = 77`.** Xcode 27 writes `90`, which no stable hosted runner can open. `preferredProjectObjectVersion` is pinned to `77` alongside it — that is the setting that otherwise lets Xcode 27 rewrite the format on the next open. If a diff ever shows either back at `90`, revert it rather than bumping the runner.
 - iOS 26+, macOS 26+. No back-deploy, no `#available` checks.
 - Project level: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = YES`.
 - Actors stay actors. `nonisolated` fixes `Decodable` warnings — never convert an actor to `@MainActor final class` to silence one.

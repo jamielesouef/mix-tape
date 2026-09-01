@@ -1,0 +1,19 @@
+# The build context is uploaded to the daemon on every build, so this file is
+# a build-speed control, not tidiness.
+#
+# A bare ".build/" would match only the repository root. The vendored
+# dependency tree lives at Server/.build/checkouts, so the glob has to be
+# path-independent or every build ships Hummingbird's whole source tree.
+**/.build
+DerivedData/
+.git
+.gitignore
+
+# The server image can never need the app tree or the documentation.
+App/
+docs/
+.vscode/
+.github/
+
+**/.DS_Store
+**/xcuserdata/

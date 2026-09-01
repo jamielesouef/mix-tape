@@ -1,0 +1,71 @@
+name: App
+
+# Shared appears here as well as in server.yml on purpose — it compiles on both
+# sides, so a change to it must be proven on both.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "App/**"
+      - "Shared/**"
+      - "scripts/**"
+      - ".github/workflows/app.yml"
+  pull_request:
+    paths:
+      - "App/**"
+      - "Shared/**"
+      - "scripts/**"
+      - ".github/workflows/app.yml"
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test the app
+    # Pinned deliberately. macos-26 is the newest STABLE image; the only image
+    # carrying Xcode 27 is a public preview, and a preview is not a pin. The
+    # project file is kept at objectVersion 77 so this image can open it — see
+    # slice 003's decision log.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26.6
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
+
+      - name: SPDX headers
+        run: ./scripts/check-spdx.sh
+
+      - name: Layer imports
+        run: ./scripts/check-layer-imports.sh
+
+      # Resolved at runtime rather than hardcoded: GitHub rotates this image
+      # regularly, and a device name in the YAML fails as a destination error
+      # that reads like a project fault. A generic destination would build
+      # without running a single test, which is worse.
+      - name: Pick an available iPhone simulator
+        id: simulator
+        run: |
+          name=$(xcrun simctl list devices available --json \
+            | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['name'] for r in d for x in d[r] if x['name'].startswith('iPhone')))")
+          echo "Using simulator: $name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        working-directory: App
+        run: |
+          xcodebuild test \
+            -scheme MixTape \
+            -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.name }}" \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult
+          path: App/TestResults.xcresult
