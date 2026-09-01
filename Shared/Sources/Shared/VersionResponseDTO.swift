@@ -6,6 +6,7 @@
 //  Created by Jamie Le Souëf on 31/08/2026.
 //
 
+import CoreGraphics
 public struct VersionResponseDTO: Codable, Sendable, Hashable {
   public let apiVersion: Int
   public let serverVersion: String
