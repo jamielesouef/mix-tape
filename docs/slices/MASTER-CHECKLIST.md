@@ -10,7 +10,7 @@ That split is deliberate. Every fact duplicated across two files becomes two fac
 
 Derived from [`../engineering-doc.md`](../engineering-doc.md) and [`../../SPEC-DECISIONS.md`](../../SPEC-DECISIONS.md). **`SPEC-DECISIONS.md` outranks both docs**; where a slice departs from the engineering doc, the departure is a numbered fork with a decision row in the owning slice — see [Plan Forks](#6-plan-forks).
 
-Populated 2026-09-03 (Phase 2). Decisions 1–35 are binding on every row below.
+Populated 2026-09-03 (Phase 2). Decisions 1–47 are binding on every row below.
 
 ## 1. Slices
 
@@ -41,8 +41,8 @@ Spikes are not deliverables and are not in the linked list, so they get their ow
 
 | # | Question | Timebox | Unblocks | Status | Answer |
 |---|---|---|---|---|---|
-| [S001](S001-vlckit-spm-resolution.md) | Does VLCKit resolve as an SPM binary dependency with iOS 26 and tvOS 26 simulator slices and link into `MixtapeInfrastructure` under Swift 6 mode with MainActor default isolation? | 2 h | 007 | Open | — |
-| [S002](S002-stream-authorization-header.md) | Can `AVPlayerController` and `VLCPlayerController` each send `Authorization: MediaBrowser …` on a stream request using public API only? (decision 33; answered per player) | 3 h | 006, 007, 009 | Open | — |
+| [S001](S001-vlckit-spm-resolution.md) | Does VLCKit resolve as an SPM binary dependency with iOS 26 and tvOS 26 simulator slices and link into `MixtapeInfrastructure` under Swift 6 mode with MainActor default isolation? | 2 h | 007 | Answered | **Yes** — resolves and links on iOS 26.5 and tvOS 26.5 simulators under Swift 6 mode + `MainActor` default isolation via `tylerjonesio/vlckit-spm` exact `3.6.0`, product `VLCKitSPM`; no vendoring needed. Module is `MobileVLCKit` (iOS) / `TVVLCKit` (tvOS), so the one importing file uses `#if os(...)` imports. 778.7 MB binary artefact. 2026-09-03. |
+| [S002](S002-stream-authorization-header.md) | Can `AVPlayerController` and `VLCPlayerController` each send `Authorization: MediaBrowser …` on a stream request using public API only? (decision 33; answered per player) | 3 h | 006, 007, 009 | Answered | **AVPlayer: yes** — `AVAssetResourceLoaderDelegate` on a custom-scheme asset carries the header (206 + plays on an auth-required endpoint; `-1013` without). **VLCKit: yes, only via libavformat** — MRL `avio://http://…` + `:avio-options={headers='Authorization: MediaBrowser …'}`; VLC's own http access has no header option and `:http-token` sends Bearer (401). `ApiKey` fallback works for both. **Finding:** `/Videos/{itemId}/stream` is anonymous on 10.11.11; `universal` and `master.m3u8` require auth, and `maxStreamingBitrate=320000` transcoded ALAC. **Decided:** decision 42 puts `ApiKey` in the query on every client-built stream URL for both players and closes decision 33; decision 43 drops `maxStreamingBitrate`. 2026-09-03. |
 
 ## 3. Active Blockers
 
@@ -55,6 +55,7 @@ Drift found during a slice's pre-flight: something changed underneath a slice af
 
 | Date | Slice | What changed | Slices affected | Resolution |
 |---|---|---|---|---|
+| 2026-09-03 | S002 | Decisions 7 and 33 assume the client must authenticate the stream URL it builds. On Jellyfin 10.11.11 `/Videos/{itemId}/stream` and `/Audio/{itemId}/stream` carry no `security` requirement and serve 206 with no auth and with a bogus token; `/Audio/{itemId}/universal` and `master.m3u8` do require auth. | 006, 007, 009 | Closed 2026-09-03 by decisions 42 and 43: every client-built stream URL carries `ApiKey` in the query for both players (decision 7 amended, decision 33 closed); 009's universal URL drops `maxStreamingBitrate`. Triage 5's "send nothing" is reversed; Triage 6 is closed. |
 
 ## 5. Requirement Coverage
 
@@ -74,7 +75,7 @@ Every in-scope capability from engineering doc §1 and every acceptance criterio
 | §1.10 Play video: AVPlayer direct, VLC direct, HLS transcode | eng doc §1 | 006 (AVPlayer, HLS), 007 (VLC), 011 (tvOS demonstration) | `ResolveVideoPlaybackUseCase` (decision 12), `AVPlayerController` (decision 18), `VLCPlayerController`; AC6, AC7, AC8 |
 | §1.11 Resume from last position; mark watched at ≥90% | eng doc §1 | 008 | `startAt` from `PlaybackState.position`; 0.9 rule at stop (decision 8); AC9, AC10 |
 | §1.12 Play music: album queue, next/prev, background, lock screen | eng doc §1 | 009 (iOS), 011 (tvOS demonstration) | `MusicPlayerService` + `AudioPlayerController`; §1.1 invariants suite; AC12, AC13 |
-| §1.13 Report playback start / progress / stop | eng doc §1 | 006 (start, decision 37), 008 (progress, stopped), 009 (music, decision 34) | Three report use cases (decision 19) called by both services; `PlayMethod` from `PlaybackPlan.playMethod` (decision 11) |
+| §1.13 Report playback start / progress / stop | eng doc §1 | 006 (start, decision 37), 008 (progress, stopped), 009 (music, decision 34) | Three report use cases (decision 19) called by both services; `PlayMethod` from `PlaybackPlan.playMethod` for video (decision 11) and from `BuildAudioStreamURLUseCase`'s return value for music (decision 40) |
 | §1.14 Remote images with in-memory cache | eng doc §1 | 005 | `ImageService` (120 MB `NSCache`) + `JellyfinImageURLBuilder` (decision 25) |
 | §1.15 The Wallet | eng doc §1 | 010 | `WalletScreen`, `WalletPage`, `AlbumSleeve`, pull-out and return-to-sleeve |
 | §12.1 `localhost:8096` with no scheme connects | eng doc §12 | 004 | AC1 against the live server |
@@ -119,10 +120,12 @@ Questions raised mid-build. Each becomes a spike, a decision, or an explicit def
 
 | # | Question | Raised by | Disposition |
 |---|---|---|---|
-| 1 | How does `MixtapeServices` hold `VideoPlayerControlling` and `AudioPlayerController`, which §7 places in `MixtapeInfrastructure`, when §3 gives Services no edge to Infrastructure? `VideoPlayerControlling.makeView() -> AnyView` rules out moving the protocol to `MixtapeUseCase` or `MixtapeDomain`, and Infrastructure cannot import Services to conform. | Phase 2 verification | **Decided 2026-09-03 by the project owner (decision 36): add a `MixtapeServices → MixtapeInfrastructure` edge** to `Package.swift` and `check-layer-imports.sh`, applied in slice 001 so 006 and 009 inherit it. Rejected: declaring the player protocols in `MixtapeServices` and conforming in the app target (retroactive conformance across two modules, compiler warning). Pending only the paste into `SPEC-DECISIONS.md`. |
+| 1 | How does `MixtapeServices` hold `VideoPlayerControlling` and `AudioPlayerController`, which §7 places in `MixtapeInfrastructure`, when §3 gives Services no edge to Infrastructure? `VideoPlayerControlling.makeView() -> AnyView` rules out moving the protocol to `MixtapeUseCase` or `MixtapeDomain`, and Infrastructure cannot import Services to conform. | Phase 2 verification | **Decided 2026-09-03 by the project owner (decision 36): add a `MixtapeServices → MixtapeInfrastructure` edge** to `Package.swift` and `check-layer-imports.sh`, applied in slice 001 so 006 and 009 inherit it. Rejected: declaring the player protocols in `MixtapeServices` and conforming in the app target (retroactive conformance across two modules, compiler warning). Recorded as decision 36. |
 | 2 | Does `GET /Sessions` show `PlayMethod`, `NowPlayingItem` or `TranscodingInfo` for a stream request that has not yet sent `POST /Sessions/Playing`? | Phase 2 verification | **Measured no** (decision 37): with a transcode running, `/Sessions` shows none of the three, and `/Videos/ActiveEncodings` is 405. `ReportPlaybackStartUseCase` moves to 006 so AC6, AC7 and AC8 are claimed in full by 006 and 007. |
 | 3 | No iPad simulator exists, so AC13a's 3×3 half has no device. | Phase 2 verification | There is no iPadOS runtime and no iOS 26.0. 010's gate creates one with `xcrun simctl create` using an iPad device type against the iOS 26.5 runtime before demonstrating. |
 | 4 | When the FLAC album from decision 35 lands, which slice claims AC13f? | decision 35 | 009 re-opens and claims `§12.13f`; update the coverage row and 009's `covers:` at that point. |
+| 5 | `/Videos/{itemId}/stream` and `/Audio/{itemId}/stream` are anonymous on 10.11.11 (spec: no `security` block, no global security; live: 206 with no auth, 206 with `Token="deadbeef"`). Should 006/007 send any auth on that URL, and if so which mechanism, given S002 proved AVPlayer carries the header via `AVAssetResourceLoaderDelegate` and VLC only via the `avio://` MRL + `:avio-options` route (or `ApiKey` for either)? | S002 | **Superseded and reversed by decision 42 (2026-09-03): 006 and 007 send `ApiKey` in the query string on `/Videos/{itemId}/stream`, for both players.** The first disposition — send nothing — was faithful to the server today but built on undocumented anonymity, and `ApiKey` costs one query parameter with no delegate. No player carries the `Authorization` header; the `avio://` route and the resource-loader delegate are both rejected. Decision 33 closed, decision 7 amended. |
+| 6 | 009's `/Audio/{itemId}/universal` URL at `maxStreamingBitrate=320000` made the server transcode the ALAC track to HLS (`TranscodeReasons=ContainerBitrateExceedsLimit`); at `140000000` it direct-streamed `audio/mp4`. Under header auth the HLS child URI carries no token, so AVPlayer would need the full custom-scheme loader for every child and segment; under `ApiKey` auth the server propagates `ApiKey=` into the child URI and AVPlayer fetches children natively. | S002 | **Closed by decisions 42 and 43 (2026-09-03):** `maxStreamingBitrate` is dropped entirely — `320000` is 320 kbps and forced every ALAC and FLAC track through the transcoder, which would have broken AC13f — and the universal URL carries `ApiKey` in the query, the one mechanism the server propagates into the HLS child URI. |
 
 ## Ordering Notes
 
@@ -140,3 +143,4 @@ Why the delivery sequence is what it is, where it isn't obvious from `depends_on
 - **003's tests live in `MixtapeDataTests`** (fork F1); it therefore has a real gate of its own without a fifth test target.
 - **The tvOS scheme must build at every slice from 005 onward.** Shared presentation means any iOS-only view lands in an `#if os(iOS)` file with a tvOS counterpart named for what it is; 011 replaces the minimal counterparts with real tvOS chrome.
 - **The Services → Infrastructure edge (decision 36) lands in 001**, so 006 and 009 inherit it and neither waits on a manifest change of its own.
+- **The credentials file (decision 45) and `scripts/jf-probe.swift` (decision 47) land in 001**, because `curl` is globally denied on this machine and 004 is the first slice that needs to sign in. Every server-observable criterion from 004 onward reads the server through the probe.

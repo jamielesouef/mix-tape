@@ -78,6 +78,9 @@ Complete **before the first line of code**, not at close.
 - [ ] Its state matches what this slice assumed when drafted: `JellyfinHTTPClient`, `AuthContext`, `KeychainStore` and `AppLogger` exist in `MixtapeInfrastructure`, and the status mapping — 401 → `.invalidCredentials` on auth endpoints, `.quickConnectUnavailable` on `/QuickConnect/Enabled` and `/QuickConnect/Initiate` (decision 10), `.sessionExpired` elsewhere; unmapped 4xx → `.transport` (decision 9) — is proven by `MixtapeDataTests`.
 - [ ] Architecture standards doc re-read; nothing changed underneath this slice.
 
+**`001` — credentials file (decision 45):**
+- [ ] `.jellyfin-dev.env` exists at the repository root, is untracked, and `git check-ignore` confirms it is ignored. Its `JELLYFIN_USERNAME` and `JELLYFIN_PASSWORD` are what AC1, AC2, AC4 and AC14 below sign in with. They are typed into the simulator, never inlined into a source file, a test, a fixture or a log.
+
 **Drift found:** none.
 
 ## 5. Acceptance Criteria
@@ -93,7 +96,7 @@ Behavioural:
 - [ ] `.service` tests in `MixtapeServicesTests` for `SessionService`: restore, sign-in and expiry transitions, plus Quick Connect success, cancel and timeout, all against an injected clock — no test sleeps.
 - [ ] `.repository` tests in `MixtapeDataTests` for `JellyfinAuthRepository` against a stubbed `URLProtocol`, including the decision-31 null-identity case that must throw `.notAJellyfinServer`.
 
-Acceptance, against `http://localhost:8096` and the iOS/tvOS simulators:
+Acceptance, against `http://localhost:8096` and the iOS/tvOS simulators, signing in with `JELLYFIN_USERNAME` and `JELLYFIN_PASSWORD` from `.jellyfin-dev.env` (decision 45) — the values are entered in the simulator and appear in no source file, test, fixture or log:
 - [ ] AC1 — entering `localhost:8096` with no scheme resolves and connects.
 - [ ] AC2 — a wrong password shows an inline error and does not clear the username field.
 - [ ] AC3 — on the tvOS simulator, the Quick Connect code appears; approving it in Jellyfin Web signs the app in within 10 s.
@@ -115,6 +118,7 @@ Acceptance, against `http://localhost:8096` and the iOS/tvOS simulators:
 | 2026-09-03 | Quick Connect expiry sets `quickConnect = .failed(.quickConnectExpired)`, per decision 29 | see decision 29 | already resolved; cited because `SessionService`'s 5-minute timer implements it |
 | 2026-09-03 | The `Authorization` header is sent on `/QuickConnect/Enabled` even though the call is unauthenticated, per decision 26 | see decision 26 | already resolved; cited because `JellyfinAuthRepository.isQuickConnectEnabled` sends it |
 | 2026-09-03 | Accessibility identifiers: one enum per file, named for the enum, per decision 17 | see decision 17 | already resolved; cited because this slice writes the first identifier enums |
+| 2026-09-03 | AC1, AC2, AC4 and AC14 sign in with the credentials in the gitignored `.jellyfin-dev.env` that slice 001 created, per decision 45 | see decision 45 | already resolved; cited because this is the first slice that needs a real username and password, and the spike run's leaked-token failure is the one this rule prevents |
 
 ## 7. Sub-Slices
 

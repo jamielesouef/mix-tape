@@ -85,10 +85,10 @@ Behavioural:
 - [ ] `MixtapeServicesTests`, tagged `.service`: a `VideoPlaybackService` reporting suite, driven by an injected clock (never a real sleep), proving the cadence is exactly start / every 10 s while playing / on pause / on seek completion / on stop, across a run that includes a pause-then-resume and a mid-track seek, with no extra report anywhere in that sequence.
 - [ ] `MixtapeServicesTests`: a case proving `isWatched` is `true` on stop when position is ≥ 90% of the F1 mkv's 48.4 s runtime, and `false` below that threshold, at 89.9 %/90.0 %/90.1 % boundaries.
 
-Acceptance (server-observable against `http://localhost:8096`):
-- [ ] AC9 — play F1 (mkv, 48.4 s) to roughly 30 s, exit the player. `MovieDetailScreen` offers Resume at ≈30 s. `GET /UserItems/Resume?userId={uid}` lists the item with `PlaybackPositionTicks` matching the app's last progress report.
-- [ ] AC10 — play Avatar (mp4, 20.8 s) to completion. `GET /Items/{itemId}?userId={uid}` (or Jellyfin Web) shows `UserData.Played: true`.
-- [ ] After `stop()`, `GET /Sessions` shows this device's session with `NowPlayingItem` cleared — the stopped report closed what 006's start report opened.
+Acceptance (server-observable against `http://localhost:8096`, read with `./scripts/jf-probe.swift` from slice 001 — decision 47):
+- [ ] AC9 — play F1 (mkv, 48.4 s) to roughly 30 s, exit the player. `MovieDetailScreen` offers Resume at ≈30 s. `./scripts/jf-probe.swift '/UserItems/Resume?userId={uid}'` lists the item with `PlaybackPositionTicks` matching the app's last progress report.
+- [ ] AC10 — play Avatar (mp4, 20.8 s) to completion. `./scripts/jf-probe.swift '/Items/{itemId}?userId={uid}'` (or Jellyfin Web) shows `UserData.Played: true`.
+- [ ] After `stop()`, `./scripts/jf-probe.swift /Sessions` shows this device's session with `NowPlayingItem` cleared — the stopped report closed what 006's start report opened.
 - [ ] AC5 re-verified — using the resume point this slice's own reporting created (not the one seeded via Jellyfin Web in 005), Home's Continue Watching row shows a progress bar matching that position after `LibraryService.refresh()` runs.
 
 ## 6. Decision Log

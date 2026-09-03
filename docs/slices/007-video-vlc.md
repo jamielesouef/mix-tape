@@ -6,8 +6,8 @@ complexity: M
 ladder: none
 depends_on:
   - { id: "006", type: hard, note: "conforms to the VideoPlayerControlling protocol 006 defines and wires into the VideoPlaybackService 006 builds; reuses 006's stream URL" }
-  - { id: "S001", type: hard, note: "VLCKit must resolve as an SPM dependency (or vendored xcframework fallback) and link into MixtapeInfrastructure under Swift 6 mode with MainActor default isolation before this slice can add the dependency edge" }
-  - { id: "S002", type: hard, note: "needs the per-player answer on whether VLCPlayerController can carry the Authorization header on a stream request, or must fall back to ApiKey in the query string" }
+  - { id: "S001", type: hard, note: "proved VLCKit resolves as the SPM package tylerjonesio/vlckit-spm exact 3.6.0, product VLCKitSPM, modules MobileVLCKit / TVVLCKit, under Swift 6 mode with MainActor default isolation; decision 44 records it and the vendored fallback was not taken" }
+  - { id: "S002", type: hard, note: "measured that VLC plays a URL carrying ApiKey in the query and that VLC's own HTTP access has no header option; decision 42 chose ApiKey on that evidence and closed decision 33, so no per-player mechanism remains" }
 previous_slice: "006"
 next_slice: "008"
 parent_slice: none
@@ -32,23 +32,24 @@ P0. Engineering doc capability 10 names three playback methods and acceptance cr
 ## 3. Scope
 
 **In scope:**
-- The VLCKit dependency added to `MixtapeKit/Package.swift`'s `MixtapeInfrastructure` target, in the shape S001's spike result recorded — either the VLCKit SPM package, or a local `binaryTarget(path:)` vendoring the xcframework if S001 took that fallback.
-- `VLCPlayerController`: `@MainActor final class`, conforming to `VideoPlayerControlling` (§7), and the **only** file in the codebase that imports `VLCKit`.
+- The VLCKit dependency added to `MixtapeKit/Package.swift`'s `MixtapeInfrastructure` target, in the shape S001 recorded and decision 44 fixes: `.package(url: "https://github.com/tylerjonesio/vlckit-spm.git", exact: "3.6.0")` and `.product(name: "VLCKitSPM", package: "vlckit-spm")`. The `exact` pin is load-bearing — VideoLAN publishes no SPM manifest, so this is a community distribution. No vendored `binaryTarget(path:)` — S001 proved the SPM route on both simulators, so the fallback was not taken. The binary artefact is 778.7 MB per clean resolve; no consequence for this run, but cache the SPM artefact directory when CI returns.
+- `VLCPlayerController`: `@MainActor final class`, conforming to `VideoPlayerControlling` (§7), and the **only** file in the codebase that imports libVLC — as `import MobileVLCKit` under `#if os(iOS)` and `import TVVLCKit` under `#if os(tvOS)`, because those are the module names the package ships (decision 44). A bare `import VLCKit` fails with `Unable to resolve module dependency: 'VLCKit'`; `CLAUDE.md` and engineering doc §7 still say "imports VLCKit" and are wrong on the name, right on the substance.
+- The `VLCLogging` conformer that receives libVLC's log output is declared `nonisolated` (decision 44). Decision 15's `.defaultIsolation(MainActor.self)` would otherwise make it `MainActor`, and VLC's logging thread then traps with `SIGTRAP` (`@objc … level.getter`, `VLCLibrary.m:372`). This is the one place in the slice where the project-wide default is explicitly overridden, and it follows `CLAUDE.md`'s "`nonisolated` fixes it — never convert the actor" rule.
 - `VLCPlayerController.makeView()` returning a `UIViewRepresentable` wrapping `VLCVideoView`, with a custom overlay (play/pause, scrub, close) — VLC gets no native SwiftUI transport, so this overlay is hand-built where `AVPlayerController` gets one free from `VideoPlayer`.
 - The `.directVLC` branch wired into `VideoPlaybackService`: when `plan.method == .directVLC`, the service owns a `VLCPlayerController` instead of an `AVPlayerController`, behind the same `VideoPlayerControlling` interface the service already programs against.
-- Auth on the VLC-bound stream URL, following S002's recorded per-player answer: the `Authorization: MediaBrowser …` header if S002 proved libVLC can carry it through documented `VLCMedia` options, otherwise `ApiKey` in the query string of VLC-bound URLs only (decision 33).
+- Auth on the VLC-bound stream URL: **`ApiKey` in the query string, per decision 42** — the same URL slice 006 builds, token included, handed to `VLCMedia(url:)` with no media options. `/Videos/{itemId}/stream` happens to be anonymous on Jellyfin 10.11.11, but the app does not build on that. No `Authorization` header, no `:http-token` (it sends `Bearer`, which Jellyfin 401s), and never the `avio://` MRL plus `:avio-options` header route S002 proved and decision 42 rejected as fragile.
 
 **Out of scope** (name the slice it's deferred to):
 - tvOS's Siri Remote-specific overlay behaviour (play/pause and swipe gestures mapped onto this same `VLCPlayerController`) — deferred to slice 011, which owns all tvOS presentation chrome.
 - Any change to `ResolveVideoPlaybackUseCase`, the `PlaybackInfo` call, or the device profile — all delivered in slice 006 and untouched here.
 - Progress and stopped reports, and resume — slice 008. The start report already fires from `VideoPlaybackService.play` (006, decision 37) and is what makes AC7's `/Sessions` check meaningful.
-- A second, VLC-specific `PlaybackMethod` case or a second stream-URL-building path — none exists; `.directVLC` reuses the same `/Videos/{itemId}/stream?static=true…` URL slice 006 already builds, differing only in which auth mechanism decision 33 assigns it.
+- A second, VLC-specific `PlaybackMethod` case or a second stream-URL-building path — none exists; `.directVLC` reuses the identical `/Videos/{itemId}/stream?static=true…&ApiKey={token}` URL slice 006 already builds. Decision 42 gives both players the same mechanism, so nothing differs per player.
 
 **Plan requirements covered:**
 - `§1.10` (the VLC third of "direct play (AVPlayer), direct play (VLCKit), or HLS transcode") — satisfied by `VLCPlayerController` and the `.directVLC` branch in `VideoPlaybackService`, demonstrated by acceptance criterion 7.
 - `§12.7` — satisfied by AC7 itself: the F1 mkv plays via `.directVLC` and the Jellyfin dashboard shows no transcode session.
 
-No fork against the plan is taken in this slice; every departure from the engineering doc's literal text (custom overlay instead of native transport, per-player auth fallback) is already covered by a `SPEC-DECISIONS.md` decision cited in Section 6.
+No fork against the plan is taken in this slice; every departure from the engineering doc's literal text (custom overlay instead of native transport, `ApiKey` instead of the header, `MobileVLCKit`/`TVVLCKit` instead of `VLCKit`) is already covered by a `SPEC-DECISIONS.md` decision cited in Section 6.
 
 ## 4. Pre-Flight Validation
 
@@ -68,10 +69,9 @@ Complete **before the first line of code**, not at close.
 - [ ] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **S002 — Can `AVPlayerController` and `VLCPlayerController` each send `Authorization: MediaBrowser …` on a stream request using public API only?**
-- [ ] Opened it. Its decision log still says what this slice assumed.
-- [ ] It's answered specifically for the VLC player (S002 answers per player, not jointly) — the answer, not the hoped-for answer, decides whether `VLCPlayerController` sends the header or falls back to `ApiKey` in the query string.
-- [ ] If the fallback was taken for VLC, that is noted here and the reason carried into Section 6 rather than re-litigated.
-- [ ] Its state matches what this slice assumed when drafted, not when it was written.
+- [ ] Opened it. Its Result still records what this slice is built on: VLC plays a URL carrying `ApiKey` in the query; VLC's own HTTP access has no header option; the `avio://` route works but swaps HTTP stacks.
+- [ ] It's answered for the VLC player, and decision 42 — `ApiKey` in the query string for both players, header route rejected — is still the standing decision on that evidence.
+- [ ] Its state matches what this slice assumed when drafted: decision 33 is closed, so there is no per-player fallback left to note.
 - [ ] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **Drift found:** none.
@@ -80,10 +80,10 @@ Complete **before the first line of code**, not at close.
 
 - [ ] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes with the VLCKit dependency in place.
 - [ ] `xcodebuild test -skip-testing:iOSUITests` / `-skip-testing:tvOSUITests` is green for both schemes.
-- [ ] `./scripts/check-layer-imports.sh` exits 0, and a manual grep confirms `VLCPlayerController.swift` is the only file anywhere under `Sources/` that imports `VLCKit`.
+- [ ] `./scripts/check-layer-imports.sh` exits 0, and a manual grep confirms `VLCPlayerController.swift` is the only file anywhere under `Sources/` that imports `MobileVLCKit` or `TVVLCKit` (no file imports a bare `VLCKit`; that module exists only in the macOS slice).
 - [ ] `swiftformat --lint .` is clean.
 - [ ] `MixtapeServicesTests`, `.service` tag: a `PlaybackPlan` with `method == .directVLC` causes `VideoPlaybackService` to select the VLC controller rather than the AVPlayer one, proven against a stub `VideoPlayerControlling` — not the real `VLCVideoView` — and the start report still fires once with `PlayMethod: DirectPlay`.
-- [ ] AC7: on the simulator, sign in, open F1 (`mkv`/h264/aac, 48.4 s), tap Play. It plays in-app through `VLCVideoView` with working play/pause, scrub and close on the custom overlay. `curl` against `GET /Sessions` on `http://localhost:8096` shows this device's session with `NowPlayingItem` set, `PlayMethod: DirectPlay`, and no `TranscodingInfo` — the start report from 006 (decision 37) makes the session visible, so an absent `NowPlayingItem` is a failure, not a pass. The criterion's literal `hevc/dts` wording is satisfied by F1's `mkv` container instead, per decision 14: `mkv` routes to VLC by container regardless of codec, and no `hevc/dts` file exists in the library.
+- [ ] AC7: on the simulator, sign in, open F1 (`mkv`/h264/aac, 48.4 s), tap Play. It plays in-app through `VLCVideoView` with working play/pause, scrub and close on the custom overlay. `./scripts/jf-probe.swift /Sessions` against `http://localhost:8096` (decision 47) shows this device's session with `NowPlayingItem` set, `PlayMethod: DirectPlay`, and no `TranscodingInfo` — the start report from 006 (decision 37) makes the session visible, so an absent `NowPlayingItem` is a failure, not a pass. The criterion's literal `hevc/dts` wording is satisfied by F1's `mkv` container instead, per decision 14: `mkv` routes to VLC by container regardless of codec, and no `hevc/dts` file exists in the library.
 - [ ] If S001's answer left no working tvOS slice for VLCKit, the fallback S001 recorded is what this criterion and the tvOS build gate actually run against, and that is noted in Section 6 rather than silently assumed away.
 
 ## 6. Decision Log
@@ -92,10 +92,12 @@ Complete **before the first line of code**, not at close.
 
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
-| 2026-09-03 | Auth on the VLC-bound stream URL follows S002's recorded per-player answer: the `MediaBrowser` header if S002 proved libVLC can carry it via documented `VLCMedia` options, otherwise `ApiKey` in the query string of VLC-bound URLs only. See `SPEC-DECISIONS.md` decision 33. | Reaching for an undocumented libVLC header-injection option to preserve one-mechanism auth (decision 7) regardless of what S002 found. | Decision 33 pre-authorises the per-player `ApiKey` fallback precisely so this slice does not stall on a spike result that came back negative; shipping an undocumented option to avoid the fallback is the outcome decision 33 exists to rule out. |
+| 2026-09-03 | S002 answered for VLC: VLC's own HTTP access has no header option (`:http-token` sends `Authorization: Bearer`, Jellyfin 401s it), but the header **can** be carried by routing through libavformat: MRL `avio://http://…` plus `media.addOption(":avio-options={headers='Authorization: MediaBrowser …'}")` played an auth-required endpoint, and the same MRL without it failed. `ApiKey` in the query also plays. S002 also found `/Videos/{itemId}/stream` is anonymous on 10.11.11. **Decision 42: the VLC-bound stream URL carries `ApiKey` in the query string — the same URL as 006, plain `VLCMedia(url:)`, no options.** Decision 33 is closed; no player carries the header. | Sending nothing, as Triage 5 first recorded — depends on undocumented anonymity; the `avio://` route — proven, but swaps VLC's HTTP stack for FFmpeg's and rides the token in a fragile option string; `:http-token` — sends `Bearer`, 401 | Decision 42, cited not re-argued; S002's Result and Evidence detail carry the exact runs, the libvlc option inventory, and the avio route's caveats (config-chain quoting, FFmpeg HTTP behaviour, `avio://` documented in libvlc source and the VLC wiki, not VLCKit headers) |
+| 2026-09-03 | The `VLCLogging` conformer is `nonisolated` (decision 44, cited not re-argued) | Leaving it on the `MainActor` default; converting the surrounding type off `MainActor` | S002 hit the trap: VLC's logging thread calls the conformer off-main and `SIGTRAP`s under MainActor isolation; `nonisolated` on the one conformer is the smallest override and matches `CLAUDE.md`'s rule |
 | 2026-09-03 | AC7 is demonstrated against the F1 mkv (h264/aac) rather than a genuine hevc/dts source. See `SPEC-DECISIONS.md` decision 14. | Sourcing or transcoding a real `mkv/hevc/dts` file into the library before this slice runs. | Decision 14 records that `mkv` routes to `.directVLC` by container alone, independent of codec, and that F1 is the file the library actually has; it is also the only video item long enough (48.4 s) to double as slice 008's watch-30-s fixture. |
 | 2026-09-03 | `VLCPlayerController` presents its own hand-built overlay (play/pause, scrub, close) rather than a transport shared with `AVPlayerController`. See `SPEC-DECISIONS.md` decision 18. | One shared representable and overlay for both players, built against a raw `AVPlayerLayer` on the AVPlayer side to make the two symmetric. | Decision 18 keeps `AVPlayerController` on the native `VideoPlayer` transport (Picture in Picture and AirPlay free), and accepts that VLC — which has no equivalent SwiftUI transport — needs a custom overlay instead; `VideoPlayerControlling` still means Presentation only ever sees `AnyView`, so the asymmetry stops at the infrastructure layer. |
 | 2026-09-03 | The VLCKit dependency edge is added to `Package.swift` in this slice, not in slice 001. | Adding a placeholder or speculative VLCKit dependency in slice 001 ahead of S001's result, so the manifest would not need editing again here. | Slice 001's own decision log defers this edge to 007 pending S001, so slice 001 gates green with zero third-party dependencies; 007 is the first slice that actually needs VLCKit to compile, so it is the first slice that adds it. |
+| 2026-09-03 | VLCKit arrives as the community SPM package `tylerjonesio/vlckit-spm` pinned `exact: "3.6.0"`, product `VLCKitSPM`, and `VLCPlayerController.swift` imports `MobileVLCKit` / `TVVLCKit` behind `#if os(iOS)` / `#if os(tvOS)`. See S001's Result and decision 44. | A local `binaryTarget(path:)` vendoring the 778.7 MB xcframework (S001's pre-authorised fallback); building VLCKit from VideoLAN's source repo; the 4.0 alpha line. | S001 proved the SPM route resolves and links a real executable on both the iOS 26.5 and tvOS 26.5 simulators under decision 15's settings with zero warnings, so the fallback buys nothing and would put a 778.7 MB binary in the repo. VideoLAN publishes no `Package.swift` (checked `code.videolan.org/videolan/VLCKit` at tag `4.0.0a21`), so the community package is the only SPM coordinate. Pinned `exact` because the package's own platform floors (iOS 11, tvOS 11) and upstream re-tags give a range nothing to protect. |
 
 ## 7. Sub-Slices
 
@@ -103,7 +105,7 @@ Not split — delivered as a single slice.
 
 ## 8. Testing Strategy
 
-- **Unit / Integration / UI:** unit tests only, Swift Testing, tagged `.service`. No `.repository` test in this slice — `resolveVideo` and the `PlaybackInfo` call are already covered in slice 006's tests and are untouched here. No XCUITest and no CI gate (decision 4) — the F1 playback check is a manual simulator run plus a `curl` against `/Sessions`.
+- **Unit / Integration / UI:** unit tests only, Swift Testing, tagged `.service`. No `.repository` test in this slice — `resolveVideo` and the `PlaybackInfo` call are already covered in slice 006's tests and are untouched here. No XCUITest and no CI gate (decision 4) — the F1 playback check is a manual simulator run plus `./scripts/jf-probe.swift /Sessions` (decision 47).
 - **Test targets required:** `MixtapeServicesTests`, already created in slice 001. This slice adds the `.directVLC` controller-selection case to `VideoPlaybackService`'s existing test suite rather than creating a new target.
 
 ## 9. Keeping this document true

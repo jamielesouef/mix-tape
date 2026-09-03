@@ -88,9 +88,9 @@ Complete **before the first line of code**, not at close.
 - [ ] `./scripts/check-layer-imports.sh` exits 0.
 - [ ] `swiftformat --lint .` is clean.
 - [ ] On the Apple TV simulator, signed in: Home, Movies, Shows and Music tabs are all reachable and focus-navigable; Movies shows the two-item library via `MovieLibraryShelf`; Music shows the album shelf via `AlbumGrid`.
-- [ ] **AC6 replayed on tvOS**: the `mp4`/h264 Avatar item plays via `.directAVPlayer` with system transport controls; `GET /Sessions` shows `PlayMethod: DirectPlay` and no `TranscodingInfo`.
-- [ ] **AC7 replayed on tvOS**: the `mkv`/h264/aac F1 item plays via `.directVLC` with the Siri Remote overlay (play/pause on the remote's Play/Pause button, scrub on swipe); `GET /Sessions` shows `PlayMethod: DirectPlay` and no `TranscodingInfo`.
-- [ ] An album (all 46 tracks are `m4a`/`alac`) plays through on tvOS: the Siri Remote's next/previous buttons advance and step back through the queue, and `GET /Sessions` shows a music session with `NowPlayingItem` and `PlayMethod: DirectPlay` while it plays.
+- [ ] **AC6 replayed on tvOS**: the `mp4`/h264 Avatar item plays via `.directAVPlayer` with system transport controls; `./scripts/jf-probe.swift /Sessions` (decision 47) shows `PlayMethod: DirectPlay` and no `TranscodingInfo`.
+- [ ] **AC7 replayed on tvOS**: the `mkv`/h264/aac F1 item plays via `.directVLC` with the Siri Remote overlay (play/pause on the remote's Play/Pause button, scrub on swipe); `./scripts/jf-probe.swift /Sessions` shows `PlayMethod: DirectPlay` and no `TranscodingInfo`.
+- [ ] An album (all 46 tracks are `m4a`/`alac`) plays through on tvOS: the Siri Remote's next/previous buttons advance and step back through the queue, and `./scripts/jf-probe.swift /Sessions` shows a music session with `NowPlayingItem` and `PlayMethod: DirectPlay` while it plays.
 - [ ] AC3 (tvOS Quick Connect) is **not** re-demonstrated here — it was claimed in slice 004 and nothing about sign-in changes in this slice.
 
 ## 6. Decision Log
