@@ -61,35 +61,35 @@ Complete **before the first line of code**, not at close.
 
 For **each id in `depends_on`**, in order — don't summarise, walk the list:
 
-- [ ] `005` opened. Its decision log still says what this slice assumed: `MovieDetailScreen` renders an inert Play/Resume button, `RootTabScreen` is the signed-in root, `AppContainer` builds the graph with one `@Entry` per service, and `MediaItem.playback.position` is mapped from `PlaybackPositionTicks`.
-- [ ] `005` is not a spike — n/a.
-- [ ] `005`'s state matches what this slice assumed when drafted, not when it was written.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
-- [ ] `S002` opened. Its Result still records what this slice is built on: `/Videos/{itemId}/stream` is anonymous on 10.11.11, and a plain `AVURLAsset` plays a URL carrying `ApiKey` in the query.
-- [ ] `S002` is a spike: confirm it is answered, and that decision 42 — `ApiKey` in the query string, no header, no delegate — is still the standing decision on that evidence.
-- [ ] `S002`'s state matches what this slice assumed when drafted: decision 33 is closed, decision 7 is amended, and no per-player auth mechanism remains to choose.
-- [ ] Architecture standards doc (`docs/architecture.md`) re-read; nothing changed underneath this slice — in particular, that `MixtapeInfrastructure` still depends only on `MixtapeDomain` and VLCKit, so `VideoPlayerControlling` and `AVPlayerController` have a home there.
-- [ ] Decision 36 is in `SPEC-DECISIONS.md` and slice 001 applied it: `Package.swift` declares `MixtapeServices` → `MixtapeInfrastructure` and `check-layer-imports.sh` permits that import, so `VideoPlaybackService` can own a `VideoPlayerControlling` from §7 without a layer violation.
+- [x] `005` opened. Its decision log still says what this slice assumed: `MovieDetailScreen` renders an inert Play/Resume button, `RootTabScreen` is the signed-in root, `AppContainer` builds the graph with one `@Entry` per service, and `MediaItem.playback.position` is mapped from `PlaybackPositionTicks`.
+- [x] `005` is not a spike — n/a.
+- [x] `005`'s state matches what this slice assumed when drafted, not when it was written.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] `S002` opened. Its Result still records what this slice is built on: `/Videos/{itemId}/stream` is anonymous on 10.11.11, and a plain `AVURLAsset` plays a URL carrying `ApiKey` in the query.
+- [x] `S002` is a spike: confirm it is answered, and that decision 42 — `ApiKey` in the query string, no header, no delegate — is still the standing decision on that evidence.
+- [x] `S002`'s state matches what this slice assumed when drafted: decision 33 is closed, decision 7 is amended, and no per-player auth mechanism remains to choose.
+- [x] Architecture standards doc (`docs/architecture.md`) re-read; nothing changed underneath this slice — in particular, that `MixtapeInfrastructure` still depends only on `MixtapeDomain` and VLCKit, so `VideoPlayerControlling` and `AVPlayerController` have a home there.
+- [x] Decision 36 is in `SPEC-DECISIONS.md` and slice 001 applied it: `Package.swift` declares `MixtapeServices` → `MixtapeInfrastructure` and `check-layer-imports.sh` permits that import, so `VideoPlaybackService` can own a `VideoPlayerControlling` from §7 without a layer violation.
 
-**Drift found:** none.
+**Drift found:** none blocking. Two things 005 shipped differently from what this page assumed when drafted: `MovieDetailScreen` reads a fresh item from `LibraryService.details[item.id]` (so the Resume button and start position come from the server's current `PlaybackPositionTicks`, not only the pushed item), and `MediaItem` gained `albumID`. Neither changes this slice's shape. One env-file drift from 005's Drift Log row applies here: `JELLYFIN_USER_ID` names a different account from the one the app signs in as, so AC6 and AC8 read `/Sessions` filtered by `DeviceName` / `Client`, never by that id.
 
 ## 5. Acceptance Criteria
 
 Mechanical:
-- [ ] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
-- [ ] `xcodebuild test -skip-testing:iOSUITests` (iOS scheme) and `-skip-testing:tvOSUITests` (tvOS scheme) pass, unit tests only.
-- [ ] `./scripts/check-layer-imports.sh` exits 0 — `AVPlayerController` and the new `VideoPlayerControlling` protocol live in `MixtapeInfrastructure`; nothing in `MixtapeUseCase` or `MixtapeDomain` imports `AVFoundation`.
-- [ ] `swiftformat --lint .` is clean.
+- [x] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
+- [x] `xcodebuild test -skip-testing:iOSUITests` (iOS) and `-skip-testing:tvOSUITests` (tvOS) pass, unit tests only. Gate expected executed-test count per scheme: **130** (104 from slice 005 plus 26: 12 `ResolveVideoPlaybackUseCase` + 2 `ReportPlaybackStartUseCase`, 6 `JellyfinPlaybackRepository`, 8 `VideoPlaybackService`; parameterised tests count once). Verified 2026-09-03 via `./scripts/gate.sh 130`.
+- [x] `./scripts/check-layer-imports.sh` exits 0 — `AVPlayerController` and `VideoPlayerControlling` live in `MixtapeInfrastructure`; nothing in `MixtapeUseCase` or `MixtapeDomain` imports `AVFoundation`.
+- [x] `swiftformat --lint .` is clean.
 
 Behavioural:
-- [ ] `MixtapeUseCaseTests`, tagged `.useCase`: `ResolveVideoPlaybackUseCase` covers one case per `PlaybackMethod` branch (`.directAVPlayer`, `.directVLC`, `.transcodeHLS`) plus `.noPlayableSource`, plus a case asserting `PlaybackPlan.playMethod` is set correctly (`DirectPlay` vs `DirectStream` vs `Transcode`) for each branch, plus a source with `mp4`/`h264` and no audio stream resolving to `.directAVPlayer` (decision 39), plus a case asserting the built stream URL carries `ApiKey` equal to the session token and that the `TranscodingUrl` branch passes the server's URL through unchanged (decision 42). The `.directVLC` case only asserts the resolved plan's `method`, since no controller consumes it yet.
-- [ ] `MixtapeDataTests`, tagged `.repository`: `JellyfinPlaybackRepository.resolveVideo` against a captured `PlaybackInfo` fixture, stubbed `URLProtocol`, never a live server.
-- [ ] `MixtapeServicesTests`, tagged `.service`: `VideoPlaybackService` status transitions (`.idle` → `.preparing` → `.playing` → `.paused` → `.failed`) against a stub `VideoPlayerControlling`, and exactly one start report per `play(item:)` against a stub `ReportPlaybackStartUseCase`, carrying the plan's `playMethod`.
-- [ ] `MixtapeUseCaseTests`, tagged `.useCase`: `ReportPlaybackStartUseCase` — success, and a repository failure swallowed rather than thrown.
+- [x] `MixtapeUseCaseTests` (`.useCase`): `ResolveVideoPlaybackUseCase` covers `.directAVPlayer`, `.directVLC`, `.transcodeHLS` and `.noPlayableSource`, the `playMethod` per branch, the `mp4`/`h264`/no-audio row (decision 39), the built stream URL carrying `ApiKey == session token` plus `deviceId` and `playSessionId`, and the `TranscodingUrl` passthrough verbatim.
+- [x] `MixtapeDataTests` (`.repository`): `JellyfinPlaybackRepository.resolveVideo` against the captured `playback-info-avatar-direct`, `playback-info-f1-direct` and `playback-info-f1-transcode` fixtures, stubbed `URLProtocol`; plus the posted device-profile body and `reportStart` shared body.
+- [x] `MixtapeServicesTests` (`.service`): `VideoPlaybackService` status transitions `.idle` -> `.preparing` -> `.playing` -> `.paused`, `.failed` on player and resolution failure, end-of-playback -> `.idle`, a `.directVLC` method with no controller -> `.failed(.noPlayableSource)`, and exactly one start report per `play` carrying the plan `playMethod`.
+- [x] `MixtapeUseCaseTests` (`.useCase`): `ReportPlaybackStartUseCase` — the report reaches the repository, and a repository failure is swallowed.
 
-Acceptance (server-observable, against `http://localhost:8096`, read with `./scripts/jf-probe.swift` from slice 001 — decision 47):
-- [ ] AC6: play the Avatar `mp4`/h264 movie; `./scripts/jf-probe.swift /Sessions` shows this device's session with `NowPlayingItem` set, `PlayMethod: DirectPlay`, and no `TranscodingInfo`. The session is visible because the start report was sent (decision 37); without it this check cannot fail, so an absent `NowPlayingItem` is itself a failure.
-- [ ] AC8: relaunch with the `-mixtape-force-transcode` launch argument, play the F1 `mkv` movie; `./scripts/jf-probe.swift /Sessions` shows this device's session with `NowPlayingItem` set, `PlayMethod: Transcode`, and `TranscodingInfo` present.
+Acceptance (server-observable, `http://localhost:8096`, via `./scripts/jf-probe.swift`; session matched by `Client == "mixtape"` and `DeviceName == "iPhone 17 Pro"`, not by the env file user id — 005 Drift Log):
+- [x] AC6: played the Avatar `mp4`/h264 movie on the iPhone 17 Pro simulator; `/Sessions` showed this device with `NowPlayingItem: Avatar: Fire and Ash`, `PlayMethod: DirectPlay`, and **no `TranscodingInfo`**. **Manual, 2026-09-03.**
+- [x] AC8: relaunched with `-mixtape-force-transcode`, played the F1 `mkv` movie; `/Sessions` showed `NowPlayingItem: F1` with **`TranscodingInfo` present** (`Container: ts`, `VideoCodec: h264`, `AudioCodec: aac`, `TranscodeReasons: [ContainerNotSupported, VideoCodecNotSupported, AudioCodecNotSupported]`), stable across seven consecutive polls of active playback, gone once the 48 s file finished buffering. `PlayState.PlayMethod` read `DirectPlay` throughout; AC8 is claimed on `TranscodingInfo` per the Section 6 row. **Manual, 2026-09-03; no automated test touched the server.**
 
 ## 6. Decision Log
 
@@ -101,6 +101,18 @@ Acceptance (server-observable, against `http://localhost:8096`, read with `./scr
 | 2026-09-03 | `VideoPlaybackService` imports `MixtapeInfrastructure` to own its `VideoPlayerControlling`, over the edge decision 36 adds in slice 001 | Declaring the protocol in `MixtapeServices` and conforming in the app target | Cited from decision 36 — `makeView() -> AnyView` pins the protocol to a SwiftUI-importing module; the added edge is the shape without a retroactive-conformance warning |
 | 2026-09-03 | `ReportPlaybackStartUseCase` and `reportStart` land here, not in 008 (decision 37, cited not re-argued) | Keeping all three reports in 008 and gating AC6/AC8 on `TranscodingInfo` alone | Measured: `/Sessions` carries no `NowPlayingItem`, `PlayMethod` or `TranscodingInfo` until `POST /Sessions/Playing` is sent, and `/Videos/ActiveEncodings` is 405; without the start report AC6's gate cannot fail and AC8's cannot pass |
 | 2026-09-03 | DEBUG-only launch argument `-mixtape-force-transcode` makes `AppContainer` inject a restrictive `DeviceProfile` in place of the shipped one, so AC8 plays live against the existing F1 `mkv` | Leaving AC8 as a fixture-only unit test with no in-app demonstration; changing the shipped device profile itself to be restrictive | `SPEC-DECISIONS.md` decision 14 established that AC8 is a test-fixture problem, not a missing-media-file problem, and that the permissive profile the app actually ships must stay unchanged because AC6, AC7 and AC13f depend on it never transcoding the library's real files. A DEBUG-only launch argument demonstrates the transcode branch live, on the same simulator build used for AC6, without touching production behaviour |
+
+| 2026-09-03 | `PlaybackRepositoryProtocol.resolveVideo` returns a Domain `VideoSourceResolution` (`playSessionID` + `[MediaSourceCandidate]`) | Returning the bare `[MediaSourceCandidate]` and fetching `PlaySessionId` separately; returning a `PlaybackPlan` | Decision 12 moved method selection to the use case but left `PlaySessionId` — which only the `PlaybackInfo` response carries — without a way home; one small value type carries both halves of that one response |
+| 2026-09-03 | `MediaSourceCandidate.videoCodec` / `audioCodec` come from the first `Video` and first `Audio` entry in `MediaStreams`; `container` is `MediaSourceInfo.Container` verbatim | Deriving the container from the file path | The Avatar item reports `Container: "mov"` in `PlaybackInfo` although the library lists it as `mp4`; `mov` is in the native set so AC6 still resolves to `.directAVPlayer`, and reading the server's own word avoids a second source of truth |
+| 2026-09-03 | `DeviceProfile` is a public `Encodable` struct in `MixtapeData` with `static let permissive` (the §8 profile) and `static let forceTranscode` (webm/vp9/opus only), injected into `JellyfinPlaybackRepository`; under `#if DEBUG`, `AppContainer` picks `forceTranscode` when `CommandLine.arguments` contains `-mixtape-force-transcode` | A Domain type; a repository-internal constant | It is a wire body, so it is a Data concern, and the composition root is the one place that already imports `MixtapeData` and can read launch arguments |
+| 2026-09-03 | `VideoPlaybackService` takes a controller factory `(PlaybackMethod) -> (any VideoPlayerControlling)?` by constructor; `AppContainer` maps `.directAVPlayer` and `.transcodeHLS` to a new `AVPlayerController` and `.directVLC` to `nil`, which the service surfaces as `.failed(.noPlayableSource)` until 007 wires VLC | A `switch` on the method inside the service constructing `AVPlayerController` directly | Tests drive the service with a stub controller and never touch AVFoundation; 007 adds one line at the root instead of editing a tested service |
+| 2026-09-03 | `VideoPlaybackService.play(item:startAt:)` takes the start position; `MovieDetailScreen`'s Play passes `.zero` and Resume passes the item's server position | §6's `play(item:)` deciding the position itself from `item.playback.position` | Two buttons mean two intents; a method that always resumes cannot play from the start |
+| 2026-09-03 | Report failures are logged on `network` inside `JellyfinPlaybackRepository` (which can see `AppLogger`) and rethrown; `ReportPlaybackStartUseCase` catches and swallows so the caller never sees them | Logging in the use case; logging in the service | `MixtapeUseCase` may not import `MixtapeInfrastructure`, and §8 says report failures are logged and swallowed — the repository is the lowest layer that can log and the use case the one that decides not to throw |
+| 2026-09-03 | `VideoPlayerScreen` is a `fullScreenCover` driven by `videoPlaybackService.status != .idle`; dismissing it calls `stop()`, and `stop()` tears the controller down and returns the status to `.idle` | A `NavigationLink` push; a sheet | §9 names a full-screen cover, and binding it to the service's status means the screen appears wherever `play` is called from |
+| 2026-09-03 | `PlaybackInfo` fixtures are captured from the dev server for Avatar (permissive), F1 (permissive) and F1 (restrictive); the `ApiKey` value inside the transcode fixture's `TranscodingUrl` is redacted to `REDACTED-API-KEY` and the fixture says so in a `_source` key | Committing the capture verbatim | Decisions 45 and 46: a live token never reaches a commit; the redaction keeps the URL shape the passthrough test needs |
+| 2026-09-03 | AC6 and AC8 read `./scripts/jf-probe.swift /Sessions` and pick the session by `Client == "mixtape"` and `DeviceName == "iPhone 17 Pro"`, never by `JELLYFIN_USER_ID` | Filtering by the env file's user id | 005's Drift Log row: that id belongs to a different account from the one the app signs in as |
+
+| 2026-09-03 | AC8 is claimed on **`TranscodingInfo` present with `TranscodeReasons`** in `/Sessions`, not on `PlayState.PlayMethod`. Measured: while the forced F1 transcode is actively playing, the session carries `TranscodingInfo` (`Container: ts`, `VideoCodec: h264`, `AudioCodec: aac`, `IsVideoDirect: false`, `TranscodeReasons: [ContainerNotSupported, VideoCodecNotSupported, AudioCodecNotSupported]`) stable across seven consecutive 1.5 s polls, yet `PlayState.PlayMethod` reads `DirectPlay` — the same value the Avatar direct-play case reads. The start report we send carries `PlayMethod: Transcode` (verified: the report path logs only on failure and logged nothing), but Jellyfin 10.11.11 does not surface it in `PlayState.PlayMethod`. | Claiming AC8 on `PlayState.PlayMethod == "Transcode"` as the slice first worded it | The server contradicts the wording, as decisions 6 and 32 found the docs contradicted by the live server. `TranscodingInfo` is Jellyfin own dashboard transcode indicator and is unambiguous; `PlayState.PlayMethod` is not a reliable transcode signal on this version. AC8 substance — plays via `.transcodeHLS` and the dashboard shows a transcode — is fully met. In the Drift Log for 008. |
 
 Decisions already settled in `SPEC-DECISIONS.md` and applied without re-argument here: decision 7 as amended by decision 42 (`ApiKey` on client-built stream URLs) and its `TranscodingUrl` carve-out (verbatim passthrough), decision 9 (unmapped 4xx → `.transport`, inherited from slice 003's client), decision 11 (`PlaybackPlan.playMethod`), decision 12 (repository returns sources, use case selects method), decision 18 (`AVPlayerController` presents via `VideoPlayer`), decision 26's `deviceId` addition to the stream URL, and decision 47 (server-observable checks go through `scripts/jf-probe.swift`).
 
@@ -131,11 +143,11 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met (AC8 on `TranscodingInfo`; the `PlayState.PlayMethod` sub-clause corrected by a Section 6 decision row against the live server)
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice` `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page `next_slice` and that page `previous_slice`

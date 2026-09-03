@@ -1,0 +1,125 @@
+//  VideoPlaybackServiceTests.swift
+//  MixtapeServicesTests
+//
+//  Created by Jamie Le Souëf on 03/09/2026.
+//
+
+import Foundation
+import MixtapeDomain
+import MixtapeInfrastructure
+@testable import MixtapeServices
+import MixtapeUseCase
+import Testing
+
+@Suite(.tags(.service))
+@MainActor
+struct VideoPlaybackServiceTests {
+    private let movie = MockLibraryRepository.sampleMovies[0]
+    private let controller = StubVideoPlayerController()
+
+    private func makeService(
+        repository: MockPlaybackRepository = MockPlaybackRepository(),
+        sessionService: SessionService = MockSessionService.signedIn(),
+        controllerFor: @escaping (PlaybackMethod) -> (any VideoPlayerControlling)?,
+    ) -> VideoPlaybackService {
+        VideoPlaybackService(
+            resolveVideo: ResolveVideoPlaybackUseCase(repository: repository),
+            reportStart: ReportPlaybackStartUseCase(repository: repository),
+            sessionService: sessionService,
+            makeController: controllerFor,
+        )
+    }
+
+    @Test func `play resolves loads plays and reports the start once`() async {
+        let recorder = Recorder()
+        let repository = MockPlaybackRepository(reportStartResult: { report, _ in
+            recorder.append("\(report.itemID) \(report.playMethod) paused=\(report.isPaused) pos=\(report.position.components.seconds)")
+        })
+        let service = makeService(repository: repository) { _ in controller }
+        await service.play(item: movie, startAt: .seconds(12))
+        #expect(service.status == .playing)
+        #expect(service.plan?.method == .directAVPlayer)
+        #expect(service.item == movie)
+        #expect(service.position == .seconds(12))
+        #expect(service.duration == Duration(ticks: 207_797_330))
+        #expect(controller.calls == ["load headers=0", "play"])
+        #expect(controller.loadedStart == .seconds(12))
+        #expect(controller.loadedURL?.path() == "/Videos/movie-1/stream")
+        #expect(recorder.urls == ["movie-1 directPlay paused=false pos=12"])
+    }
+
+    @Test func `toggle pauses and resumes`() async {
+        let service = makeService { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        service.togglePlayPause()
+        #expect(service.status == .paused)
+        service.togglePlayPause()
+        #expect(service.status == .playing)
+        #expect(controller.calls == ["load headers=0", "play", "pause", "play"])
+    }
+
+    @Test func `seek forwards to the controller and updates position`() async {
+        let service = makeService { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        service.seek(to: .seconds(9))
+        #expect(service.position == .seconds(9))
+        #expect(controller.calls.last == "seek 9")
+        controller.onPositionChange?(.seconds(10))
+        #expect(service.position == .seconds(10))
+    }
+
+    @Test func `stop tears down and returns to idle`() async {
+        let service = makeService { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        await service.stop()
+        #expect(service.status == .idle)
+        #expect(service.plan == nil)
+        #expect(service.item == nil)
+        #expect(service.isActive == false)
+        #expect(controller.calls.last == "teardown")
+    }
+
+    @Test func `a player failure lands in failed`() async {
+        let service = makeService { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        controller.onFailure?(.transport("boom"))
+        #expect(service.status == .failed(.transport("boom")))
+    }
+
+    @Test func `a method with no controller is no playable source`() async {
+        let repository = MockPlaybackRepository(resolveVideoResult: { _, _, _ in
+            VideoSourceResolution(playSessionID: "p", sources: [
+                MediaSourceCandidate(id: "s", container: "mkv", videoCodec: "hevc", audioCodec: "dts", supportsDirectPlay: true, supportsDirectStream: true, transcodingUrl: nil, runTimeTicks: nil),
+            ])
+        })
+        let service = makeService(repository: repository) { method in method == .directVLC ? nil : controller }
+        await service.play(item: movie, startAt: .zero)
+        #expect(service.status == .failed(.noPlayableSource))
+        #expect(service.plan?.method == .directVLC)
+        #expect(controller.calls.isEmpty)
+    }
+
+    @Test func `resolution failure lands in failed and expiry signs out`() async {
+        let sessionService = MockSessionService.signedIn()
+        let repository = MockPlaybackRepository(resolveVideoResult: { _, _, _ in throw MixtapeError.sessionExpired })
+        let service = makeService(repository: repository, sessionService: sessionService) { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        #expect(service.status == .failed(.sessionExpired))
+        #expect(sessionService.state == .signedOut)
+
+        let unreachable = makeService(repository: MockPlaybackRepository(resolveVideoResult: { _, _, _ in throw MixtapeError.serverUnreachable })) { _ in controller }
+        await unreachable.play(item: movie, startAt: .zero)
+        #expect(unreachable.status == .failed(.serverUnreachable))
+    }
+
+    @Test func `end of playback stops`() async {
+        let service = makeService { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        controller.onEnded?()
+        await Task.yield()
+        for _ in 0 ..< 10 where service.status != .idle {
+            await Task.yield()
+        }
+        #expect(service.status == .idle)
+    }
+}

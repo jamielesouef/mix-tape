@@ -8,10 +8,12 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Backdrop, title, year, runtime, overview, Play / Resume. The buttons render and do nothing
-/// until slice 006 wires the video player. Also used for episodes pushed from Continue Watching.
+/// Backdrop, title, year, runtime, overview, Play / Resume. Play starts from the beginning and
+/// Resume from the server's position; both present `VideoPlayerScreen` as a full-screen cover.
+/// Also used for episodes pushed from Continue Watching.
 public struct MovieDetailScreen: View {
     @Environment(\.libraryService) private var libraryService
+    @Environment(\.videoPlaybackService) private var videoPlaybackService
     let item: MediaItem
 
     public init(item: MediaItem) {
@@ -31,12 +33,11 @@ public struct MovieDetailScreen: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 12) {
-                        // Wired to `VideoPlaybackService` in slice 006.
-                        Button("Play", systemImage: "play.fill") {}
+                        Button("Play", systemImage: "play.fill") { play(from: .zero) }
                             .buttonStyle(.borderedProminent)
                             .accessibilityIdentifier(MovieDetailIdentifiers.playButton)
                         if current.playback.hasResumePoint {
-                            Button("Resume", systemImage: "playpause.fill") {}
+                            Button("Resume", systemImage: "playpause.fill") { play(from: current.playback.position) }
                                 .buttonStyle(.bordered)
                                 .accessibilityIdentifier(MovieDetailIdentifiers.resumeButton)
                         }
@@ -63,6 +64,25 @@ public struct MovieDetailScreen: View {
         }
         .navigationTitle(current.name)
         .task { await libraryService.loadDetail(id: item.id) }
+        .fullScreenCover(isPresented: isPlayerPresented) {
+            VideoPlayerScreen()
+        }
+    }
+
+    private var isPlayerPresented: Binding<Bool> {
+        Binding(
+            get: { videoPlaybackService.isActive && videoPlaybackService.item?.id == item.id },
+            set: { presented in
+                if presented == false {
+                    Task { await videoPlaybackService.stop() }
+                }
+            },
+        )
+    }
+
+    private func play(from position: Duration) {
+        let target = current
+        Task { await videoPlaybackService.play(item: target, startAt: position) }
     }
 
     /// The freshly fetched item when it has arrived, else the one this screen was pushed with.

@@ -18,6 +18,7 @@ struct MixtapeApp: App {
                 .environment(\.libraryService, container.libraryService)
                 .environment(\.seriesService, container.seriesService)
                 .environment(\.imageService, container.imageService)
+                .environment(\.videoPlaybackService, container.videoPlaybackService)
         }
     }
 }

@@ -23,7 +23,7 @@ Ordered by delivery sequence — the same order as the linked list.
 | 003 | HTTP client, keychain and logger | P0 | M | adw-run | Done | [003](003-http-client-keychain-logger.md) |
 | 004 | Sign in — checkpoint: you can sign in | P0 | L | adw-run | Done | [004](004-sign-in.md) |
 | 005 | Browse — checkpoint: you can browse | P0 | L | adw-run | Done | [005](005-browse.md) |
-| 006 | Video: AVPlayer direct and HLS | P0 | L | adw-run | Not started | [006](006-video-avplayer-and-hls.md) |
+| 006 | Video: AVPlayer direct and HLS | P0 | L | adw-run | Done | [006](006-video-avplayer-and-hls.md) |
 | 007 | Video: VLC direct | P0 | M | adw-run | Not started | [007](007-video-vlc.md) |
 | 008 | Playback reporting and resume | P0 | M | adw-run | Not started | [008](008-playback-reporting-and-resume.md) |
 | 009 | Music playback — checkpoint: music plays, one album at a time | P1 | L | adw-run | Not started | [009](009-music-playback.md) |
@@ -55,6 +55,7 @@ Drift found during a slice's pre-flight: something changed underneath a slice af
 
 | Date | Slice | What changed | Slices affected | Resolution |
 |---|---|---|---|---|
+| 2026-09-03 | 006 | On Jellyfin 10.11.11 `/Sessions` `PlayState.PlayMethod` reads `DirectPlay` even while a transcode is actively running (`TranscodingInfo` present with `TranscodeReasons`). The start report carries `PlayMethod: Transcode` but the server does not surface it in `PlayState.PlayMethod`. | 008 — AC checks should use `TranscodingInfo` as the transcode signal, not `PlayMethod`; 008 adds progress reports that may change what `PlayMethod` shows. | 006 claimed AC8 on `TranscodingInfo` present with `TranscodeReasons`, Jellyfin own dashboard transcode indicator, stable across active playback. Recorded so 008 does not gate on `PlayMethod == "Transcode"`. |
 | 2026-09-03 | 005 | `.jellyfin-dev.env`'s `JELLYFIN_USER_ID` belongs to a different account from the one `JELLYFIN_USERNAME` / `JELLYFIN_PASSWORD` sign in as (`/Sessions` shows the app session under another user id). Any probe keyed on `JELLYFIN_USER_ID` reads or seeds a different user's data from what the app shows. | 006, 007, 008, 009 — every server-observable check that seeds or reads per-user state (`/UserItems/Resume`, `/Items/{id}` `UserData`, `/Sessions` filtering) | 005 seeded AC5 against the signed-in user's id read from `/Sessions`. Later slices do the same until the env file is corrected by its owner; the file is gitignored and holds credentials, so the run does not edit it. |
 | 2026-09-03 | S002 | Decisions 7 and 33 assume the client must authenticate the stream URL it builds. On Jellyfin 10.11.11 `/Videos/{itemId}/stream` and `/Audio/{itemId}/stream` carry no `security` requirement and serve 206 with no auth and with a bogus token; `/Audio/{itemId}/universal` and `master.m3u8` do require auth. | 006, 007, 009 | Closed 2026-09-03 by decisions 42 and 43: every client-built stream URL carries `ApiKey` in the query for both players (decision 7 amended, decision 33 closed); 009's universal URL drops `maxStreamingBitrate`. Triage 5's "send nothing" is reversed; Triage 6 is closed. |
 

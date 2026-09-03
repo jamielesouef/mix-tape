@@ -5,7 +5,7 @@ priority: P0
 complexity: M
 ladder: none
 depends_on:
-  - { id: "006", type: hard, note: "conforms to the VideoPlayerControlling protocol 006 defines and wires into the VideoPlaybackService 006 builds; reuses 006's stream URL" }
+  - { id: "006", type: hard, note: "as shipped: VideoPlayerControlling lives in MixtapeInfrastructure/Video with load(url:startAt:headers:), play, pause, seek(to:), teardown, makeView() -> AnyView and the three callbacks; VideoPlaybackService takes makeController: (PlaybackMethod) -> (any VideoPlayerControlling)? and AppContainer maps .directVLC to nil today, so 007 changes one line at the root; ResolveVideoPlaybackUseCase already resolves mkv to .directVLC and builds the same ApiKey stream URL; DeviceProfile.permissive/.forceTranscode live in MixtapeData" }
   - { id: "S001", type: hard, note: "proved VLCKit resolves as the SPM package tylerjonesio/vlckit-spm exact 3.6.0, product VLCKitSPM, modules MobileVLCKit / TVVLCKit, under Swift 6 mode with MainActor default isolation; decision 44 records it and the vendored fallback was not taken" }
   - { id: "S002", type: hard, note: "measured that VLC plays a URL carrying ApiKey in the query and that VLC's own HTTP access has no header option; decision 42 chose ApiKey on that evidence and closed decision 33, so no per-player mechanism remains" }
 previous_slice: "006"

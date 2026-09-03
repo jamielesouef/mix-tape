@@ -63,7 +63,7 @@ let package = Package(
         ),
         .testTarget(name: "MixtapeDomainTests", dependencies: ["MixtapeDomain"]),
         .testTarget(name: "MixtapeUseCaseTests", dependencies: ["MixtapeUseCase", "MixtapeDomain"]),
-        .testTarget(name: "MixtapeServicesTests", dependencies: ["MixtapeServices", "MixtapeDomain"]),
+        .testTarget(name: "MixtapeServicesTests", dependencies: ["MixtapeServices", "MixtapeInfrastructure", "MixtapeDomain"]),
         .testTarget(
             name: "MixtapeDataTests",
             dependencies: ["MixtapeData", "MixtapeInfrastructure", "MixtapeUseCase", "MixtapeDomain"],

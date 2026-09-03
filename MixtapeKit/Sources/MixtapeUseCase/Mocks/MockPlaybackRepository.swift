@@ -1,0 +1,36 @@
+//  MockPlaybackRepository.swift
+//  MixtapeUseCase
+//
+//  Created by Jamie Le Souëf on 03/09/2026.
+//
+
+import Foundation
+import MixtapeDomain
+
+/// Closure-driven test double. Defaults resolve every item to one AVPlayer-native source.
+public nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
+    public var resolveVideoResult: @Sendable (String, Duration, UserSession) async throws -> VideoSourceResolution
+    public var reportStartResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
+
+    public static let nativeSource = MediaSourceCandidate(
+        id: "source-1", container: "mov", videoCodec: "h264", audioCodec: nil,
+        supportsDirectPlay: true, supportsDirectStream: true, transcodingUrl: nil, runTimeTicks: 207_797_330,
+    )
+    public static let sampleResolution = VideoSourceResolution(playSessionID: "psid-1", sources: [nativeSource])
+
+    public init(
+        resolveVideoResult: @escaping @Sendable (String, Duration, UserSession) async throws -> VideoSourceResolution = { _, _, _ in sampleResolution },
+        reportStartResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
+    ) {
+        self.resolveVideoResult = resolveVideoResult
+        self.reportStartResult = reportStartResult
+    }
+
+    public func resolveVideo(itemID: String, startAt: Duration, session: UserSession) async throws -> VideoSourceResolution {
+        try await resolveVideoResult(itemID, startAt, session)
+    }
+
+    public func reportStart(_ report: PlaybackReport, session: UserSession) async throws {
+        try await reportStartResult(report, session)
+    }
+}

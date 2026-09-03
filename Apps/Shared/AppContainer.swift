@@ -20,6 +20,7 @@ struct AppContainer {
     let libraryService: LibraryService
     let seriesService: SeriesService
     let imageService: ImageService
+    let videoPlaybackService: VideoPlaybackService
 
     init() {
         let configuration = URLSessionConfiguration.default
@@ -58,5 +59,29 @@ struct AppContainer {
             sessionService: sessionService,
         )
         imageService = ImageService(builder: JellyfinImageURLBuilder(), sessionService: sessionService)
+
+        let playbackRepository = JellyfinPlaybackRepository(client: client, appVersion: appVersion, deviceProfile: Self.deviceProfile)
+        videoPlaybackService = VideoPlaybackService(
+            resolveVideo: ResolveVideoPlaybackUseCase(repository: playbackRepository),
+            reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
+            sessionService: sessionService,
+            makeController: { method in
+                switch method {
+                case .directAVPlayer, .transcodeHLS: AVPlayerController()
+                case .directVLC: nil // VLCPlayerController lands in slice 007
+                }
+            },
+        )
+    }
+
+    /// The shipped profile is always `permissive`. In DEBUG builds the `-mixtape-force-transcode`
+    /// launch argument swaps in the restrictive profile so AC8 can be demonstrated live (fork F3).
+    private static var deviceProfile: DeviceProfile {
+        #if DEBUG
+            if CommandLine.arguments.contains("-mixtape-force-transcode") {
+                return .forceTranscode
+            }
+        #endif
+        return .permissive
     }
 }
