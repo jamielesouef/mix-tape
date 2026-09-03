@@ -55,25 +55,25 @@ Nothing above Domain can compile without these types, so this is the narrowest p
 
 Complete **before the first line of code**, not at close.
 
-- [ ] Opened `001-package-skeleton-and-gates.md`. Its decision log still says what this slice assumed: `MixtapeDomain` and `MixtapeDomainTests` exist as targets in `MixtapeKit/Package.swift`, each carrying `swiftSettings: [.defaultIsolation(MainActor.self), .swiftLanguageMode(.v6)]`, and `MixtapeDomainTests` has its placeholder `@Test` still passing.
-- [ ] 001 is not a spike, so no fallback question applies — its outcome is either shipped as planned or drifted, checked below.
-- [ ] 001's state matches what this slice assumed when drafted: the six-target skeleton exists, `check-layer-imports.sh` exits 0, and nothing under `Sources/MixtapeDomain` yet exists beyond the placeholder the skeleton slice left there.
-- [ ] Architecture standards doc (`docs/architecture.md`) re-read; nothing changed underneath this slice — in particular that Domain still depends on nothing but Foundation, and that `SPEC-DECISIONS.md` decisions 1–35 remain the current binding set.
+- [x] Opened `001-package-skeleton-and-gates.md`. Its decision log still says what this slice assumed: `MixtapeDomain` and `MixtapeDomainTests` exist as targets in `MixtapeKit/Package.swift`, each carrying `swiftSettings: [.defaultIsolation(MainActor.self), .swiftLanguageMode(.v6)]`, and `MixtapeDomainTests` has its placeholder `@Test` still passing.
+- [x] 001 is not a spike, so no fallback question applies — its outcome is either shipped as planned or drifted, checked below.
+- [x] 001's state matches what this slice assumed when drafted: the six-target skeleton exists, `check-layer-imports.sh` exits 0, and nothing under `Sources/MixtapeDomain` yet exists beyond the placeholder the skeleton slice left there.
+- [x] Architecture standards doc (`docs/architecture.md`) re-read; nothing changed underneath this slice — in particular that Domain still depends on nothing but Foundation, and that `SPEC-DECISIONS.md` decisions 1–35 remain the current binding set.
 
 **Drift found:** none.
 
 ## 5. Acceptance Criteria
 
-- [ ] `MixtapeDomainTests` builds and every fixture-table case in `isAVPlayerNative` passes: `(mp4, h264, aac)` → `true`; `(mkv, h264, aac)` → `false`; `(mkv, hevc, dts)` → `false`; `(mov, hevc, ac3)` → `true`; `(webm, vp9, opus)` → `false`; `(mp4, h264, dts)` → `false`; `(mp4, av1, aac)` → `false`; `(mp4, h264, nil)` → `true`; `(mkv, h264, nil)` → `false` (decision 39 — the Avatar mp4 has no audio track).
-- [ ] A tick round-trip test passes: `Duration.seconds(n).ticks == n * 10_000_000` and `Duration(ticks: n * 10_000_000) == .seconds(n)` for at least one non-zero `n`.
-- [ ] The watched-threshold pure function is tested at 89.9%, 90.0% and 90.1% of a fixed duration, asserting `false`, `true`, `true`.
-- [ ] `displayTitle` is tested for an episode (`parentIndexNumber: 2, indexNumber: 4, name: "Title"` → `"S2E4 · Title"`), a track (`indexNumber: 3, name: "Title"` → `"3. Title"`), and a movie (`name: "Title"`, no index numbers → `"Title"`).
-- [ ] `MixtapeError` has exactly the eight §4 cases plus `.decoding`, and no `.forbidden` case — checked by a test that switches over it exhaustively (a missing or extra case fails to compile, which is the test).
-- [ ] `QuickConnectUIState` has exactly `.idle`, `.waiting(code:)`, `.failed(MixtapeError)` — same exhaustive-switch check.
-- [ ] `xcodebuild build` is green for both the `iOS` and `tvOS` schemes with `MixtapeDomain` populated.
-- [ ] `xcodebuild test -skip-testing:iOSUITests` (iOS scheme) and `-skip-testing:tvOSUITests` (tvOS scheme) are green, including the new `MixtapeDomainTests` cases.
-- [ ] `./scripts/check-layer-imports.sh` exits 0 — nothing under `Sources/MixtapeDomain` imports anything but Foundation.
-- [ ] `swiftformat --lint .` is clean.
+- [x] `MixtapeDomainTests` builds and every fixture-table case in `isAVPlayerNative` passes: `(mp4, h264, aac)` → `true`; `(mkv, h264, aac)` → `false`; `(mkv, hevc, dts)` → `false`; `(mov, hevc, ac3)` → `true`; `(webm, vp9, opus)` → `false`; `(mp4, h264, dts)` → `false`; `(mp4, av1, aac)` → `false`; `(mp4, h264, nil)` → `true`; `(mkv, h264, nil)` → `false` (decision 39 — the Avatar mp4 has no audio track).
+- [x] A tick round-trip test passes: `Duration.seconds(n).ticks == n * 10_000_000` and `Duration(ticks: n * 10_000_000) == .seconds(n)` for at least one non-zero `n`.
+- [x] The watched-threshold pure function is tested at 89.9%, 90.0% and 90.1% of a fixed duration, asserting `false`, `true`, `true`.
+- [x] `displayTitle` is tested for an episode (`parentIndexNumber: 2, indexNumber: 4, name: "Title"` → `"S2E4 · Title"`), a track (`indexNumber: 3, name: "Title"` → `"3. Title"`), and a movie (`name: "Title"`, no index numbers → `"Title"`).
+- [x] `MixtapeError` has exactly the eight §4 cases plus `.decoding`, and no `.forbidden` case — checked by a test that switches over it exhaustively (a missing or extra case fails to compile, which is the test).
+- [x] `QuickConnectUIState` has exactly `.idle`, `.waiting(code:)`, `.failed(MixtapeError)` — same exhaustive-switch check.
+- [x] `xcodebuild build` is green for both the `iOS` and `tvOS` schemes with `MixtapeDomain` populated.
+- [x] `xcodebuild test -skip-testing:iOSUITests` (iOS scheme) and `-skip-testing:tvOSUITests` (tvOS scheme) are green, including the new `MixtapeDomainTests` cases. Expected executed-test count per scheme: **18** — 15 `` functions in `MixtapeDomainTests` (a parameterised test counts once in the result bundle, whatever its argument count) plus the three placeholders in the other package test targets. Verified 2026-09-03 via `./scripts/gate.sh 18`.
+- [x] `./scripts/check-layer-imports.sh` exits 0 — nothing under `Sources/MixtapeDomain` imports anything but Foundation.
+- [x] `swiftformat --lint .` is clean.
 
 ## 6. Decision Log
 
@@ -86,6 +86,11 @@ Complete **before the first line of code**, not at close.
 | 2026-09-03 | `MixtapeError` has no `.forbidden` case; unmapped 4xx is a Data-layer concern (`.transport`), not a new Domain case | Adding `.forbidden` for 403 | Cited from `SPEC-DECISIONS.md` decision 9 — not re-argued here. |
 | 2026-09-03 | `isAVPlayerNative` treats a `nil` audio codec as native (decision 39, cited not re-argued) | Requiring a member of the audio list, so `nil` fails | The library's only `.directAVPlayer` candidate has no audio stream; under the strict rule it routes to `.directVLC` and AC6 fails against correct code, with no fixture row to catch it |
 | 2026-09-03 | A new Domain type, `MediaSourceCandidate`, is introduced ahead of §4 to carry what `resolveVideo` will return once decision 12 lands in slice 006 | Waiting until slice 006 to define it, leaving the repository return type undecided until then | §4 does not name this type because the doc originally had the repository return a finished `PlaybackPlan`; decision 12 moved selection to the use case, which needs an intermediate shape. Defining it now means slice 006 has no Domain work left to do, only wiring. |
+| 2026-09-03 | Every Domain declaration — each type and the one free function — is marked `nonisolated`, while the target keeps `.defaultIsolation(MainActor.self)` per decision 15. | Leaving Domain types under the target's `MainActor` default; removing the setting from the Domain target. | Domain is pure `Sendable` value types with no state to protect. Under the `MainActor` default their computed properties and methods would be main-actor-isolated, so `@concurrent` decoding in Data and plain synchronous tests could not call them without hopping actors. `nonisolated` on the declaration is `CLAUDE.md`'s prescribed fix; decision 15's setting stays untouched on the target. Members declared in an `extension` do not inherit the modifier from the type — the first gate run failed with "Call to main actor-isolated static method" — so `displayTitle`, `reachesWatchedThreshold`, `ticks` and `init(ticks:)` carry `nonisolated` themselves. Every later slice's Domain extension must do the same. |
+| 2026-09-03 | `isAVPlayerNative` is a free function in `IsAVPlayerNative.swift`, comparing container and codec names case-insensitively. | A static on `PlaybackMethod`; a `PlaybackRules` namespace enum; exact-case comparison. | The slice names the free-function signature, the one-type-per-file rule governs types and is not violated by a function file, and a namespace with one member is an abstraction with no second use. Jellyfin sends lowercase codec names today; lowercasing costs nothing and removes a spelling dependency. |
+| 2026-09-03 | The watched-threshold rule is `PlaybackState.reachesWatchedThreshold(position:duration:)`, computed with integer `Duration` arithmetic (`position * 10 >= duration * 9`) and returning `false` for a zero or negative duration. | A `Double` ratio; a free function; a computed property on `PlaybackState` that needs a duration it does not hold. | Integer arithmetic makes the 90.0% boundary exact rather than a floating-point coin toss. It lives on `PlaybackState` because it is the reporting-time counterpart of the stored `isWatched` (decision 8), and a guard on the duration avoids dividing by zero for items with no runtime. |
+| 2026-09-03 | `Duration` ticks are `Int64`: `Duration.ticks` and `Duration(ticks:)`, one tick = 100 ns, computed from `components` so sub-second positions round-trip. | Seconds-only conversion (`Int(seconds) * 10_000_000`). | Jellyfin positions are 100 ns ticks and resume points are sub-second; truncating to whole seconds would drift the resume position on every report. |
+| 2026-09-03 | `displayTitle` falls back to `name` for an episode missing either index number and for a track missing its index number. | Rendering `S?E4 · Title` or `?. Title`; treating a missing number as a programming error. | Jellyfin metadata is often incomplete for specials and loose tracks; a bare name is the only rendering that is never wrong. |
 
 ## 7. Sub-Slices
 
@@ -114,11 +119,11 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page's `next_slice` and that page's `previous_slice`

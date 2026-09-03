@@ -19,7 +19,7 @@ Ordered by delivery sequence — the same order as the linked list.
 | # | Slice | Priority | Cx | Owner | Status | Link |
 |---|---|---|---|---|---|---|
 | 001 | Package skeleton and gates | P0 | L | adw-run | Done | [001](001-package-skeleton-and-gates.md) |
-| 002 | Domain model and pure rules | P0 | M | adw-run | Not started | [002](002-domain-model-and-pure-rules.md) |
+| 002 | Domain model and pure rules | P0 | M | adw-run | Done | [002](002-domain-model-and-pure-rules.md) |
 | 003 | HTTP client, keychain and logger | P0 | M | adw-run | Not started | [003](003-http-client-keychain-logger.md) |
 | 004 | Sign in — checkpoint: you can sign in | P0 | L | adw-run | Not started | [004](004-sign-in.md) |
 | 005 | Browse — checkpoint: you can browse | P0 | L | adw-run | Not started | [005](005-browse.md) |

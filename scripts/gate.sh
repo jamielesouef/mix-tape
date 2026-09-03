@@ -29,7 +29,7 @@ step=
 run() {
     echo "== $*"
     if ! "$@" > "$out/$step.log" 2>&1; then
-        grep -E 'error:|failed|FAIL' "$out/$step.log" | head -40
+        grep -E "error:|Testing failed|TEST FAILED|BUILD FAILED|^\s+(Call|Cannot|Missing|Use of|Type|Value|Argument)" "$out/$step.log" | cut -c1-300 | head -40
         tail -20 "$out/$step.log"
         echo "GATE FAILED at $step (log: $out/$step.log)"
         exit 1
