@@ -18,6 +18,11 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
     ]
     private static let quickConnectPaths: Set<String> = ["/QuickConnect/Enabled", "/QuickConnect/Initiate"]
 
+    public init(session: URLSession, deviceName: String) {
+        self.session = session
+        self.deviceName = deviceName
+    }
+
     public func get<T: Decodable & Sendable>(_ path: String, query: [URLQueryItem] = [], auth: AuthContext) async throws -> T {
         let request = try makeRequest(method: "GET", path: path, query: query, auth: auth, body: nil)
         let data = try await perform(request, path: path)

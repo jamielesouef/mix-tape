@@ -12,9 +12,14 @@
 
 import Foundation
 
-let arguments = CommandLine.arguments
+var arguments = CommandLine.arguments
+var method = "GET"
+if arguments.count == 3 {
+    method = arguments.remove(at: 1).uppercased()
+}
+
 guard arguments.count == 2 else {
-    print("usage: jf-probe.swift </server/path?query>")
+    print("usage: jf-probe.swift [METHOD] </server/path?query>")
     exit(2)
 }
 
@@ -53,6 +58,7 @@ guard let url = URL(string: baseURL + arguments[1]) else {
 }
 
 var request = URLRequest(url: url)
+request.httpMethod = method
 request.setValue(token, forHTTPHeaderField: "X-Emby-Token")
 
 let task = URLSession.shared.dataTask(with: request) { data, response, error in

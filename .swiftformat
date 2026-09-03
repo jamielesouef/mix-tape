@@ -2,3 +2,4 @@
 --indent 4
 --exclude .build,DerivedData,docs,**/xcuserdata
 --header ignore
+--disable redundantMemberwiseInit

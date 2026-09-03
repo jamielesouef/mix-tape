@@ -65,6 +65,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AD00000000000000000007 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Apps/Shared;
+			sourceTree = "<group>";
+		};
 		AD00000000000000000001 /* MixtapeiOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -143,6 +148,7 @@
 				AD00000000000000000011 /* MixtapeKit */,
 				AD00000000000000000001 /* MixtapeiOS */,
 				AD00000000000000000002 /* MixtapeTV */,
+				AD00000000000000000007 /* Shared */,
 				AD00000000000000000003 /* iOS UI tests */,
 				AD00000000000000000004 /* tvOS UI tests */,
 				698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */,
@@ -179,6 +185,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD00000000000000000001 /* MixtapeiOS */,
+				AD00000000000000000007 /* Shared */,
 			);
 			name = iOS;
 			packageProductDependencies = (
@@ -228,6 +235,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD00000000000000000002 /* MixtapeTV */,
+				AD00000000000000000007 /* Shared */,
 			);
 			name = tvOS;
 			packageProductDependencies = (

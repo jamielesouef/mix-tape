@@ -6,27 +6,10 @@
 
 import Foundation
 
-/// Answers every request through a process-global handler. Suites using it must be `.serialized`.
+/// Routes each request to the `StubServer` whose id the session stamped into a header, so
+/// suites can run in parallel without sharing a handler.
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
-    nonisolated(unsafe) static var handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
-    nonisolated(unsafe) static var lastRequest: URLRequest?
-
-    static func session() -> URLSession {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [StubURLProtocol.self]
-        return URLSession(configuration: configuration)
-    }
-
-    static func respond(status: Int, body: Data = Data()) {
-        handler = { request in
-            let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)! // stub: URL and status are test constants
-            return (response, body)
-        }
-    }
-
-    static func fail(_ code: URLError.Code) {
-        handler = { _ in throw URLError(code) }
-    }
+    static let headerName = "X-Stub-Server"
 
     override class func canInit(with _: URLRequest) -> Bool {
         true
@@ -37,13 +20,13 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func startLoading() {
-        Self.lastRequest = request
-        guard let handler = Self.handler else {
+        guard let id = request.value(forHTTPHeaderField: Self.headerName), let server = StubServer.registry.server(for: id) else {
             client?.urlProtocol(self, didFailWithError: URLError(.unknown))
             return
         }
+        server.record(request)
         do {
-            let (response, data) = try handler(request)
+            let (response, data) = try server.handle(request)
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)

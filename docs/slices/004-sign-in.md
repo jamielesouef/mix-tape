@@ -67,41 +67,43 @@ No requirement in this list is being built differently from how the engineering 
 Complete **before the first line of code**, not at close.
 
 **`002` — domain model and pure rules:**
-- [ ] Opened `002-domain-model-and-pure-rules.md`. Its decision log still says what this slice assumed.
-- [ ] Not a spike — n/a.
-- [ ] Its state matches what this slice assumed when drafted: `UserSession`, `ServerIdentity` (non-optional `id`/`name`/`version`/`baseURL` per decision 31), `MixtapeError` (no `.forbidden`, per decision 9), and `QuickConnectUIState` (`.idle` / `.waiting(code:)` / `.failed(MixtapeError)`, per decisions 24 and 28) all exist as specified.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened `002-domain-model-and-pure-rules.md`. Its decision log still says what this slice assumed.
+- [x] Not a spike — n/a.
+- [x] Its state matches what this slice assumed when drafted: `UserSession`, `ServerIdentity` (non-optional `id`/`name`/`version`/`baseURL` per decision 31), `MixtapeError` (no `.forbidden`, per decision 9), and `QuickConnectUIState` (`.idle` / `.waiting(code:)` / `.failed(MixtapeError)`, per decisions 24 and 28) all exist as specified.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **`003` — HTTP client, keychain, logger:**
-- [ ] Opened `003-http-client-keychain-logger.md`. Its decision log still says what this slice assumed.
-- [ ] Not a spike — n/a.
-- [ ] Its state matches what this slice assumed when drafted: `JellyfinHTTPClient`, `AuthContext`, `KeychainStore` and `AppLogger` exist in `MixtapeInfrastructure`, and the status mapping — 401 → `.invalidCredentials` on auth endpoints, `.quickConnectUnavailable` on `/QuickConnect/Enabled` and `/QuickConnect/Initiate` (decision 10), `.sessionExpired` elsewhere; unmapped 4xx → `.transport` (decision 9) — is proven by `MixtapeDataTests`.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened `003-http-client-keychain-logger.md`. Its decision log still says what this slice assumed.
+- [x] Not a spike — n/a.
+- [x] Its state matches what this slice assumed when drafted: `JellyfinHTTPClient`, `AuthContext`, `KeychainStore` and `AppLogger` exist in `MixtapeInfrastructure`, and the status mapping — 401 → `.invalidCredentials` on auth endpoints, `.quickConnectUnavailable` on `/QuickConnect/Enabled` and `/QuickConnect/Initiate` (decision 10), `.sessionExpired` elsewhere; unmapped 4xx → `.transport` (decision 9) — is proven by `MixtapeDataTests`.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **`001` — credentials file (decision 45):**
-- [ ] `.jellyfin-dev.env` exists at the repository root, is untracked, and `git check-ignore` confirms it is ignored. Its `JELLYFIN_USERNAME` and `JELLYFIN_PASSWORD` are what AC1, AC2, AC4 and AC14 below sign in with. They are typed into the simulator, never inlined into a source file, a test, a fixture or a log.
+- [x] `.jellyfin-dev.env` exists at the repository root, is untracked, and `git check-ignore` confirms it is ignored. Its `JELLYFIN_USERNAME` and `JELLYFIN_PASSWORD` are what AC1, AC2, AC4 and AC14 below sign in with. They are typed into the simulator, never inlined into a source file, a test, a fixture or a log.
 
 **Drift found:** none.
 
 ## 5. Acceptance Criteria
 
 Mechanical:
-- [ ] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
-- [ ] `xcodebuild test -skip-testing:iOSUITests` passes for `iOS`; `xcodebuild test -skip-testing:tvOSUITests` passes for `tvOS`.
-- [ ] `./scripts/check-layer-imports.sh` exits 0.
-- [ ] `swiftformat --lint .` is clean.
+- [x] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
+- [x] `xcodebuild test -skip-testing:iOSUITests` passes for `iOS`; `xcodebuild test -skip-testing:tvOSUITests` passes for `tvOS`. Gate 2 expected executed-test count per scheme: **62** — 15 Domain, 19 Data (11 client + 8 auth repository), 15 UseCase, 13 Services; parameterised tests count once. Verified 2026-09-03 via `./scripts/gate.sh 62`.
+- [x] `./scripts/check-layer-imports.sh` exits 0.
+- [x] `swiftformat --lint .` is clean.
 
 Behavioural:
-- [ ] `.useCase` tests in `MixtapeUseCaseTests` for all six use cases — success, `.sessionExpired`, `.serverUnreachable` — against `Mock*` repositories.
-- [ ] `.service` tests in `MixtapeServicesTests` for `SessionService`: restore, sign-in and expiry transitions, plus Quick Connect success, cancel and timeout, all against an injected clock — no test sleeps.
-- [ ] `.repository` tests in `MixtapeDataTests` for `JellyfinAuthRepository` against a stubbed `URLProtocol`, including the decision-31 null-identity case that must throw `.notAJellyfinServer`.
+- [x] `.useCase` tests in `MixtapeUseCaseTests` for all six use cases — success, `.sessionExpired`, `.serverUnreachable` — against `Mock*` repositories.
+- [x] `.service` tests in `MixtapeServicesTests` for `SessionService`: restore, sign-in and expiry transitions, plus Quick Connect success, cancel and timeout, all against an injected clock — no test sleeps.
+- [x] `.repository` tests in `MixtapeDataTests` for `JellyfinAuthRepository` against a stubbed `URLProtocol`, including the decision-31 null-identity case that must throw `.notAJellyfinServer`.
 
 Acceptance, against `http://localhost:8096` and the iOS/tvOS simulators, signing in with `JELLYFIN_USERNAME` and `JELLYFIN_PASSWORD` from `.jellyfin-dev.env` (decision 45) — the values are entered in the simulator and appear in no source file, test, fixture or log:
-- [ ] AC1 — entering `localhost:8096` with no scheme resolves and connects.
-- [ ] AC2 — a wrong password shows an inline error and does not clear the username field.
-- [ ] AC3 — on the tvOS simulator, the Quick Connect code appears; approving it in Jellyfin Web signs the app in within 10 s.
-- [ ] AC4 — force-quitting and relaunching the app lands directly on the signed-in root (`SettingsScreen`, see Section 6) with no sign-in prompt.
-- [ ] AC14 — signing out clears the Keychain; relaunching shows `ServerEntryScreen`.
+- [x] AC1 — entering `localhost:8096` with no scheme resolves and connects.
+- [x] AC2 — a wrong password shows an inline error and does not clear the username field.
+- [x] AC3 — on the tvOS simulator, the Quick Connect code appears; approving it in Jellyfin Web signs the app in within 10 s.
+- [x] AC4 — force-quitting and relaunching the app lands directly on the signed-in root (`SettingsScreen`, see Section 6) with no sign-in prompt.
+- [x] AC14 — signing out clears the Keychain; relaunching shows `ServerEntryScreen`.
+
+Verified 2026-09-03 on the iPhone 17 Pro (iOS 26.5) simulator through `idb`, reading each screen by accessibility identifier: AC1 landed on `signIn.*` with the server name "mixtape" after the https→http fallback; AC2 showed `signIn.errorLabel` "Wrong username or password." with `signIn.userNameField` still holding the username; AC4 relaunched straight onto `settings.*`; AC14 showed `serverEntry.*` after sign-out and again after relaunch. AC3 verified on a clone of the Apple TV 4K (tvOS 26.5) simulator by the scratch-copy XCUITest driver described in Section 6 — code shown, approved by API, signed-in root within 10 s (approval `POST /QuickConnect/Authorize` returned 200; the signed-in root appeared 4.1 s after approval, against the 10 s limit).
 
 ## 6. Decision Log
 
@@ -119,6 +121,19 @@ Acceptance, against `http://localhost:8096` and the iOS/tvOS simulators, signing
 | 2026-09-03 | The `Authorization` header is sent on `/QuickConnect/Enabled` even though the call is unauthenticated, per decision 26 | see decision 26 | already resolved; cited because `JellyfinAuthRepository.isQuickConnectEnabled` sends it |
 | 2026-09-03 | Accessibility identifiers: one enum per file, named for the enum, per decision 17 | see decision 17 | already resolved; cited because this slice writes the first identifier enums |
 | 2026-09-03 | AC1, AC2, AC4 and AC14 sign in with the credentials in the gitignored `.jellyfin-dev.env` that slice 001 created, per decision 45 | see decision 45 | already resolved; cited because this is the first slice that needs a real username and password, and the spike run's leaked-token failure is the one this rule prevents |
+| 2026-09-03 | `ValidateServerUseCase` decides "no scheme" by the absence of `://` and, when none was given, tries `https://` first and falls back to `http://` on **any** error from the `https` attempt. With an explicit scheme there is no fallback. | Keying on `URL(string:).scheme == nil`; falling back only on `.serverUnreachable`. | `URL(string: "localhost:8096")?.scheme` is `"localhost"`, so the scheme check would misfire on AC1's exact input. A TLS handshake against Jellyfin's plain-HTTP port fails with `URLError.secureConnectionFailed`, which 003 maps to `.transport`, so a fallback limited to `.serverUnreachable` never reaches `http`. |
+| 2026-09-03 | `Mock*` repositories and the mock session store live in `MixtapeUseCase/Mocks/`, beside the protocols they conform to, using Foundation only (`NSLock` for the store's state). `MockSessionService` in `MixtapeServices/Mocks/` is an `enum` of static factories returning real `SessionService` instances wired to those mocks. | Mocks in `MixtapeServices`; a `MockSessionService` subclass; `Synchronization.Mutex`. | `MixtapeUseCaseTests` may only import UseCase and Domain, and §11 wants use-case tests against `Mock*`, so the mocks have to sit at or below UseCase. `SessionService` is `final` so it cannot be subclassed, and Presentation may not construct use cases, so the only way a `#Preview` can show a state is a factory in Services that returns the real class pre-configured. `Mutex` is fine in 6.2 but pulls a second module into a layer that is meant to be Foundation-only. |
+| 2026-09-03 | `SessionService.init` takes an `initialState`, `serverIdentity`, `quickConnect` and `error` alongside the use cases and clock, all defaulting to the launch values, so previews and tests can start from any state. | Making the state `var`s settable; a separate preview-only initialiser in a `#if DEBUG`. | The state stays `public private(set)`, so only construction can set it, and one initialiser serves production, previews and tests. |
+| 2026-09-03 | `SessionService` exposes `public func handleSessionExpiry()` — clears the store and returns the state to `.signedOut` — and calls it itself whenever a use case throws `.sessionExpired`. | A protocol later services conform to; each service clearing the store itself. | §6 makes `SessionService` the single place expiry is handled; 005's services need one method to call, not a protocol with one conformer. |
+| 2026-09-03 | The stable `DeviceId` is read from `KeychainSessionStore.deviceID()` at composition time and injected into `JellyfinAuthRepository.init(client:deviceID:appVersion:)`; the same value is written into every `UserSession`. `SessionStoreProtocol` keeps §5's three methods. | Adding `deviceID()` to `SessionStoreProtocol`; generating the id inside the repository. | `/QuickConnect/Initiate` needs the `DeviceId` header before any session exists (§8), so it must exist at construction. The composition root already sees the concrete store, so the protocol does not need to grow; a repository is a stateless struct and must not own generation. |
+| 2026-09-03 | Sign-in flow is platform-split as two files defining the same type, `SignInFlow`, under `#if os(iOS)` (`SignInFlow+iOS.swift`: server entry → password sign-in, Quick Connect as the secondary action) and `#if os(tvOS)` (`SignInFlow+tvOS.swift`: server entry → Quick Connect first, password as the secondary action). `RootScreen` is shared and switches on `sessionService.state` only. | Two differently named flows with an `#if os` inside `RootScreen`'s body; one flow with a branch in the body. | The rule is two files and no branch inside a body; a shared type name is what lets `RootScreen` stay branch-free, and it is the same pattern 003 used for `DeviceName`. The screens themselves are shared — only their order differs. |
+| 2026-09-03 | `StartQuickConnectUseCase` checks `isQuickConnectEnabled` before `initiateQuickConnect` and throws `.quickConnectUnavailable` when the server says `false`. `SignInScreen` always offers "Use Quick Connect"; an unavailable server surfaces as `QuickConnectUIState.failed(.quickConnectUnavailable)` on `QuickConnectScreen`. | A separate enabled-check use case feeding a `SignInScreen` toggle. | §5 lists no such use case, and §9's "when enabled" is satisfied with one fewer state to keep in sync: the user learns Quick Connect is off at the moment they ask for it. |
+| 2026-09-03 | `scripts/jf-probe.swift` gains an optional leading HTTP method argument (`./scripts/jf-probe.swift POST /QuickConnect/Authorize?code=…&userId=…`); the one-argument form stays a GET. | A second script; approving the code in Jellyfin Web by hand. | AC3 needs the Quick Connect code approved with nobody at a browser; decision 47 makes the probe the one server tool, and one optional argument keeps it so. |
+| 2026-09-03 | `AppContainer.swift` lives once in `Apps/Shared/`, a synchronised folder added to both app targets; each target keeps its own `MixtapeApp.swift`. | Two copies of `AppContainer`, one per target, as §10's "both share this shape" reads. | Slices 005–011 each add services to the container; two copies is two chances per slice to diverge. The folder costs two lines in the project file, checked afterwards for `objectVersion = 77`. |
+| 2026-09-03 | Credentials reach the simulator through `scripts/sim-type.sh <ENV_KEY>`, which reads the value from `.jellyfin-dev.env` itself and types it through `idb`; the literal never appears in a command line you type, a tool argument or a log. AC2's wrong password is a plain literal. | Typing the values directly through the simulator input tool. | Decision 46 already treats a conversation transcript as a leak surface; a tool argument is a transcript. |
+| 2026-09-03 | Acceptance checks drive the simulators with `idb` (Facebook's `idb_companion` via Homebrew, `fb-idb` via `uv`), installed during this slice: `idb ui tap`, `idb ui text`, `idb ui describe-all`. `scripts/sim-type.sh` types through it. | AppleScript keystrokes and clicks into Simulator.app; waiting for a person at the terminal. | The Mac's screen locked mid-run and AppleScript then saw zero Simulator windows, so window-server automation is unavailable to an unattended run. `idb` talks to CoreSimulator directly, works with the screen locked, and exposes every `accessibilityIdentifier` — which is also what the installed xclaude plugin's tap and type tools require. |
+| 2026-09-03 | AC3 is driven by a throwaway XCUITest in a scratch **copy** of the repository (outside the worktree, never committed): it launches the installed tvOS app, presses select, types the address, reads `quickConnect.codeLabel`, approves the code through `POST /QuickConnect/Authorize` with the API key read from the env file, and asserts the signed-in root appears in under 10 s. The repository's `tvOSUITests` stub is untouched and no gate runs it. | Writing the driver into the repository's `tvOSUITests` target; waiting for a person to unlock the Mac and type on the Simulator's remote. | On Xcode 27's CoreSimulator, `idb` reports "Keyboard HID is suppressed … use the DTUHID transport" for tvOS (facebook/idb issue #941, no fix), and tvOS has no touch surface, so `idb` cannot enter the address. XCUITest uses the transport CoreSimulator now requires. Decision 4 defers UI *tests* from the deliverable and forbids enabling the repo's targets to check something; a driver in a scratch copy adds nothing to the deliverable and runs in no gate. |
+| 2026-09-03 | `EmptyBody` (a `public struct: Encodable` with no fields) moves from the test target into `MixtapeInfrastructure`, used for `POST /QuickConnect/Initiate`, which has no request body. | A fourth client method that posts without a body; a duplicate empty struct in `MixtapeData`. | §7's client contract is three methods and 003 shipped it; an empty JSON object is what the endpoint receives and ignores. |
 
 ## 7. Sub-Slices
 
@@ -146,11 +161,11 @@ And in the same commit as the code, not a follow-up: **commit this file alongsid
 Nothing checks any of this. That's the point of putting the writes first — a write you have to do to proceed is one you do; a write you're supposed to do afterwards is one you don't.
 
 ## 10. Definition of Done
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page's `next_slice` and that page's `previous_slice`

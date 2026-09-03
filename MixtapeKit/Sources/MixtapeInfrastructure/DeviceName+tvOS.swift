@@ -6,8 +6,8 @@
 
 #if os(tvOS)
     /// The `Device` component of the Authorization header.
-    nonisolated enum DeviceName {
-        @MainActor static var current: String {
+    public nonisolated enum DeviceName {
+        @MainActor public static var current: String {
             "Apple TV"
         }
     }
