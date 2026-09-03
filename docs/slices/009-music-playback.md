@@ -5,7 +5,7 @@ priority: P1
 complexity: L
 ladder: none
 depends_on:
-  - { id: "008", type: hard, note: "reuses ReportPlaybackStartUseCase / ReportPlaybackProgressUseCase / ReportPlaybackStoppedUseCase unchanged, per decision 34" }
+  - { id: "008", type: hard, note: "as shipped: ReportPlaybackStartUseCase (006), ReportPlaybackProgressUseCase and ReportPlaybackStoppedUseCase (008) exist and PlaybackRepositoryProtocol has reportStart/reportProgress/reportStopped; VideoPlaybackService drives the cadence (start, every 10 s, pause, seek, stop) off an injected Clock. MusicPlayerService reuses the same three use cases (decision 34). Note the 008 Drift Log: MinResumeDurationSeconds=300 means short items get no server resume point via reports" }
   - { id: "S002", type: hard, note: "measured that /Audio/{itemId}/universal and master.m3u8 require auth, that ApiKey propagates into the HLS child URI where the header does not, and that the engineering doc's 320 kbps bitrate cap forces ALAC through the transcoder; decisions 42 and 43 are built on those measurements" }
 previous_slice: "008"
 next_slice: "010"

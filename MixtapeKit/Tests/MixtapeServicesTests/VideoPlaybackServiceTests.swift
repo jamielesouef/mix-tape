@@ -20,13 +20,19 @@ struct VideoPlaybackServiceTests {
     private func makeService(
         repository: MockPlaybackRepository = MockPlaybackRepository(),
         sessionService: SessionService = MockSessionService.signedIn(),
+        libraryService: LibraryService? = nil,
+        clock: any Clock<Duration> = ContinuousClock(),
         controllerFor: @escaping (PlaybackMethod) -> (any VideoPlayerControlling)?,
     ) -> VideoPlaybackService {
         VideoPlaybackService(
             resolveVideo: ResolveVideoPlaybackUseCase(repository: repository),
             reportStart: ReportPlaybackStartUseCase(repository: repository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: repository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
             sessionService: sessionService,
             makeController: controllerFor,
+            libraryService: libraryService,
+            clock: clock,
         )
     }
 
@@ -142,5 +148,98 @@ struct VideoPlaybackServiceTests {
         #expect(vlc.calls == ["load headers=0", "play"])
         #expect(avPlayer.calls.isEmpty)
         #expect(recorder.urls == ["directPlay"])
+    }
+
+    // MARK: Reporting cadence (slice 008)
+
+    /// Awaits the detached report tasks a synchronous control method fires.
+    private func settle() async {
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+    }
+
+    @Test func `discrete events each report exactly once`() async {
+        let reports = ReportLog()
+        let repository = Self.loggingRepository(reports)
+        let service = makeService(repository: repository) { _ in controller }
+        await service.play(item: movie, startAt: .zero) // start
+        await settle()
+        service.togglePlayPause() // pause -> progress paused
+        await settle()
+        service.togglePlayPause() // resume -> progress not paused
+        await settle()
+        service.seek(to: .seconds(5)) // seek -> progress
+        await settle()
+        await service.stop() // stopped
+        #expect(reports.entries == [
+            "start pos=0 paused=false",
+            "progress pos=0 paused=true",
+            "progress pos=0 paused=false",
+            "progress pos=5 paused=false",
+            "stopped pos=5 paused=false",
+        ])
+    }
+
+    @Test func `progress fires once per interval while playing`() async {
+        let reports = ReportLog()
+        let clock = ManualClock()
+        let service = makeService(repository: Self.loggingRepository(reports), clock: clock) { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        await clock.tick() // 10 s
+        await clock.tick() // 20 s
+        await service.stop()
+        #expect(reports.entries == [
+            "start pos=0 paused=false",
+            "progress pos=0 paused=false",
+            "progress pos=0 paused=false",
+            "stopped pos=0 paused=false",
+        ])
+    }
+
+    @Test(arguments: [
+        (Duration.seconds(43.5), false), // 89.9% of 48.4 s
+        (Duration.seconds(43.56), true), // 90.0%
+        (Duration.seconds(43.6), true), // 90.1%
+    ])
+    func `watched at stop reports the full duration at or past ninety percent`(position: Duration, watched: Bool) async {
+        let reports = ReportLog()
+        let repository = MockPlaybackRepository(
+            resolveVideoResult: { _, _, _ in
+                VideoSourceResolution(playSessionID: "psid", sources: [
+                    MediaSourceCandidate(id: "s", container: "mkv", videoCodec: "h264", audioCodec: "aac", supportsDirectPlay: true, supportsDirectStream: true, transcodingUrl: nil, runTimeTicks: 484_000_000),
+                ])
+            },
+            reportStoppedResult: { report, _ in reports.append("stopped pos=\(report.position.components.seconds)") },
+        )
+        let f1 = Self.f1(runtime: .seconds(48.4))
+        let service = makeService(repository: repository) { _ in controller }
+        await service.play(item: f1, startAt: .zero)
+        controller.onPositionChange?(position)
+        #expect(service.reachesWatchedThreshold == watched)
+        await service.stop()
+        // Watched -> reports the full 48 s so Jellyfin marks it played; not watched -> the resume point.
+        let expected = watched ? "stopped pos=48" : "stopped pos=\(position.components.seconds)"
+        #expect(reports.entries.contains(expected))
+    }
+
+    private nonisolated static func line(_ kind: String, _ r: PlaybackReport) -> String {
+        "\(kind) pos=\(r.position.components.seconds) paused=\(r.isPaused)"
+    }
+
+    private static func loggingRepository(_ log: ReportLog) -> MockPlaybackRepository {
+        MockPlaybackRepository(
+            reportStartResult: { r, _ in log.append(line("start", r)) },
+            reportProgressResult: { r, _ in log.append(line("progress", r)) },
+            reportStoppedResult: { r, _ in log.append(line("stopped", r)) },
+        )
+    }
+
+    private static func f1(runtime: Duration) -> MediaItem {
+        MediaItem(
+            id: "f1", name: "F1", kind: .movie, overview: nil, productionYear: 2025, runtime: runtime, indexNumber: nil, parentIndexNumber: nil,
+            seriesName: nil, albumArtist: nil, primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: nil,
+            playback: PlaybackState(position: .zero, isWatched: false),
+        )
     }
 }

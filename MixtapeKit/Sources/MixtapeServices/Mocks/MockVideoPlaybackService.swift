@@ -27,6 +27,8 @@ public enum MockVideoPlaybackService {
         VideoPlaybackService(
             resolveVideo: ResolveVideoPlaybackUseCase(repository: repository),
             reportStart: ReportPlaybackStartUseCase(repository: repository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: repository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
             sessionService: sessionService,
             makeController: { _ in MockVideoPlayerController() },
             item: item,

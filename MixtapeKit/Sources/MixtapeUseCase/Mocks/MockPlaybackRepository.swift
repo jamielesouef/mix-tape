@@ -11,6 +11,8 @@ import MixtapeDomain
 public nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
     public var resolveVideoResult: @Sendable (String, Duration, UserSession) async throws -> VideoSourceResolution
     public var reportStartResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
+    public var reportProgressResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
+    public var reportStoppedResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
 
     public static let nativeSource = MediaSourceCandidate(
         id: "source-1", container: "mov", videoCodec: "h264", audioCodec: nil,
@@ -21,9 +23,13 @@ public nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
     public init(
         resolveVideoResult: @escaping @Sendable (String, Duration, UserSession) async throws -> VideoSourceResolution = { _, _, _ in sampleResolution },
         reportStartResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
+        reportProgressResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
+        reportStoppedResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
     ) {
         self.resolveVideoResult = resolveVideoResult
         self.reportStartResult = reportStartResult
+        self.reportProgressResult = reportProgressResult
+        self.reportStoppedResult = reportStoppedResult
     }
 
     public func resolveVideo(itemID: String, startAt: Duration, session: UserSession) async throws -> VideoSourceResolution {
@@ -32,5 +38,13 @@ public nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
 
     public func reportStart(_ report: PlaybackReport, session: UserSession) async throws {
         try await reportStartResult(report, session)
+    }
+
+    public func reportProgress(_ report: PlaybackReport, session: UserSession) async throws {
+        try await reportProgressResult(report, session)
+    }
+
+    public func reportStopped(_ report: PlaybackReport, session: UserSession) async throws {
+        try await reportStoppedResult(report, session)
     }
 }

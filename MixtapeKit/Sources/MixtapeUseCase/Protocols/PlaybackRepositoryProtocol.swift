@@ -7,8 +7,10 @@
 import MixtapeDomain
 
 /// Engineering doc §5, corrected by decision 12: `resolveVideo` returns sources, the use case
-/// picks the method. Progress and stopped reports arrive in slice 008; the audio URL in 009.
+/// picks the method. The audio URL arrives in slice 009.
 public nonisolated protocol PlaybackRepositoryProtocol: Sendable {
     func resolveVideo(itemID: String, startAt: Duration, session: UserSession) async throws -> VideoSourceResolution
     func reportStart(_ report: PlaybackReport, session: UserSession) async throws
+    func reportProgress(_ report: PlaybackReport, session: UserSession) async throws
+    func reportStopped(_ report: PlaybackReport, session: UserSession) async throws
 }

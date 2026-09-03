@@ -59,37 +59,37 @@ No fork: every departure from the engineering doc's plain reading here (three us
 Complete **before the first line of code**, not at close.
 
 **006** — Video: AVPlayer direct and HLS
-- [ ] Opened it. Its decision log still says what this slice assumed: `PlaybackPlan` carries a `playMethod: PlayMethod` field set at resolve time (decision 11), and `VideoPlaybackService` exposes `play(item:)`, `togglePlayPause()`, `seek(to:)` and `stop()` with no reporting wired in yet.
-- [ ] N/A — 006 is a slice, not a spike.
-- [ ] Its state matches what this slice assumed when drafted: no report call fires anywhere in `VideoPlaybackService` before this slice adds one.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened it. Its decision log still says what this slice assumed: `PlaybackPlan` carries a `playMethod: PlayMethod` field set at resolve time (decision 11), and `VideoPlaybackService` exposes `play(item:)`, `togglePlayPause()`, `seek(to:)` and `stop()` with no reporting wired in yet.
+- [x] N/A — 006 is a slice, not a spike.
+- [x] Its state matches what this slice assumed when drafted: no report call fires anywhere in `VideoPlaybackService` before this slice adds one.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **007** — Video: VLC direct
-- [ ] Opened it. Its decision log still says what this slice assumed: the `.directVLC` branch is wired into the same `VideoPlaybackService.play`/`stop` lifecycle 006 built, so this slice's cadence hooks fire identically regardless of which `VideoPlayerControlling` is active underneath.
-- [ ] N/A — 007 is a slice, not a spike.
-- [ ] Its state matches what this slice assumed when drafted: `stop()` on a VLC-backed session raises the same completion point 006's AVPlayer path does.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened it. Its decision log still says what this slice assumed: the `.directVLC` branch is wired into the same `VideoPlaybackService.play`/`stop` lifecycle 006 built, so this slice's cadence hooks fire identically regardless of which `VideoPlayerControlling` is active underneath.
+- [x] N/A — 007 is a slice, not a spike.
+- [x] Its state matches what this slice assumed when drafted: `stop()` on a VLC-backed session raises the same completion point 006's AVPlayer path does.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
-**Drift found:** none.
+**Drift found:** none blocking. The 006 Drift Log finding carries here: on 10.11.11 `/Sessions` `PlayState.PlayMethod` reads `DirectPlay` even during a transcode, so this slice never gates on `PlayMethod`. The 005 env-file drift also carries: AC9/AC10 read `/UserItems/Resume` and `/Items/{id}` for the user the app signs in as, whose id is read from `/Sessions`, not from `JELLYFIN_USER_ID`.
 
 ## 5. Acceptance Criteria
 
 Mechanical:
-- [ ] `xcodebuild build` passes for the `iOS` and `tvOS` schemes.
-- [ ] `xcodebuild test` passes for both schemes with `-skip-testing:iOSUITests` (iOS) / `-skip-testing:tvOSUITests` (tvOS); no unit test skipped or commented out.
-- [ ] `./scripts/check-layer-imports.sh` exits 0.
-- [ ] `swiftformat --lint .` is clean.
+- [x] `xcodebuild build` passes for the `iOS` and `tvOS` schemes.
+- [x] `xcodebuild test` passes for both schemes with the UI bundles skipped; no unit test skipped or commented out. Gate expected executed-test count per scheme: **138** (131 from slice 007 plus 7: 4 progress/stopped use-case cases and 3 `VideoPlaybackService` reporting cases — discrete-event cadence, per-interval progress, and the parameterised watched-at-stop). Verified 2026-09-03 via `./scripts/gate.sh 138`.
+- [x] `./scripts/check-layer-imports.sh` exits 0.
+- [x] `swiftformat --lint .` is clean.
 
 Behavioural:
-- [ ] `MixtapeUseCaseTests`, tagged `.useCase`: one suite each for `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase`, each covering a successful call and a swallowed failure that never reaches the caller as a thrown error. The start use case's suite exists from 006.
-- [ ] `MixtapeServicesTests`, tagged `.service`: a `VideoPlaybackService` reporting suite, driven by an injected clock (never a real sleep), proving the cadence is exactly start / every 10 s while playing / on pause / on seek completion / on stop, across a run that includes a pause-then-resume and a mid-track seek, with no extra report anywhere in that sequence.
-- [ ] `MixtapeServicesTests`: a case proving `isWatched` is `true` on stop when position is ≥ 90% of the F1 mkv's 48.4 s runtime, and `false` below that threshold, at 89.9 %/90.0 %/90.1 % boundaries.
+- [x] `MixtapeUseCaseTests` (`.useCase`): `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase` each covering a successful call and a swallowed failure. The start use case's suite is from 006.
+- [x] `MixtapeServicesTests` (`.service`): a reporting-cadence suite on an injected `ManualClock` (never a real sleep) proving the sequence is exactly start / every 10 s while playing / on pause / on seek / on stop, across a pause-then-resume and a mid-track seek, with no extra report — and a per-interval progress test driving the clock two ticks.
+- [x] `MixtapeServicesTests`: a parameterised case proving the stop-time watched rule at 89.9% / 90.0% / 90.1% of F1's 48.4 s runtime — at or past 90% the stopped report carries the full duration (Jellyfin marks it played), below it the actual resume point.
 
-Acceptance (server-observable against `http://localhost:8096`, read with `./scripts/jf-probe.swift` from slice 001 — decision 47):
-- [ ] AC9 — play F1 (mkv, 48.4 s) to roughly 30 s, exit the player. `MovieDetailScreen` offers Resume at ≈30 s. `./scripts/jf-probe.swift '/UserItems/Resume?userId={uid}'` lists the item with `PlaybackPositionTicks` matching the app's last progress report.
-- [ ] AC10 — play Avatar (mp4, 20.8 s) to completion. `./scripts/jf-probe.swift '/Items/{itemId}?userId={uid}'` (or Jellyfin Web) shows `UserData.Played: true`.
-- [ ] After `stop()`, `./scripts/jf-probe.swift /Sessions` shows this device's session with `NowPlayingItem` cleared — the stopped report closed what 006's start report opened.
-- [ ] AC5 re-verified — using the resume point this slice's own reporting created (not the one seeded via Jellyfin Web in 005), Home's Continue Watching row shows a progress bar matching that position after `LibraryService.refresh()` runs.
+Acceptance (server-observable against `http://localhost:8096`, via `./scripts/jf-probe.swift`; the session and user are matched via `/Sessions`, not the env file's user id — 005 Drift Log; `PlayMethod` is never gated on — 006 Drift Log):
+- [x] AC9 — played F1 (mkv, 48.4 s) to ~22 s and closed. `/UserItems/Resume` listed F1 with `PlaybackPositionTicks` at 21.6 s, and `MovieDetailScreen` then showed the Resume affordance (both Play and Resume). Requires the server's `MinResumeDurationSeconds` lowered to admit the short clip — see the Section 6 row. **Manual, 2026-09-03.**
+- [x] AC10 — played Avatar (mp4, 20.8 s) to completion; the player auto-dismissed on end and `/Items/{itemId}` showed `UserData.Played: true`. **Manual, 2026-09-03.**
+- [x] After `stop()`, `/Sessions` showed this device's `NowPlayingItem` cleared — the stopped report closed what 006's start report opened. Observed repeatedly across the AC9/AC10 runs. **Manual, 2026-09-03.**
+- [x] AC5 re-verified — using the resume point this slice's own reporting created (not the 005 Jellyfin-Web seed), Home's Continue Watching row showed F1 with a progress bar reading 73%, matching the server's 35.5 s of 48.4 s exactly, after `LibraryService.refresh()` ran on stop. **Manual, 2026-09-03.**
 
 ## 6. Decision Log
 
@@ -101,6 +101,7 @@ Acceptance (server-observable against `http://localhost:8096`, read with `./scri
 | 2026-09-03 | `isWatched` runs the `>= 0.9` rule only at stop time, during active local playback (SPEC-DECISIONS #8) | Computing `isWatched` from position/duration on every mapped list and detail response too | `PlayedPercentage` never arrives from this server, so a mapper doing that would compute from `nil`; the two rules apply at different moments and 005 already handles the at-rest case from `UserData.Played` |
 | 2026-09-03 | Every report's `PlayMethod` is read from `PlaybackPlan.playMethod`, set at resolve time (SPEC-DECISIONS #11) | Reporting `DirectPlay` unconditionally for any non-transcode path | AC6/AC7/AC8 are verified by reading the Jellyfin session dashboard; reporting an untrue `PlayMethod` degrades the very check those criteria depend on |
 | 2026-09-03 | Progress and stopped report failures — including a 503 with `Retry-After` — are logged and swallowed, never surfaced as a playback error (SPEC-DECISIONS #9, #26) | Retrying on 503, or raising the failure into `VideoPlaybackService.status` | `Retry-After` is not honoured in V1; a dropped heartbeat must never interrupt playback, per §8 of the engineering doc |
+| 2026-09-03 | AC9 (app-created resume) and AC5 (re-verify) are demonstrated with the dev server's `MinResumeDurationSeconds` temporarily lowered from **300 to 10**, then restored. On the default config a `PlaybackStopped` report for any item under 300 s creates **no** resume point — Jellyfin discards the position — and both video items the library has (Avatar 20.8 s, F1 48.4 s) are far below that. | Claiming AC9 against the default config (unverifiable — no resume point is ever saved for these clips); leaving the criterion for a human | The app side is proven independently: a live `/Sessions` poll showed the app's progress reports carrying accurate positions (2, 4, 7, 9, 10, 13 s) and the start/stopped reports opening and closing the session. The only blocker is a server policy that excludes short test clips, the same class of data/config gap decision 14 records and decision 35 resolves by changing the server. With the floor at 10 s, F1's app-created stopped report produced a `/UserItems/Resume` entry at 21.6 s, `MovieDetailScreen` showed Resume, and Home showed F1 at 73% (35.5 s of 48.4 s) matching the server exactly. The config was restored to 300 afterwards; the created resume `UserData` persists. Recorded in the Drift Log. |
 
 ## 7. Sub-Slices
 
@@ -127,11 +128,12 @@ And in the same commit as the code, not a follow-up: **commit this file alongsid
 Nothing checks any of this. That's the point of putting the writes first — a write you have to do to proceed is one you do; a write you're supposed to do afterwards is one you don't.
 
 ## 10. Definition of Done
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+
+- [x] Acceptance criteria met (AC9/AC5 demonstrated with the dev server's resume floor lowered then restored — Section 6 row)
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row (§1.13 video half here; music half is 009)
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice` `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page `next_slice` and that page `previous_slice`

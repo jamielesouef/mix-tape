@@ -32,12 +32,25 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
         return try PlaybackMapper.resolution(from: dto)
     }
 
-    /// Logged on `network` and rethrown; the use case decides to swallow (§8).
+    /// All three reports share one body (§8; decision 32). Each is logged on `network` and
+    /// rethrown; the use case decides to swallow (§8).
     public func reportStart(_ report: PlaybackReport, session: UserSession) async throws {
+        try await post("/Sessions/Playing", report, session, "start")
+    }
+
+    public func reportProgress(_ report: PlaybackReport, session: UserSession) async throws {
+        try await post("/Sessions/Playing/Progress", report, session, "progress")
+    }
+
+    public func reportStopped(_ report: PlaybackReport, session: UserSession) async throws {
+        try await post("/Sessions/Playing/Stopped", report, session, "stopped")
+    }
+
+    private func post(_ path: String, _ report: PlaybackReport, _ session: UserSession, _ kind: String) async throws {
         do {
-            try await client.post("/Sessions/Playing", body: PlaybackMapper.body(from: report), auth: context(session))
+            try await client.post(path, body: PlaybackMapper.body(from: report), auth: context(session))
         } catch {
-            AppLogger.network.error("playback start report failed for item \(report.itemID): \(error)")
+            AppLogger.network.error("playback \(kind) report failed for item \(report.itemID): \(error)")
             throw error
         }
     }

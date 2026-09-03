@@ -74,7 +74,11 @@ public struct MovieDetailScreen: View {
             get: { videoPlaybackService.isActive && videoPlaybackService.item?.id == item.id },
             set: { presented in
                 if presented == false {
-                    Task { await videoPlaybackService.stop() }
+                    // On return from the player, reload so the new resume point shows as Resume (slice 008).
+                    Task {
+                        await videoPlaybackService.stop()
+                        await libraryService.loadDetail(id: item.id)
+                    }
                 }
             },
         )

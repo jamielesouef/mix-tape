@@ -64,6 +64,8 @@ struct AppContainer {
         videoPlaybackService = VideoPlaybackService(
             resolveVideo: ResolveVideoPlaybackUseCase(repository: playbackRepository),
             reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
             sessionService: sessionService,
             makeController: { method in
                 switch method {
@@ -71,6 +73,7 @@ struct AppContainer {
                 case .directVLC: VLCPlayerController()
                 }
             },
+            libraryService: libraryService,
         )
     }
 
