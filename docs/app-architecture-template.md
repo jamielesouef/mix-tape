@@ -8,11 +8,11 @@ No ViewModel layer. `@MainActor @Observable` **services** hold state. Views read
 
 ## Platform baseline
 
-- iOS 26+, MacOS 26+ only. No back-deploy. No `#available` checks.
+- iOS 26+, MacOS 26+, tvOS 26+ ONLY. No back-deploy. No `#available` checks.
 - Xcode 26, Swift 6.2, Swift 6 language mode.
 - Set at project level:
   - `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`
-  - `SWIFT_APPROACHABLE_CONCURRENCY = YES`
+  - `SWIFT_APPROACHABLE_CONCURRENCY = NO`
 - Use `@concurrent` for real background work only (parsing, decoding, image work).
 - Swift Testing for unit tests. XCTest only for UI automation (XCUITest).
 - Liquid Glass by default for chrome. Always give a Reduce Transparency fallback.
