@@ -4,8 +4,8 @@ A Jellyfin client for iOS and tvOS. Browse video and music libraries, play both,
 report progress back.
 
 `docs/engineering-doc.md` is the source of truth. Appendix A in it is the
-architecture template. `docs/jellyfin-openapi.json` (Jellyfin 12.0.0, OpenAPI
-3.0.4) is the API contract. When this file and the engineering doc disagree, the
+architecture template. `docs/jellyfin-openapi.json` (Jellyfin 10.11.11, OpenAPI
+3.0.1) is the API contract. When this file and the engineering doc disagree, the
 engineering doc wins.
 
 ## Target
@@ -96,10 +96,10 @@ XCUITest drives off accessibility identifiers, never visible text.
 ## The development server
 
 A local Jellyfin runs at `http://localhost:8096` (server name `mixtape`) from
-the compose file in the main repo. It is **version 10.11.11**, while
-`docs/jellyfin-openapi.json` describes 12.0.0 — do not assume an endpoint or
-field from that spec exists on the server. Check what the running instance
-serves at `/api-docs/swagger` before relying on a shape.
+the compose file in the main repo. It is **version 10.11.11**, and
+`docs/jellyfin-openapi.json` is that server's own spec, pulled from
+`/api-docs/openapi.json` — so the spec and the server agree. If the server is
+ever upgraded, re-pull the spec; see `docs/jellyfin-api.md`.
 
 It is for manual acceptance checks only. No automated test touches it: DTO
 mapping runs against captured JSON fixtures, repositories against a stubbed

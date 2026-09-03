@@ -71,15 +71,13 @@ surface them rather than quietly picking a reading:
    `tests/iOS`, `uiTess/iOS`; engineering doc §3 specifies `Apps/MixtapeiOS` and
    `MixtapeKit/Sources/Mixtape*`. Build-order step 1 restructures regardless, but
    nothing says which is authoritative.
-2. **The checked-in API spec is a major version ahead of the real server.**
-   Measured, not inferred: `http://localhost:8096/System/Info/Public` reports
-   **Jellyfin 10.11.11**. `docs/jellyfin-openapi.json` and `jellyfin-api.md`
-   describe **12.0.0**. Engineering doc §1 requires demonstration against a live
-   10.10+ server — which is the one running. Endpoint shapes and DTO fields in
-   the 12.0.0 spec cannot be assumed present on 10.11.11. This should be the
-   audit's top-ranked item: it is the difference between DTOs that compile and
-   DTOs that decode. Cross-check against what the running server serves at
-   `http://localhost:8096/api-docs/swagger`.
+2. ~~**API spec version mismatch.**~~ **Resolved before Phase 1.**
+   `docs/jellyfin-openapi.json` is now the running server's own 10.11.11 spec
+   rather than the published 12.0.0 one. The two agreed on 293 paths and all
+   V1 endpoints, but 12.0.0 was missing `/Videos/{itemId}/master.m3u8` and
+   `/Audio/{itemId}/master.m3u8` — the HLS transcode paths behind
+   `PlaybackMethod.transcodeHLS` and the music fallback. See
+   `docs/jellyfin-api.md`. Nothing left for the audit here.
 3. **tvOS deployment target.** `APPLETVOS_DEPLOYMENT_TARGET = 27.0` in some
    build configurations, `TVOS_DEPLOYMENT_TARGET = 26` in others. The docs say
    tvOS 26+.

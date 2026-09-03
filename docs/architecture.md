@@ -61,7 +61,7 @@ Rules:
 
 ## Jellyfin API integration
 
-Use the checked-in [Jellyfin OpenAPI specification](jellyfin-openapi.json) as the API contract when implementing the iOS and tvOS clients. This copy describes Jellyfin **12.0.0** using OpenAPI **3.0.4**. See [API version and source notes](jellyfin-api.md) for provenance and server-version compatibility.
+Use the checked-in [Jellyfin OpenAPI specification](jellyfin-openapi.json) as the API contract when implementing the iOS and tvOS clients. This copy is the spec served by the local server itself and describes Jellyfin **10.11.11** using OpenAPI **3.0.1**. See [API version and source notes](jellyfin-api.md) for provenance and for how to refresh it after a server upgrade.
 
 Keep the Jellyfin network client in `AppInfrastructure`, and repository implementations and API DTO-to-domain mapping in `AppData`. Expose domain types through the repository protocols in `AppUseCase` so services and views remain independent of Jellyfin's transport models.
 
