@@ -698,3 +698,161 @@ Two other §4 premises were tested and hold:
   three-call body and the schema-exact body. The extra `IsPaused`, `CanSeek` and
   `PlayMethod` fields are ignored, so one shared body for all three reports is
   safe.
+
+---
+
+# Phase 2 decisions
+
+Raised by the Phase 2 plan review, before the slice set was written.
+
+## 33. Decision 7 is provisional until a spike proves both players can carry the header
+
+**Decision: the spike blocking video playback asks the question for *both*
+players and runs before slice 006, not 007** — "can `AVPlayerController` and
+`VLCPlayerController` each send `Authorization: MediaBrowser …` on a stream
+request?"
+
+**The fallback is pre-authorised, so an unattended run does not stall on it:** if
+a player cannot carry the header, that player's stream URLs carry `ApiKey` in the
+query string instead, and decision 7 is amended to a per-player split. Record
+which player took the fallback and why in the spike's Result section.
+
+Decision 7 was made on server-side evidence — both mechanisms authenticate, which
+is true and was measured. It says nothing about whether the *client* can deliver
+a header, and that is a different question with a different answer per player:
+
+- `AVURLAssetHTTPHeaderFieldsKey` is not public API. The documented route for
+  injecting auth into AVPlayer is `AVAssetResourceLoaderDelegate`, which for HLS
+  means a custom URL scheme and reimplementing manifest fetching.
+- libvlc's support for arbitrary request headers is likewise not a documented
+  media option.
+
+The audit's blocking-lens judge said exactly this when it refuted the `api_key`
+findings — "Jellyfin's standard mechanism for URLs handed to native players
+(AVPlayer/VLCKit) that can't set the custom `MediaBrowser` Authorization header".
+That was read as a claim about the server, checked against the server, and
+accepted on those terms. It was a claim about the client.
+
+**Do not reach for the private `AVURLAsset` key to satisfy decision 7.** Taking
+the `ApiKey` fallback is correct; shipping a private API to preserve a decision
+is not.
+
+Slice 006's plan asserts header delivery "through AVURLAsset HTTP header
+options". That assertion is what the spike tests, not a settled input.
+
+## 34. Music playback reports to the server
+
+**Decision: `MusicPlayerService` calls the same three report use cases as
+`VideoPlaybackService`** — start, progress, stopped.
+
+§1 capability 13 reads "Report playback start / progress / stop to the server"
+with no video qualifier, and §1 is the scope authority. §6's assignment of
+reporting to `VideoPlaybackService` describes where the video path's reporting
+lives, not a restriction of capability 13 to video.
+
+Rejected — video only. It halves a listed capability, leaves music invisible in
+Jellyfin's session list and play counts, and makes AC13f's "no transcode session
+in the dashboard" harder to read when no music session appears there at all.
+
+The three use cases already exist from build step 8, so this is wiring, not new
+machinery. **The §1.1 invariants suite gains cases** covering it: reporting must
+not introduce a cross-album queue, must not fire for a track that was never
+played, and `finishedAlbumID` must still fire exactly once with reporting
+enabled.
+
+## 35. A FLAC album is added before the run
+
+**Decision: the library gains a FLAC album.** AC13f stands as written.
+
+Measured: all 46 tracks are `m4a`/`alac`. There is no FLAC.
+
+ALAC would demonstrate the criterion's substance — a lossless album
+direct-streaming with no transcode — but FLAC is the container the
+`/Audio/{id}/universal` list leads with, and the one most likely to appear in a
+real library. Proving the format the app asks for first is worth one album.
+
+Rejected — rewording AC13f to ALAC, which would leave the leading container
+unproven. Rejected — letting the run substitute and record it, which produces a
+slice claiming a criterion it demonstrated with other data.
+
+Until the album exists, AC13f is unverifiable and no slice may claim it — the
+same rule decision 14 applies to criterion 11.
+
+## 36. `MixtapeServices` depends on `MixtapeInfrastructure`
+
+**Decision: `Package.swift` adds the edge `MixtapeServices` →
+`MixtapeInfrastructure`, and `check-layer-imports.sh` permits that import.**
+Lands in build-order step 1.
+
+Engineering doc §3's table gives Services only `MixtapeUseCase` and
+`MixtapeDomain`, yet §6 has `VideoPlaybackService` own a `VideoPlayerControlling`
+and `MusicPlayerService` own an `AudioPlayerController`, and §7 places both in
+`MixtapeInfrastructure`. The two sections disagree and nothing resolved it.
+
+`VideoPlayerControlling.makeView() -> AnyView` pins the protocol to a module that
+imports SwiftUI, so it cannot move to `MixtapeUseCase` or `MixtapeDomain`, and
+`MixtapeInfrastructure` cannot import `MixtapeServices` to conform.
+
+Rejected — declaring the player protocols in `MixtapeServices` and adding the
+conformances as extensions in the app target. Keeps §3's table intact, but it is
+retroactive conformance across two imported modules and earns a compiler warning.
+
+Rejected — a seventh target holding just the player protocols, imported by both
+Services and Infrastructure. It would preserve §3's table exactly, but D2 settled
+the architecture at six library targets, and adding a target is a larger
+departure than adding an edge.
+
+Rejected — splitting `VideoPlayerControlling` into a SwiftUI-free control
+protocol in `MixtapeUseCase` and a view-providing protocol in
+`MixtapePresentation`. Architecturally the cleanest of the four, and it would
+need no new edge — but `CLAUDE.md` states Presentation sees
+`VideoPlayerControlling` *and* an `AnyView` through one protocol, and splitting it
+puts view construction back in Presentation, which is where VLCKit isolation
+starts to leak.
+
+`MixtapeServices` still may not import `MixtapeData`. `MixtapePresentation`'s
+forbidden imports are unchanged.
+
+**The edge is wider than the need.** It gives Services sight of
+`JellyfinHTTPClient`, `KeychainStore` and VLCKit as well as the player
+controllers, and no grep can tell an intended import from an unintended one. The
+rule is narrower than the edge: **`MixtapeServices` imports
+`MixtapeInfrastructure` for the player controllers and for nothing else.** A
+service that reaches for the HTTP client or the keychain directly is a defect the
+layer script will not catch.
+
+## 37. The start report moves to slice 006 — the dashboard gates need it
+
+**Decision: `ReportPlaybackStartUseCase` lands in build step 6, not 8.** Progress,
+stopped and resume stay in step 8.
+
+Every dashboard-based acceptance check depends on it, which was not visible from
+the docs. Measured: with a transcode genuinely running and the `master.m3u8`
+fetched, `/Sessions` reports nothing —
+
+```
+GET /Sessions → 2 sessions, NowPlayingItem: None, PlayMethod: None,
+                TranscodingInfo: None
+GET /Videos/ActiveEncodings → 405
+```
+
+`TranscodingInfo` hangs off a session's `NowPlayingItem`, and that only exists
+once `POST /Sessions/Playing` has been sent. There is no other endpoint exposing
+active transcodes.
+
+Two consequences the slice set had wrong:
+
+- **"No `TranscodingInfo` on the session" is unfalsifiable** before reporting
+  exists. It passes whether or not the app is transcoding, so as a gate for AC6
+  and AC7 it cannot fail.
+- **AC8's gate expects `TranscodingInfo` present**, which cannot happen in step 6
+  without the start report. It would fail against a correct transcode
+  implementation — and an unattended run reading that failure would begin
+  altering working code.
+
+Moving one of decision 19's three use cases forward is the smallest change that
+makes steps 6 and 7 gate on their own behaviour. A slice whose acceptance is
+deferred two slices later is not gated; it is only sequenced.
+
+AC6, AC7 and AC8 are therefore claimed in full by steps 6 and 7, not split
+across 6/7 and 8.

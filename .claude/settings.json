@@ -13,7 +13,13 @@
       "Bash(swift build*)",
       "Bash(swift test*)",
       "Bash(xcodebuild *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(swiftformat*)",
+      "Bash(./scripts/*)",
+      "Bash(xcrun*)",
+      "Bash(curl*)",
+      "Bash(grep*)",
+      "Bash(ls*)"
     ]
   }
 }

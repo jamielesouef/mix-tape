@@ -1,0 +1,138 @@
+---
+slice_id: "009"
+title: Music playback
+priority: P1
+complexity: L
+ladder: none
+depends_on:
+  - { id: "008", type: hard, note: "reuses ReportPlaybackStartUseCase / ReportPlaybackProgressUseCase / ReportPlaybackStoppedUseCase unchanged, per decision 34" }
+  - { id: "S002", type: hard, note: "AudioPlayerController is AVPlayer-based, so the audio stream URL takes whichever auth mechanism S002 proved for AVPlayer — header, or the ApiKey query fallback pre-authorised by decision 33" }
+previous_slice: "008"
+next_slice: "010"
+parent_slice: none
+covers: ["§1.12", "§1.13", "§12.12", "§12.13"]
+created: 2026-09-03
+---
+
+# 009 — Music playback
+
+← [previous](008-playback-reporting-and-resume.md) · [Master Checklist](MASTER-CHECKLIST.md) · [next](010-wallet.md) →
+
+> **Status, owner and blockers live in the master checklist, not here.** Dependencies live in this page's front matter and nowhere else. Each fact has one home; if you find yourself writing it twice, one of the two copies is going to be wrong in a fortnight.
+
+## 1. Objective
+
+An album plays through from a plain album grid: audio streams, lock screen and remote controls work, playback continues in the background, and the server sees the session.
+
+The queue-is-the-album invariants from §1.1 are enforced by tests before the Wallet (slice 010) puts a prettier front end on this same service.
+
+## 2. Business Value & Priority
+
+Build order step 9 in the engineering doc, and the plan's checkpoint for this slice is literally "music plays, one album at a time" — the first point at which capability 12 (music playback) and the music half of capability 13 (reporting) are demonstrable.
+
+This is not a rung on a version ladder. There is no v2 of `MusicPlayerService` planned or implied — the queue stays exactly one album forever, per §1.1. The plain album grid built here is temporary front-end scaffolding, not a deferred rung: slice 010 replaces it with the Wallet, and the shared seam is `MusicPlayerService` and `AlbumDetailScreen`'s Play wiring, both of which are unaffected by the grid-to-wallet swap.
+
+## 3. Scope
+
+**In scope:**
+- `BuildAudioStreamURLUseCase`, building `/Audio/{itemId}/universal?userId=&deviceId=&maxStreamingBitrate=320000&container=flac,alac,m4a,mp3,aac,wav,aiff&transcodingContainer=ts&transcodingProtocol=hls&audioCodec=aac`, authenticated the way S002 proved for AVPlayer: the `Authorization: MediaBrowser …` header if AVPlayer can carry it through public API, otherwise `ApiKey` in the query string (decision 33). Never the private `AVURLAssetHTTPHeaderFieldsKey`. The server's own `/Audio/{itemId}/master.m3u8` fallback URL, when it fires, is used as returned.
+- `AudioPlayerController` in `MixtapeInfrastructure`: `AVPlayer` for audio, `AVAudioSession` configured `.playback` on first play, `MPRemoteCommandCenter` (play, pause, next, previous, changePlaybackPosition), `MPNowPlayingInfoCenter` updated on track change and every 5 s.
+- `MusicPlayerService` exactly per engineering doc §6: `play(album:tracks:startingAt:)` replaces the queue, `next()`, `previous()` (restarts the track above 3 s, steps back below it), `seek(to:)`, `stop()`, `finishedAlbumID` set exactly once at end-of-album, `acknowledgeFinish()`. `MPRemoteCommandCenter.nextTrackCommand` disabled on the final track.
+- Music playback reporting, per decision 34: `MusicPlayerService` calls `ReportPlaybackStartUseCase`, `ReportPlaybackProgressUseCase`, `ReportPlaybackStoppedUseCase` — the same three types slice 008 built for video — on track start, every 10 s, on pause, on seek completion, and on track stop. `PlayMethod` is `DirectPlay`, or `Transcode` when the HLS fallback fired. Failures are logged and swallowed, matching the video path.
+- The HLS fallback's diagnostic log: item id logged at `.info` on the `playback` category when `/Audio/{itemId}/master.m3u8` fires, per decision 23.
+- `AlbumDetailScreen`'s Play button wired to `MusicPlayerService.play(album:tracks:startingAt:)`.
+- `NowPlayingScreen`: art, title, scrubber, previous/play/next only. No shuffle, no repeat, no queue button.
+- A mini player docked above the iOS tab bar, Liquid Glass with a Reduce Transparency fallback via the shared modifier, visible whenever `MusicPlayerService.status` is not idle.
+- `UIBackgroundModes` → `audio` in the iOS Info.plist (the app target's own key; not new scope on top of §2, which already requires it).
+
+**Out of scope** (name the slice it's deferred to):
+- The Wallet screen, paged sleeves, `matchedGeometryEffect` pull-out and the return-to-sleeve sequence — slice 010. This slice plays music from the plain `AlbumGrid` built in slice 005.
+- tvOS-specific chrome for these screens (shelves, focus handling, Siri Remote specifics beyond what `MPRemoteCommandCenter` already gives) — slice 011. The tvOS scheme must still build and its album grid must still play music; only the presentation polish is deferred.
+- Shuffle, repeat, add-to-queue, a cross-album queue, autoplay past the last track — not deferred anywhere. §1.1 makes these permanent absences, not V2 features, and no abstraction for any of them is added here.
+- A FLAC album's direct-stream demonstration (AC13f) — unclaimed by any slice until the library has one, per decision 35.
+
+**Plan requirements covered:**
+- `§1.12` (play music: album queue, next/prev, background audio, lock screen / remote controls) — satisfied by `MusicPlayerService`, `AudioPlayerController`'s `MPRemoteCommandCenter`/`MPNowPlayingInfoCenter` wiring, and `NowPlayingScreen`.
+- `§1.13`, music half (report playback start/progress/stop to the server) — satisfied by wiring the three report use cases from slice 008 into `MusicPlayerService`, per decision 34.
+- `§12.12` — satisfied by the queue advancing through an album, `MPNowPlayingInfoCenter` carrying art/title/artist, and the remote next command skipping tracks.
+- `§12.13` — satisfied by `AVAudioSession .playback` plus the Background Modes audio capability keeping playback alive while backgrounded.
+
+## 4. Pre-Flight Validation
+
+Complete **before the first line of code**, not at close.
+
+For **each id in `depends_on`**, in order — don't summarise, walk the list:
+
+- [ ] `008` — opened. Its decision log still records `ReportPlaybackStartUseCase`, `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase` as three separate types (decision 19) taking a `PlaybackReport` built from a `PlaybackPlan`'s `playMethod` field (decision 11). This slice reuses those three types unchanged — it does not add a fourth "music" variant.
+- [ ] `008` is not a spike; no fallback to note.
+- [ ] `008`'s state matches what this slice assumed when drafted: the report use cases exist, are tested against `Mock*` repositories, and are exercised by `VideoPlaybackService` on start / every 10 s / pause / seek / stop. `MusicPlayerService` follows the identical cadence.
+- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [ ] `S002` — opened. It is a spike: confirm it is answered for AVPlayer, and that the answer — not the hoped-for one — is what `BuildAudioStreamURLUseCase` and `AudioPlayerController` are built on. Note whether the `ApiKey` fallback was taken for AVPlayer.
+- [ ] `S002`'s state matches what this slice assumed when drafted: answered per player, fallback pre-authorised by decision 33.
+- [ ] `MusicPlayerService` (in `MixtapeServices`) holds an `AudioPlayerController` (in `MixtapeInfrastructure`) over the `MixtapeServices` → `MixtapeInfrastructure` edge decision 36 adds in slice 001. Confirm the edge and the layer-script allowance are in place.
+
+**Drift found:** `none`.
+
+## 5. Acceptance Criteria
+
+- [ ] AC12 — playing an album advances through the queue track to track; the lock screen (`MPNowPlayingInfoCenter`) shows art, title and artist; the remote's next command skips to the following track.
+- [ ] AC13 — backgrounding the iOS app during playback keeps music playing, verified with the `AVAudioSession .playback` category and the Background Modes audio capability in place.
+- [ ] While an ALAC album plays, `GET /Sessions` on the Jellyfin server shows a session with `NowPlayingItem` set and `PlayMethod: DirectPlay` — all 46 tracks in the library are `m4a`/`alac`, so this is demonstrable with existing data.
+- [ ] AC13f is **not claimed by this slice**. It needs a FLAC album, which does not exist in the library per decision 35; the checklist's unknown-triage row names slice 009 as the natural owner once the album is added, but that is a future slice's claim, not this one's.
+- [ ] AC11 is likewise not claimed here or anywhere — no series/episode data exists (decision 14); unrelated to music, noted only so its absence from this list is not read as an oversight.
+- [ ] `.service` suite in `MixtapeServicesTests` proves the §1.1 invariants: `next()` past the final track stops rather than advancing; calling `play(album:tracks:startingAt:)` a second time replaces the queue rather than appending; `finishedAlbumID` is set exactly once at end-of-album and cleared by `acknowledgeFinish()`; `previous()` restarts the current track above 3 s and steps back below it; the next-track remote command is disabled on the final track.
+- [ ] The same suite proves the decision-34 reporting cases: reporting introduces no cross-album behaviour — the queue is still exactly one album after a full album plays with reporting enabled; no report fires for a track that was never played; `finishedAlbumID` still fires exactly once with reporting enabled; a stopped report is sent for the final track.
+- [ ] `xcodebuild build` and `xcodebuild test -skip-testing:iOSUITests` / `-skip-testing:tvOSUITests` are green for both the `iOS` and `tvOS` schemes — tvOS has no mini player and no wallet, but its album grid still plays music through the same `MusicPlayerService`.
+- [ ] `./scripts/check-layer-imports.sh` exits 0.
+- [ ] `swiftformat --lint .` is clean.
+
+## 6. Decision Log
+
+**Write the row before you implement the decision, not after.** This is the whole mechanism. A decision log filled in at close is reconstructed from memory, and the rejected alternatives — the part the next slice's pre-flight actually needs — are exactly what memory loses first.
+
+| Date | Decision | Alternatives rejected | Why |
+|---|---|---|---|
+| 2026-09-03 | `MusicPlayerService` calls the three report use cases from slice 008 (start, progress, stopped), per decision 34 | Video-only reporting (rejected in decision 34: it halves capability 13, leaves music invisible in Jellyfin's session list and play counts) | §1 states capability 13 with no video qualifier; §1 is the scope authority |
+| 2026-09-03 | HLS fallback on `/Audio/{itemId}/universal` is logged at `.info` on the `playback` category, not treated as an error, per decision 23 | Direct-stream only, no fallback (rejected in decision 23: one mistagged file would fail an album outright) | §8, `CLAUDE.md` and `jellyfin-api.md` all treat the fallback as real; the app ships the container list that makes it the rare path, not the normal one |
+| 2026-09-03 | `PlayMethod` reported for music comes from the same `PlaybackPlan.playMethod` field decision 11 added, set to `DirectPlay` unless the HLS fallback fired | A hardcoded `DirectPlay` for every music report (implicitly rejected by decision 11's reasoning, applied here) | AC13f and the `GET /Sessions` check in this slice's own acceptance criteria are read directly off that field; reporting anything else degrades the check |
+| 2026-09-03 | The audio stream URL uses whichever auth mechanism S002 proved for AVPlayer — header, or `ApiKey` query fallback (decision 33) | Asserting header-only auth per decision 7 regardless of S002's result; the private `AVURLAssetHTTPHeaderFieldsKey` | Decision 33 makes decision 7 provisional per player and forbids the private key; `AudioPlayerController` is an `AVPlayer`, so it inherits AVPlayer's answer |
+| 2026-09-03 | AC13f is left unclaimed this slice; the FLAC album's absence is recorded, not worked around | Substituting an ALAC album and recording AC13f as satisfied (rejected in decision 35: it would claim a criterion demonstrated with other data) | Decision 35 states the same rule decision 14 applies to criterion 11: until the data exists, no slice may claim it |
+
+## 7. Sub-Slices
+
+Not split — delivered as a single slice.
+
+## 8. Testing Strategy
+
+- **Unit / Integration / UI:** unit only, per decision 4 — no XCUITest, no CI this round.
+- `.useCase` — `BuildAudioStreamURLUseCase` against a `Stub` repository, asserting the exact query string (container list, `transcodingContainer=ts`, `transcodingProtocol=hls`, `audioCodec=aac`, `deviceId` present), and asserting the token is present in the query only when S002 recorded the `ApiKey` fallback for AVPlayer, absent otherwise.
+- `.repository` — `JellyfinPlaybackRepository.audioStreamURL(itemID:session:)` asserting the built URL matches the §8 shape, with the auth mechanism S002 recorded for AVPlayer.
+- `.service` — `MusicPlayerServiceTests`: the §1.1 invariant suite (next/previous/replace/finishedAlbumID) plus the decision-34 reporting cases, driven by an injected clock (no sleeping) and `Stub` report use cases so cadence — start, every 10 s, pause, seek completion, stop, never more often — is asserted directly rather than timed.
+- **Test targets required:** `MixtapeUseCaseTests`, `MixtapeDataTests`, `MixtapeServicesTests` — all three already exist from slice 001; no new target is created by this slice.
+
+## 9. Keeping this document true
+
+This slice is done when the page describes what was actually built — not when the code works. The discipline is **ordering**: the write happens *before* the thing it describes, so it sits on the critical path instead of after it, where it gets skipped.
+
+| Before you… | Write this first |
+|---|---|
+| implement a decision | the Section 6 row, including what you rejected |
+| start work | flip status in the master checklist |
+| stop on a blocker | the Active Blockers row |
+| build on a spike | that spike's Result section |
+| widen scope | Section 3, and `depends_on` on any slice that's now affected |
+
+And in the same commit as the code, not a follow-up: **commit this file alongside it**, with the slice id in the commit subject (`009: add music playback`).
+
+Nothing checks any of this. That's the point of putting the writes first — a write you have to do to proceed is one you do; a write you're supposed to do afterwards is one you don't.
+
+## 10. Definition of Done
+
+- [ ] Acceptance criteria met
+- [ ] Tests passing, in a target that exists
+- [ ] Every `covers:` requirement satisfied, or forked with a decision row
+- [ ] Decision log written as you went, not reconstructed
+- [ ] Pre-flight completed and drift resolved
+- [ ] Master checklist row current
+- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
+- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
