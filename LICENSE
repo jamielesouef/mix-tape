@@ -1,25 +1,21 @@
-# Mix Tape — licensing
+MIT License
 
-Mix Tape is not licensed as one thing. The licence depends on which directory a file lives in, and the split is deliberate.
+Copyright (c) 2026 Jamie Le Souëf
 
-| Path | Licence | Full text |
-| --- | --- | --- |
-| `Shared/` | MIT | [`Shared/LICENSE`](Shared/LICENSE) |
-| `App/` | MIT | [`App/LICENSE`](App/LICENSE) |
-| `Server/` | AGPL-3.0-only | [`Server/LICENSE`](Server/LICENSE) |
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Everything outside those three directories — this file, `docs/`, `scripts/` — is MIT.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-## Why the split points this way, and why it must not be "tidied"
-
-**MIT flows into AGPL. AGPL does not flow into MIT.**
-
-The app links `Shared`. If `Shared` were AGPL, the MIT claim on `App` would be invalid, because an AGPL dependency makes the whole combined work AGPL. So `Shared` must stay permissive. That is the load-bearing part of this arrangement, and it is easy to get backwards.
-
-The server is AGPL because it is a self-hosted network service, which is exactly the case AGPL exists for: someone who runs a modified Mix Tape server for other people has to publish their changes.
-
-Every source file carries an `SPDX-License-Identifier` line matching its directory, and [`scripts/check-spdx.sh`](scripts/check-spdx.sh) fails the build if one is missing or wrong. If you move a file between these directories, its SPDX line moves with it and must be corrected.
-
-## Copyright
-
-Copyright (c) 2026 Jamie Le Souëf and the Mix Tape contributors.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

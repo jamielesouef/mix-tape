@@ -1,45 +1,72 @@
 # Mix Tape
 
-Self-hosted, album-centric music server and client. A Plex alternative for music, built to avoid subscriptions. Swift server (Hummingbird 2, Docker on a NAS) plus a SwiftUI client for iOS, iPadOS and macOS. Open source from the first public commit.
+An album-centric Jellyfin client for iOS and tvOS. Browse and play video and music from a Jellyfin server, with a music experience built around one idea: pulling a CD out of a wallet. SwiftUI, MV architecture, no subscriptions and no server of our own to maintain.
 
-**Read before working:** [`docs/app-architecture-template.md`](docs/app-architecture-template.md) is authoritative for app architecture. [`docs/plan/v1-architecture.md`](docs/plan/v1-architecture.md) is the approved v1 design. [`docs/handoff.md`](docs/handoff.md) is the project brief. Precedence, highest first: the [settled decisions](#settled-decisions) and the numbered forks, then the template, then the plan — and this file loses to all three.
+**Read before working:** [`docs/architecture.md`](docs/architecture.md) is authoritative for app architecture. [`docs/engineering-doc.md`](docs/engineering-doc.md) is the approved V1 specification — scope, layers, API contract, screens, acceptance criteria. Precedence, highest first: the [settled decisions](#settled-decisions), then the architecture doc, then the engineering doc — and this file loses to all three.
 
 ## The product rule that gets "fixed" by mistake
 
 The design concept is pulling a CD out of a wallet. You pick an album, it plays, it finishes, you are back at the wallet.
 
-**The queue *is* the album.** Loading an album replaces the player queue entirely. Next on the final track stops playback and does nothing else — it never advances to another album. There is no cross-album queue, no shuffle, no algorithmic up-next. This is deliberate, it is the whole concept, and it must not be "improved". Code that enforces it carries a comment saying so.
+**The queue *is* the album.** Loading an album replaces the player queue entirely. Next on the final track stops playback and does nothing else — it never advances to another album. There is no cross-album queue, no shuffle, no repeat, no algorithmic up-next. This is deliberate, it is the whole concept, and it must not be "improved". Code that enforces it carries a comment saying so.
+
+Three things follow, and all three are tested:
+
+- `MusicPlayerService` has no `enqueue`, no `append`, no `shuffle`, no `repeatMode`. `play(album:tracks:startingAt:)` **replaces** the queue and is the only way tracks get into it.
+- Shuffle and repeat controls are **absent** from the UI, not hidden and not disabled.
+- End of the last track is a *navigational* event. The now-playing surface dismisses and the wallet returns to the sleeve that just finished.
+
+The wallet itself is **iOS only**. tvOS gets a conventional focus-driven album grid — the metaphor depends on touch and on holding the device, and it does not survive a ten-foot interface. Do not build it there. Video is unaffected by any of this.
+
+## Jellyfin is the server
+
+We do not ship a server. The previous architecture — a Hummingbird service in Docker on a NAS, a `Shared` DTO package, an AGPL server licence, ffmpeg tag scanning, a Linux CI job — **is gone**. Do not reintroduce any of it, and do not port code forward from it without a reason that survives being said out loud.
+
+What replaced it:
+
+- **The Jellyfin HTTP API is the whole backend.** Target Jellyfin **10.10+**. Every instance serves its own OpenAPI spec at `{base}/api-docs/swagger` — check that against the running server before trusting any endpoint shape written down here or in the engineering doc.
+- **One `Authorization: MediaBrowser …` header format on every request**, including unauthenticated ones. Never `X-Emby-Authorization` — Jellyfin is removing it in 10.13.
+- **`DeviceId` is a UUID generated once and kept in the Keychain.** It must survive app restarts and reinstall-free updates. Jellyfin keys sessions, Quick Connect approvals and transcode jobs off it, so regenerating it silently breaks all three.
+- **Use the query-parameter form of user-scoped endpoints** — `/Items?userId=…`, never `/Users/{userId}/Items`. The path form is deprecated.
+- **Jellyfin returns PascalCase.** Explicit `CodingKeys` on every DTO. No key decoding strategy, ever — a strategy that silently half-works is worse than a compile error.
+- **Progress-reporting failures are logged and swallowed.** A dropped `/Sessions/Playing/Progress` must never surface as a playback error.
+- Self-hosted servers on plain HTTP over LAN are the normal case, so `NSAllowsArbitraryLoads` is on. That is a deliberate trade, documented in the README, not an oversight to tighten.
+
+## Playback
+
+Video has exactly three paths, decided once in `ResolveVideoPlaybackUseCase` and nowhere else:
+
+| Method | When |
+|---|---|
+| `.directAVPlayer` | Server direct-plays **and** the container/codec is AVPlayer-native |
+| `.directVLC` | Server direct-plays but AVPlayer would refuse — mkv, webm, vp9, av1, dts, opus |
+| `.transcodeHLS` | No direct source; play the server's HLS transcode URL |
+
+We send **one permissive device profile** covering VLC's range, not AVPlayer's. That is the point of carrying VLCKit at all: it keeps MKV/HEVC/DTS off the server's transcoder. `isAVPlayerNative(_:)` is a pure Domain function with a fixture table — the branch decision is unit-tested without a server.
+
+`VLCPlayerController` is the **only** file in the repository that imports VLCKit. Presentation sees `VideoPlayerControlling` and an `AnyView`, never an `AVPlayer` and never a `VLCMediaPlayer`. That isolation is what makes the LGPL story simple and what makes VLCKit removable.
+
+Music takes no `PlaybackInfo` round-trip. The `/Audio/{id}/universal` URL asks for the containers Apple decodes natively — `flac,alac,m4a,mp3,aac,wav,aiff` — so a properly tagged library direct-streams every time. The HLS fallback exists for genuine exotica; when it fires, log the item ID at `.info` on the `playback` category. **A transcode on a music library is a diagnostic, not a normal path.**
 
 ## Repository layout
 
 ```
 mixtape/
-├── Shared/      Swift package. DTOs. ZERO external dependencies. Must compile on Linux
-├── Server/      Swift package. Hummingbird 2, JWTKit, .package(path: "../Shared")
-├── App/         MixTape.xcodeproj. Six layer folders in ONE target
-├── docs/        plan, handoff, architecture template, slices
-└── scripts/     check-layer-imports.sh, check-spdx.sh
+├── Apps/
+│   ├── MixtapeiOS/      App target: App.swift, Assets, Info.plist. Nothing else
+│   └── MixtapeTV/       App target: App.swift, Assets, Info.plist. Nothing else
+├── MixtapeKit/          Swift package. Six library targets, one per layer
+├── docs/                architecture.md, engineering-doc.md, slices/
+└── scripts/             check-layer-imports.sh, check-spdx.sh
 ```
 
-`Shared` has its own `Package.swift` deliberately. If the app depended on a manifest declaring Hummingbird, Xcode would resolve and clone Hummingbird's entire dependency tree on every project open despite never building it. Split manifests keep app dependency resolution at zero external packages. Do not merge the manifests, and do not create a `Shared` target inside the server package.
+The six layers are **six library targets in one local package**, not six folders in one app target. Two app targets share the code, so a package is required regardless — and once it exists, letting SwiftPM enforce the dependency edges is free. `Package.swift` is the enforcement; `check-layer-imports.sh` is the backstop for what the manifest cannot express.
 
-Both sides reference `Shared` by relative path. No tags, no versioning — a DTO change is immediately visible on both sides. That is the point of the monorepo.
-
-## Shared must stay Linux-clean
-
-`Codable`, `Sendable`, Foundation-only types. No SwiftData, no `@Observable`, no Core Graphics, no UIKit, no SwiftUI, no Apple-only Foundation API.
-
-When it breaks on Linux the temptation is to duplicate the type. **Do not.** Fix the type so it stays portable.
-
-One approved non-DTO lives there: `MixTapeJSON`, holding a `JSONEncoder` and `JSONDecoder` both configured `.iso8601`. It exists so the two sides cannot drift on date encoding. Never construct a bare `JSONEncoder()` or `JSONDecoder()` in `Server/` or `App/` — go through `MixTapeJSON`.
-
-Interim check until the Linux CI job lands: `grep -r "import SwiftData\|import CoreGraphics\|import UIKit\|import SwiftUI\|@Observable" Shared/` returns nothing.
+App targets contain `App.swift`, the asset catalog and the Info.plist. The composition root is the **only** file in the repository that imports all six library targets. If a view, a model or a helper lands in an app target, it is in the wrong place.
 
 ## App architecture — MV, never MVVM
 
 **No ViewModels, ever.** `@MainActor @Observable final class` services hold state and are the only place state is written. Views read state through `@Environment` and call service methods to act.
-
-The six layers are **folders inside one app target**, not six build targets. Dependency direction is unchanged:
 
 ```
 Presentation → Services → UseCase → Domain
@@ -47,39 +74,40 @@ Presentation → Services → UseCase → Domain
                    Data, Infrastructure
 ```
 
-| Folder | Holds | May depend on |
+| Target | Holds | May depend on |
 |---|---|---|
-| `AppDomain` | Entities, value types, domain errors, pure rules | Foundation only |
-| `AppUseCase` | One type per use case, repository protocols | `AppDomain` |
-| `AppServices` | `@MainActor @Observable` classes — the only writers of state | `AppUseCase`, `AppDomain` |
-| `AppInfrastructure` | `APIClient` (an actor), keychain, logging | Foundation, SDKs |
-| `AppData` | Repository implementations, DTO-to-Domain mapping, `Persistence/` | `AppUseCase`, `AppDomain`, `AppInfrastructure` |
-| `AppPresentation` | SwiftUI views only | `AppServices`, `AppDomain` |
+| `MixtapeDomain` | Entities, value types, domain errors, pure rules | Foundation only |
+| `MixtapeUseCase` | One type per use case, repository protocols | `MixtapeDomain` |
+| `MixtapeServices` | `@MainActor @Observable` classes — the only writers of state | `MixtapeUseCase`, `MixtapeDomain` |
+| `MixtapeInfrastructure` | `JellyfinHTTPClient`, keychain, players, logging, VLCKit | Foundation, SDKs |
+| `MixtapeData` | Repository implementations, DTO-to-Domain mapping | `MixtapeUseCase`, `MixtapeDomain`, `MixtapeInfrastructure` |
+| `MixtapePresentation` | SwiftUI views only | `MixtapeServices`, `MixtapeDomain` |
 
-- `AppUseCase` and `AppDomain` never import SwiftUI or Observation. `scripts/check-layer-imports.sh` enforces this by folder path and fails the build.
-- `AppData` repositories are stateless `Sendable` structs. No caching hidden inside a repository — caching is its own injected collaborator.
-- `AppInfrastructure` is stateless or actor-isolated. Never a plain class with mutable state.
-- Exception: SwiftData `ModelContainer`, `@Model` types and store actors live in `AppData/Persistence/`.
-- No use case or repository type appears in a view's signature. If a view needs data shaped differently, that is the service's job.
-- `AppPresentation` uses Liquid Glass by default for chrome, and every use of it ships a Reduce Transparency fallback. The template requires the fallback; a glass surface with no fallback is a defect, not a polish item.
+- `MixtapeUseCase` and `MixtapeDomain` never import SwiftUI, Observation, UIKit or AVFoundation. `scripts/check-layer-imports.sh` enforces this and fails the build.
+- `MixtapePresentation` does not list `MixtapeData`, `MixtapeUseCase` or `MixtapeInfrastructure` as dependencies. If a view needs data shaped differently, that is the service's job.
+- `MixtapeData` repositories are stateless `Sendable` structs. No caching hidden inside a repository — caching is its own injected collaborator.
+- `MixtapeInfrastructure` is stateless or actor-isolated. Never a plain class with mutable state. The player controllers are the exception and are `@MainActor` by necessity.
+- No DTO escapes `MixtapeData`. Mapping happens in a `*Mapper.swift` beside the repository that owns it.
+- No use case or repository type appears in a view's signature.
+- Liquid Glass by default for chrome, and **every** use ships a Reduce Transparency fallback. A glass surface with no fallback is a defect, not a polish item.
 
-Group by feature inside a layer, not by file type: `AppServices/<Feature>/`, `AppUseCase/UseCases/<Feature>/`, `AppPresentation/Screens/<Feature>/`. Presentation components split by role instead: `Components/Cards/`, `Chrome/`, `Feedback/`, `Rows/`, `Styles/`.
+Group by feature inside a layer, not by file type: `MixtapeServices/<Feature>/`, `MixtapeUseCase/UseCases/<Feature>/`, `MixtapePresentation/Screens/<Feature>/`. Presentation components split by role instead: `Components/Cards/`, `Chrome/`, `Feedback/`, `Rows/`, `Styles/`.
+
+Where iOS and tvOS layouts genuinely diverge, write **two files**, each wrapped in `#if os(…)` and named for what it is — `MovieLibraryGrid.swift` and `MovieLibraryShelf.swift` — never one file with a platform branch inside the body. One view per file still holds.
 
 Wire with `@Entry`, never a hand-rolled `EnvironmentKey`. Build the whole object graph once, by hand, at the app root. No DI container, no service locator.
 
 ## Swift rules
 
-- Swift 6 strict concurrency throughout, non-negotiable. Swift 6 language mode is the invariant. The local toolchain runs ahead of what CI pins — Xcode 27 / Swift 6.4 on the machine, Xcode 26.6 and `swift:6.2-noble` in CI — so the pins below, not the local compiler, are what the code is really held to.
-- **Write no language or standard-library feature newer than Swift 6.2, anywhere in the repository.** Not an interim measure — slice 003 pinned both sides and this is the standing rule. `Shared/` and `Server/` compile inside `swift:6.2-noble`, and `App/` builds on GitHub's `macos-26` runner under **Xcode 26.6**, which is a Swift 6.2 toolchain. A 6.4-only construct passes on the local machine and fails a build nobody runs until CI, on either side.
-- **The app project stays at `objectVersion = 77`.** Xcode 27 writes `90`, which no stable hosted runner can open. `preferredProjectObjectVersion` is pinned to `77` alongside it — that is the setting that otherwise lets Xcode 27 rewrite the format on the next open. If a diff ever shows either back at `90`, revert it rather than bumping the runner.
-- iOS 26+, macOS 26+. No back-deploy, no `#available` checks.
-- Project level: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = YES`.
+- Swift 6 strict concurrency throughout, non-negotiable. Swift 6 language mode is the invariant. The local toolchain runs ahead of what CI pins — Xcode 27 / Swift 6.4 on the machine, Xcode 26.6 in CI — so the pins below, not the local compiler, are what the code is really held to.
+- **Write no language or standard-library feature newer than Swift 6.2, anywhere in the repository.** `App/` builds on GitHub's `macos-26` runner under **Xcode 26.6**, a Swift 6.2 toolchain. A 6.4-only construct passes locally and fails a build nobody runs until CI.
+- **The app project stays at `objectVersion = 77`.** Xcode 27 writes `90`, which no stable hosted runner can open. `preferredProjectObjectVersion` is pinned to `77` alongside it — that is the setting that otherwise lets Xcode 27 rewrite the format on the next open. If a diff shows either back at `90`, revert it rather than bumping the runner.
+- iOS 26+, tvOS 26+. No back-deploy, no `#available` checks. No macOS target in V1.
+- Project level: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
 - Actors stay actors. `nonisolated` fixes `Decodable` warnings — never convert an actor to `@MainActor final class` to silence one.
-- `@concurrent` for real background work only: parsing, decoding, image work.
+- `@concurrent` for real background work only: image decoding is the one place in V1 that qualifies.
 - No `DispatchQueue` in new code. `Mutex` over `NSLock`.
 - No `@unchecked Sendable` and no `nonisolated(unsafe)` without a justification comment saying why it is safe.
-- **`DownloadSessionDelegate` is the only justified `nonisolated` delegate shim in the codebase.** A background `URLSession` delegate genuinely cannot be `@MainActor`, and its justification is written in the file. Do not add a second one — if concurrency is fighting you elsewhere, that is a design problem, not a shim.
-- No SwiftData `@Model` object crosses an isolation boundary. Use a `ModelActor` for import and pass `PersistentIdentifier`, never the objects.
 - No Combine. `async`/`await`, `AsyncSequence` and Observation cover it.
 - Constructor injection only. No singletons, no `.shared`, except wrapped system types behind a protocol.
 - No abstraction without a second conformer. Repository protocols are exempt: their `Mock*`/`Stub*` test doubles are the second conformer.
@@ -95,122 +123,89 @@ Wire with `@Entry`, never a hand-rolled `EnvironmentKey`. Build the whole object
 
 - Swift Testing (`@Test`, `@Suite`) for unit tests. **Never XCTest**, except for XCUITest.
 - Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
-- Every use case and service is tested against injected `Mock*`/`Stub*`, never a real `AppData` implementation.
+- Every use case and service is tested against injected `Mock*`/`Stub*`, never a real `MixtapeData` implementation.
+- **Never test a repository against a live Jellyfin instance.** Stub `URLProtocol`, and map DTOs against captured JSON fixtures in `Tests/MixtapeDataTests/Fixtures/`.
+- Inject a clock. Quick Connect polling and progress reporting are both timer-driven and neither test may sleep.
 - Test behaviour, not the mock's plumbing.
-- One happy-path XCUITest per screen, driven off accessibility identifiers, never visible text.
+- One happy-path XCUITest per platform, launched into a stubbed session via `-uitest-signed-in`, driven off accessibility identifiers and never visible text.
+- **`MusicPlayerService` gets a suite dedicated to the §1.1 invariants** — next past the final track stops, a second `play(album:)` replaces rather than appends, `finishedAlbumID` fires exactly once. These are the tests that stop someone helpfully adding a cross-album queue in six months.
 
-## Data model
+## Persistence
 
-**The single most important schema decision:** store album artist separately from track artist, and key albums on `(albumArtist, title, discNumber)`. Keying on track artist explodes every compilation and every guest-feature track into a one-track album. Retrofitting this means a migration.
+**There is no SwiftData in V1.** Nothing is cached to disk. The Keychain holds the access token and the device UUID, and that is the entire persistent state of the app.
 
-**Multi-disc:** one grid tile per disc, but the discs of a release must always render adjacently. Adjacency is structural, not a sort rule — the grid iterates `[Release]` and a release owns its discs, so a foreign album between disc 1 and disc 2 is unrepresentable. The disc-set shape is a domain type (`DiscSet`), not something inferred at render time.
+Images are cached in memory only, in an `NSCache` capped at 120 MB, and are expected to be lost on backgrounding. That is fine — Jellyfin serves them fast and the URLs are stable.
 
-**SwiftData has a hard split, and it is the whole boundary:**
-
-- **Cache models** (`CachedAlbum`, `CachedTrack`) — the server is the source of truth. A changed manifest replaces them wholesale. No incremental sync logic.
-- **Download models** (`DownloadedAlbum`, `DownloadedTrack`) — local truth. Not derivable from the server. They carry their own copy of every field needed to render and play, and never read a cache model.
-
-**No SwiftData relationship crosses between the two groups.** They associate only by matching `id` strings, joined in memory at read time. That absence of a relationship is what makes a full manifest replacement unable to touch a download. If a NAS rescan wipes downloaded albums off the phone, the app feels broken.
-
-Download file paths are stored **relative** to the downloads root, never absolute. The app container path changes between launches and updates.
-
-## Server
-
-- Hummingbird 2, structured-concurrency native. Chosen over Vapor for footprint.
-- **Direct play only. The server never transcodes.** AVFoundation natively plays FLAC, ALAC, MP3, AAC, WAV and AIFF. Ogg Vorbis is the only meaningful gap and is out of scope.
-- `FileMiddleware` handles HTTP `Range`. **Never hand-roll byte-range streaming.**
-- **No image processing on the server.** Linux has no Core Graphics. Serve the original embedded artwork; the client downsamples with ImageIO and caches the result.
-- Tag scanning shells out to `ffprobe -print_format json`, and artwork extraction to `ffmpeg -c:v copy` — a stream copy, never a re-encode. Both come from the `ffmpeg` package in the Docker image. Invoking a binary is licence-clean; **do not link ffmpeg.**
-- Library index is an in-memory structure rebuilt at boot and snapshotted to JSON. Genuinely sufficient for a personal library. GRDB only if it outgrows it.
-- Sign in with Apple is used **once**, for pairing. The server then issues its own long-lived token. Apple's identity token is never the session token — it is short-lived, and refreshing it needs a client secret Apple caps at six months.
-- All configuration is read into one `ServerConfiguration` type. Do not reach for `ProcessInfo` elsewhere.
+Downloads and offline playback are out of scope. When they land, the boundary that matters is the one the old architecture already got right: **download models are local truth and carry their own copy of every field needed to render and play.** No relationship crosses from a cache model to a download model, so a library refresh cannot delete something the user downloaded. Do not build the cache layer in a way that makes that split hard to add later.
 
 ## Licensing
 
-| Path | Licence |
-|---|---|
-| `Shared/` | MIT |
-| `App/` | MIT |
-| `Server/` | AGPL-3.0-only |
+MIT throughout. There is no server package and no AGPL boundary any more — the dual-licence split, and the reasoning about MIT flowing into AGPL, went with the server.
 
-`Shared` **must** stay permissive. MIT flows into AGPL; AGPL does not flow into MIT. An AGPL `Shared` would make the MIT client claim invalid. `SPDX-License-Identifier` is the **first line** of every source file, matching that file's directory, and it sits **above** the Xcode header block — see [Conventions](#conventions) for the exact combined form. No AGPL code is reachable from the app target.
+**VLCKit is LGPL-2.1-or-later.** It stays dynamically linked as the vendored xcframework, and it is reachable from exactly one file. Do not statically link it, do not vendor modified VLCKit sources, and do not let a second file import it. The licence obligation is satisfied by dynamic linking plus attribution in the app's acknowledgements; anything else means legal review.
 
-**The one exception, and it is mechanical, not discretionary: a package manifest.** Swift parses `// swift-tools-version:` positionally and will not build a `Package.swift` that does not carry it on line 1. So in a manifest the tools-version line is line 1 and the SPDX line is **line 2**. `Shared/Package.swift` is `MIT`; `Server/Package.swift` is `AGPL-3.0-only`. `scripts/check-spdx.sh` encodes exactly this — for a file named `Package.swift` it asserts line 1 matches `swift-tools-version` and line 2 is the directory's SPDX; for every other `.swift` file it asserts line 1 is the SPDX. No other file is exempt, and the exemption is keyed on the filename so the script can express it. An exemption a script cannot check is not an exemption, it is a hole.
+`SPDX-License-Identifier: MIT` is the **first line** of every source file, above the Xcode header block. `scripts/check-spdx.sh` enforces it. A `Package.swift` is the sole exception, because Swift parses `// swift-tools-version:` positionally and will not build a manifest without it on line 1 — so there the tools-version is line 1 and SPDX is line 2. The script keys that exemption on the filename. An exemption a script cannot check is not an exemption, it is a hole.
 
 ## Settled decisions
 
-Resolved by the project owner. Record them, do not relitigate them. Full reasoning is in the plan's Conflicts section.
+Resolved by the project owner. Record them, do not relitigate them.
 
 | | Decision |
 |---|---|
-| C1 | Six layers as **folders in one app target**, not six build targets. Every other template rule holds |
-| C2 | `APIClient` is the actor and `LibraryRepository` is a stateless struct. `LibraryService` holds no private actor |
-| C3 | Repository protocols are allowed. Their test doubles are the second conformer |
-| C4 | `MixTapeJSON` lives in `Shared` despite "DTOs only" |
-| C5 | One Swift language level covers the whole repository, because `Shared` compiles under both sides. The Docker build stage is `swift:6.2-noble` — **not** the handoff's `swift:6.1-noble`. The local toolchain has since moved ahead of 6.2; see [Swift rules](#swift-rules) |
-| C6 | `MIXTAPE_APPLE_TEAM_ID` is documented but read by nothing in v1. Only the bundle ID is needed to verify an identity token |
-| C7 | Ogg Vorbis is out of scope |
+| D1 | **Jellyfin replaces the in-house server.** No Hummingbird, no `Shared` package, no Docker, no Linux CI. The maintenance cost of a music server is not worth paying when Jellyfin exists |
+| D2 | Six layers as **six library targets in one package**, not folders in one target. Two app targets force a package anyway, so the compile-time enforcement is free. This is a deliberate reversal of the previous project's C1 |
+| D3 | Repository protocols are allowed. Their test doubles are the second conformer |
+| D4 | Ship **both** AVPlayer and VLCKit, with one permissive device profile. Direct play beats a smaller binary — transcoding a 4K remux on a NAS is the failure mode this exists to avoid |
+| D5 | Quick Connect is the **primary** sign-in path on tvOS, password secondary. Typing a password on a Siri Remote is the worst experience in the app |
+| D6 | The wallet is **iOS only**. tvOS gets a conventional grid |
+| D7 | Video is a conventional Jellyfin client. The album doctrine applies to music and nothing else |
+| D8 | No SwiftData in V1. Keychain and an in-memory image cache are the whole persistence story |
 
-Deliberate v1 simplifications each have a named seam and are recorded as numbered ladders in [`docs/slices/MASTER-CHECKLIST.md`](docs/slices/MASTER-CHECKLIST.md). Reach for the seam rather than reopening the decision.
+Deliberate V1 simplifications each have a named seam. Reach for the seam rather than reopening the decision.
 
-**Where a slice's decision log departs from the plan, the slice wins.** Those departures are numbered forks (F1–F6) in the same checklist, each with a decision row saying what was rejected and why. So the precedence, highest first, is: **settled decisions and forks, then the template, then the plan.** Settled decisions sit above the template because that is what they are for — C1 contradicts the template outright and wins. If you find the plan and a slice disagreeing and there is no fork row, that is drift — log it in the checklist's Drift Log and stop, rather than picking the reading that makes the task easier.
+**Where a slice's decision log departs from the engineering doc, the slice wins,** recorded as a numbered fork in [`docs/slices/MASTER-CHECKLIST.md`](docs/slices/MASTER-CHECKLIST.md) with what was rejected and why. If you find the engineering doc and a slice disagreeing and there is no fork row, that is drift — log it in the checklist's Drift Log and stop, rather than picking the reading that makes the task easier.
 
 ## How work is done here
 
-Work is delivered as **slices** in [`docs/slices/`](docs/slices/), in number order. Each slice document is the specification for its own build, and the master checklist is the only home for status, owner and blockers.
+Work is delivered as **slices** in [`docs/slices/`](docs/slices/), in number order. The engineering doc's build order (§13) defines that sequence and its shippable checkpoints — sign-in, then browse, then video, then music, then the wallet, then tvOS. Each slice document is the specification for its own build; the master checklist is the only home for status, owner and blockers.
 
 - Complete the slice's pre-flight validation **before the first line of code**.
 - Write a decision-log row **before** implementing the decision it describes, including the alternatives rejected. A log filled in at close is reconstructed from memory, and the rejected alternatives are exactly what memory loses first.
 - Widening scope means editing the slice's Section 3 and the `depends_on` of anything now affected.
-- The slice document and its code belong in **one** commit, with the slice id in the subject (`001: add monorepo skeleton`). Per [Conventions](#conventions) you do not run it — hand over the one command that commits both together, rather than committing the code now and the document later.
+- The slice document and its code belong in **one** commit, with the slice id in the subject (`001: add package skeleton`). You do not run it — hand over the one command that commits both together.
 
 ## Conventions
 
 - **Australian spelling in prose and documentation. American spelling in identifiers.** `colour` in a comment, `color` in a property name.
 - Never hard-wrap markdown prose at a column limit — one line per paragraph. Never reflow tables, fenced code blocks, headings or list items.
-- Swift file headers use the standard Xcode format, **below** the SPDX line — see the exact shape below. Date `DD/MM/YYYY`, two spaces after `//` on the `Created by` line, name `Jamie Le Souëf`.
+- Swift file headers use the standard Xcode format, **below** the SPDX line. Date `DD/MM/YYYY`, two spaces after `//` on the `Created by` line, name `Jamie Le Souëf`.
 - **Do not auto-commit.** Leave work in the working tree and hand over the command.
-- **`main` is a protected branch and refuses a direct push, administrators included.** Work lands through a pull request — branch, commit, push the branch, open the PR with `gh`. No approving review is required, so a solo change is not blocked, but the pull request itself is. Force pushes and branch deletion are refused, and history must stay linear. The two CI workflows are **not** required checks, deliberately: their path filters mean a docs-only change runs neither, and a required check that never runs would leave that pull request unmergeable forever.
+- **`main` is a protected branch and refuses a direct push, administrators included.** Work lands through a pull request — branch, commit, push the branch, open the PR with `gh`. No approving review is required, so a solo change is not blocked, but the pull request itself is. Force pushes and branch deletion are refused, and history must stay linear.
 - **Never add `Co-Authored-By` trailers or any AI attribution** to a commit, PR, issue or any other artefact.
 - Use the `gh` CLI for GitHub operations, never the REST API directly.
 
-Copy this header shape exactly. The SPDX line must be line 1 or `check-spdx.sh` fails, and its licence must match the directory — `MIT` under `Shared/` and `App/`, `AGPL-3.0-only` under `Server/`.
-
 ```swift
 // SPDX-License-Identifier: MIT
 //
-//  AlbumDTO.swift
-//  Shared
+//  PlaybackPlan.swift
+//  MixtapeDomain
 //
-//  Created by Jamie Le Souëf on 31/08/2026.
-//
-```
-
-A `Package.swift` is the sole exception, because Swift requires the tools-version line first — SPDX moves to line 2 and nothing else changes:
-
-```swift
-// swift-tools-version: 6.2
-// SPDX-License-Identifier: MIT
-//
-//  Package.swift
-//  Shared
-//
-//  Created by Jamie Le Souëf on 31/08/2026.
+//  Created by Jamie Le Souëf on 03/09/2026.
 //
 ```
 
 ## Verify
 
 ```bash
-cd Shared && swift build                 # resolves ZERO external packages
-cd Server && swift build && swift test
-swift run Server                         # then: curl -i localhost:8080/version
-xcodebuild -scheme MixTape -destination 'generic/platform=iOS Simulator' build
+xcodebuild -scheme Mixtape   -destination 'generic/platform=iOS Simulator'  -configuration Debug build
+xcodebuild -scheme MixtapeTV -destination 'generic/platform=tvOS Simulator' -configuration Debug build
+xcodebuild test -scheme Mixtape   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0'
+xcodebuild test -scheme MixtapeTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.0'
 ./scripts/check-layer-imports.sh         # test the failure case too, not just the pass
 ./scripts/check-spdx.sh                  # ditto — break one header on purpose
-grep -r "import SwiftData\|import CoreGraphics\|import UIKit\|import SwiftUI\|@Observable" Shared/
+swiftformat --lint .
 ```
 
-**Docker is a packaging step, not a dev loop.** `swift run Server` on macOS runs the identical binary against a local music folder with the app pointed at `localhost`. The moment a container is needed to test a change, iteration speed dies. The Linux CI job is what catches Apple-only API that slipped in.
+Against a live server, the checks that matter are in the engineering doc's acceptance criteria — in particular: an mp4/h264 movie and an mkv/hevc/dts movie both play with **no transcode session** in the Jellyfin dashboard, and a FLAC album does the same.
 
 A check that has never failed is not known to work. When you add one, prove it fails.
