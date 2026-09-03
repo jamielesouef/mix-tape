@@ -178,6 +178,27 @@ options.
 
 Consequence: `docs/engineering-doc.md:570` and `:592` drop `api_key={token}`.
 
+### Carve-out: the server's `TranscodingUrl` is passed through verbatim
+
+This decision governs URLs **the client constructs**. It does not govern
+`MediaSource.TranscodingUrl`, which the server builds and hands back with auth
+already embedded — as `ApiKey`, capitalised, alongside `PlaySessionId`, `Tag`,
+`TranscodeReasons` and the codec parameters:
+
+```
+/videos/{id}/master.m3u8?DeviceId=…&MediaSourceId=…&VideoCodec=h264
+  &PlaySessionId=d1a733a2…&ApiKey=78ac91…&Tag=d82a9686…&TranscodeReasons=…
+```
+
+It returns 200 exactly as given. Hand it to the player unmodified: do not strip
+`ApiKey`, do not rebuild the query, and do not treat the embedded token as a
+violation of this decision to be corrected. Adding the Authorization header to it
+as well is harmless but unnecessary.
+
+Note the casing. `docs/engineering-doc.md:573` says the URL "already contains
+`api_key`"; the actual parameter is `ApiKey`. Both spellings authenticate on
+requests the client builds, but only `ApiKey` appears in what the server returns.
+
 ## 8. `isWatched` — server `Played` when mapping, the 0.9 rule only during playback
 
 **Decision: mapping a list or detail response sets `PlaybackState.isWatched`
@@ -307,29 +328,39 @@ from either. `isAVPlayerNative` and the resolve branches stay unit-testable from
 their fixture table regardless — those are pure domain functions — but whether the
 resulting URLs actually play cannot be established without files.
 
-### Status — one of three branches covered
+### Status — all three playback branches are reachable
 
-A Movies library now exists with one item: `mp4`, `h264`, 1920×1080, Main
-profile. Verified end to end:
+The Movies library holds two items, verified end to end:
+
+| Item | Container / codecs | Length | Branch | Stream check |
+|---|---|---|---|---|
+| Avatar: Fire and Ash | `mp4` · h264 1080p · **no audio track** | 20.8 s | `.directAVPlayer` | 206, `video/mp4` |
+| F1 | `mkv` · h264 4K HDR · aac stereo | 48.4 s | `.directVLC` | 206, `video/x-matroska` |
+
+`mkv` is on the VLC list by container regardless of codec, so the second item
+exercises the branch VLCKit exists for. It also carries the audio track the first
+one lacks, so the audio-codec half of `isAVPlayerNative` has real data behind it,
+and at 48 s it is long enough for criterion 9's watch-30 s-and-resume.
+
+**`.transcodeHLS` needs no exotic file.** Direct play is decided against the
+`DeviceProfile` posted in the `PlaybackInfo` body, not against the file alone.
+Posting a restrictive profile flips the same `mkv` to a transcode:
 
 ```
-PlaybackInfo   → SupportsDirectPlay=true, TranscodingUrl=null, ErrorCode=null
-stream?static=true → 206, content-type video/mp4
+DirectPlayProfiles: [webm/vp9/opus only]  →  SupportsDirectPlay=false
+                                              TranscodingSubProtocol=hls
+                                              TranscodingUrl=/videos/…/master.m3u8
 ```
 
-So `.directAVPlayer` is exercisable. The other two branches are not, and two
-acceptance criteria remain unreachable for reasons specific to this file:
+So criterion 8 is a test fixture, not a media-sourcing problem: post a profile
+that excludes the source, confirm the branch resolves to `.transcodeHLS`, and
+confirm the transcode session appears in the dashboard. The permissive profile
+the app actually ships stays unchanged — that is the point of D4, and criteria 6,
+7 and 13f all depend on it continuing to produce no transcode.
 
-| Gap | Effect |
-|---|---|
-| No `mkv`/`hevc`/`dts` source | `.directVLC` never fires. VLCKit is carried solely for this branch, and nothing exercises it — including the check that the permissive device profile keeps it off the transcoder. |
-| No source the profile rejects | `.transcodeHLS` never fires. Acceptance criterion 8 requires seeing a transcode session appear in the dashboard. |
-| **The file has no audio stream** — `MediaStreams` holds one video entry and nothing else | Acceptance criterion 6 specifies `mp4/h264/aac`. The audio-codec half of `isAVPlayerNative` is untested against real data, and nothing confirms audio actually reaches the player on the video path. |
-| **`RunTimeTicks` is 207797330 ≈ 20.8 seconds** | Acceptance criterion 9 requires watching 30 s, exiting, and resuming at ≈30 s. The clip ends first. Criterion 10 (mark watched at ≥90%) is reachable, but only across a 20-second window. |
-| Still 0 Series, 0 Episodes | Criterion 11 (series → season → episode ordering) stays unverifiable, and decision 27's `sortBy` fix has nothing to confirm it against. |
-
-Steps 6 and 8 can start. Step 7 (`VLCPlayerController` and the `.directVLC`
-branch) should not be marked complete against a library that cannot reach it.
+Remaining gap: **0 Series, 0 Episodes.** Criterion 11 (series → season → episode
+ordering) stays unverifiable, and decision 27's `sortBy` fix has nothing to
+confirm it against. Steps 6, 7 and 8 can all proceed.
 
 ---
 
