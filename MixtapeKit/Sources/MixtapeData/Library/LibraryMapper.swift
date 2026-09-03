@@ -51,6 +51,7 @@ nonisolated enum LibraryMapper {
             backdropImageTag: dto.backdropImageTags?.first,
             parentPrimaryImageTag: dto.albumPrimaryImageTag,
             albumID: dto.albumId,
+            container: dto.container,
             playback: PlaybackState(position: position, isWatched: dto.userData?.played ?? false),
         )
     }

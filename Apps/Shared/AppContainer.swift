@@ -21,6 +21,7 @@ struct AppContainer {
     let seriesService: SeriesService
     let imageService: ImageService
     let videoPlaybackService: VideoPlaybackService
+    let musicPlayerService: MusicPlayerService
 
     init() {
         let configuration = URLSessionConfiguration.default
@@ -74,6 +75,17 @@ struct AppContainer {
                 }
             },
             libraryService: libraryService,
+        )
+
+        let imageServiceRef = imageService
+        musicPlayerService = MusicPlayerService(
+            controller: AudioPlayerController(),
+            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: playbackRepository),
+            reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
+            sessionService: sessionService,
+            artworkProvider: { track in await imageServiceRef.image(for: track, kind: .primary, maxHeight: 600) },
         )
     }
 

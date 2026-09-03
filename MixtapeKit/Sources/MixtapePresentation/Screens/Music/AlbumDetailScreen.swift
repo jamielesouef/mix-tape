@@ -11,6 +11,7 @@ import SwiftUI
 /// Art, album artist, year, track list, Play. Play renders and does nothing until slice 009.
 public struct AlbumDetailScreen: View {
     @Environment(\.libraryService) private var libraryService
+    @Environment(\.musicPlayerService) private var music
     let album: MediaItem
 
     public init(album: MediaItem) {
@@ -32,9 +33,9 @@ public struct AlbumDetailScreen: View {
                     Text([album.albumArtist, album.productionYear.map(String.init)].compactMap(\.self).joined(separator: " · "))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    // Wired to `MusicPlayerService` in slice 009.
-                    Button("Play", systemImage: "play.fill") {}
+                    Button("Play", systemImage: "play.fill") { play(startingAt: 0) }
                         .buttonStyle(.borderedProminent)
+                        .disabled(loadedTracks.isEmpty)
                         .accessibilityIdentifier(AlbumDetailIdentifiers.playButton)
                 }
                 .frame(maxWidth: .infinity)
@@ -51,15 +52,31 @@ public struct AlbumDetailScreen: View {
                     Text("No tracks")
                         .foregroundStyle(.secondary)
                 case let .loaded(tracks):
-                    ForEach(tracks) { track in
-                        TrackRow(track: track)
-                            .accessibilityIdentifier(AlbumDetailIdentifiers.trackRow(track.id))
+                    ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
+                        Button { play(startingAt: index) } label: {
+                            TrackRow(track: track)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier(AlbumDetailIdentifiers.trackRow(track.id))
                     }
                 }
             }
         }
         .navigationTitle(album.name)
         .task { await libraryService.loadTracks(albumID: album.id) }
+    }
+
+    private var loadedTracks: [MediaItem] {
+        if case let .loaded(tracks) = libraryService.tracks[album.id] {
+            return tracks
+        }
+        return []
+    }
+
+    private func play(startingAt index: Int) {
+        let tracks = loadedTracks
+        guard tracks.isEmpty == false else { return }
+        Task { await music.play(album: album, tracks: tracks, startingAt: index) }
     }
 }
 

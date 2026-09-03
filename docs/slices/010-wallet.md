@@ -5,7 +5,7 @@ priority: P1
 complexity: L
 ladder: none
 depends_on:
-  - { id: "009", type: hard, note: "needs MusicPlayerService.finishedAlbumID, AlbumDetailScreen, NowPlayingScreen and the mini player slot already wired" }
+  - { id: "009", type: hard, note: "as shipped: MusicPlayerService (queue is one album, next/previous/finishedAlbumID/acknowledgeFinish) drives an injected AudioPlayerControlling; AlbumDetailScreen Play and each TrackRow call play(album:tracks:startingAt:); the plain AlbumGrid (from 005) is the Music tab root and the mini player docks via tabViewBottomAccessory. 010 replaces the grid with the wallet and wires the return-to-sleeve on finishedAlbumID; MusicPlayerService and AlbumDetailScreen Play are unchanged" }
 previous_slice: "009"
 next_slice: "011"
 parent_slice: none

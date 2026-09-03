@@ -26,7 +26,7 @@ Ordered by delivery sequence — the same order as the linked list.
 | 006 | Video: AVPlayer direct and HLS | P0 | L | adw-run | Done | [006](006-video-avplayer-and-hls.md) |
 | 007 | Video: VLC direct | P0 | M | adw-run | Done | [007](007-video-vlc.md) |
 | 008 | Playback reporting and resume | P0 | M | adw-run | Done | [008](008-playback-reporting-and-resume.md) |
-| 009 | Music playback — checkpoint: music plays, one album at a time | P1 | L | adw-run | Not started | [009](009-music-playback.md) |
+| 009 | Music playback — checkpoint: music plays, one album at a time | P1 | L | adw-run | Done | [009](009-music-playback.md) |
 | 010 | The Wallet | P1 | L | adw-run | Not started | [010](010-wallet.md) |
 | 011 | tvOS presentation | P1 | L | adw-run | Not started | [011](011-tvos-presentation.md) |
 | 012 | Accessibility and Reduce Transparency pass | P1 | M | adw-run | Not started | [012](012-accessibility-and-reduce-transparency.md) |
@@ -55,6 +55,7 @@ Drift found during a slice's pre-flight: something changed underneath a slice af
 
 | Date | Slice | What changed | Slices affected | Resolution |
 |---|---|---|---|---|
+| 2026-09-03 | 009 | A FLAC album ("King Of Terrors", President, 6 flac tracks, id 414bfd285d27e8f649d7025bcaf3b793) has been added to the library since 009 was drafted, satisfying decision 35. | 009 (claims AC13f now, per Plan Fork 4) and the coverage table (add §12.13f to 009). | 009 claims §12.13f: the FLAC album plays DirectPlay with no TranscodingInfo, confirming decision 43. covers: updated to include §12.13f. |
 | 2026-09-03 | 008 | The dev server has `MinResumeDurationSeconds = 300`, so a `PlaybackStopped` report never creates a resume point for an item under 5 minutes; both video items (20.8 s, 48.4 s) are far below it. | 009 — music tracks are also short, so any resume-style check there hits the same floor; and any future slice reading `/UserItems/Resume` after app playback of the current library. | 008 demonstrated AC9/AC5 with the floor temporarily lowered to 10 s then restored to 300; the app-side reporting is correct (live position poll) and the created resume `UserData` persists. Music reporting (009) does not depend on resume. |
 | 2026-09-03 | 006 | On Jellyfin 10.11.11 `/Sessions` `PlayState.PlayMethod` reads `DirectPlay` even while a transcode is actively running (`TranscodingInfo` present with `TranscodeReasons`). The start report carries `PlayMethod: Transcode` but the server does not surface it in `PlayState.PlayMethod`. | 008 — AC checks should use `TranscodingInfo` as the transcode signal, not `PlayMethod`; 008 adds progress reports that may change what `PlayMethod` shows. | 006 claimed AC8 on `TranscodingInfo` present with `TranscodeReasons`, Jellyfin own dashboard transcode indicator, stable across active playback. Recorded so 008 does not gate on `PlayMethod == "Transcode"`. |
 | 2026-09-03 | 005 | `.jellyfin-dev.env`'s `JELLYFIN_USER_ID` belongs to a different account from the one `JELLYFIN_USERNAME` / `JELLYFIN_PASSWORD` sign in as (`/Sessions` shows the app session under another user id). Any probe keyed on `JELLYFIN_USER_ID` reads or seeds a different user's data from what the app shows. | 006, 007, 008, 009 — every server-observable check that seeds or reads per-user state (`/UserItems/Resume`, `/Items/{id}` `UserData`, `/Sessions` filtering) | 005 seeded AC5 against the signed-in user's id read from `/Sessions`. Later slices do the same until the env file is corrected by its owner; the file is gitignored and holds credentials, so the run does not edit it. |
@@ -99,12 +100,12 @@ Every in-scope capability from engineering doc §1 and every acceptance criterio
 | §12.13c End of album: stop, dismiss, land on the sleeve pulsing | eng doc §12 | 010 | `finishedAlbumID` → return-to-sleeve sequence |
 | §12.13d 13c after backgrounding | eng doc §12 | 010 | Same sequence without animation on foreground |
 | §12.13e No shuffle/repeat/add-to-queue; next disabled on final track | eng doc §12 | 010 | Absence audit at the wallet level; 009's invariants suite |
-| §12.13f FLAC album produces no transcode session | eng doc §12 | — | **Unverifiable until the FLAC album exists** (decision 35). All 46 tracks are m4a/alac. No slice claims it; 009 is the natural owner once the album is added. |
+| §12.13f FLAC album produces no transcode session | eng doc §12 | 009 | The FLAC album "King Of Terrors" was added (decision 35); it plays `DirectPlay` with no `TranscodingInfo`, confirming decision 43. Claimed by 009 (2026-09-03). |
 | §12.14 Sign out clears the Keychain | eng doc §12 | 004 | AC14 |
 | §12.15 Reduce Transparency: no translucent glass | eng doc §12 | 012 | Shared glass modifier + mechanical grep gate + simulator check on both platforms |
 | §12.16 Server unreachable mid-browse shows retry | eng doc §12 | 005 | Unit-tested `.failed` state plus a manual check with the server stopped |
 
-**Known unverifiable:** acceptance criterion 11 (series → season → episode ordering) has no test data — the library holds 0 Series and 0 Episodes. No slice may claim it. See `SPEC-DECISIONS.md` decision 14. Acceptance criterion 13f is unverifiable until the FLAC album from decision 35 exists; same rule.
+**Known unverifiable:** acceptance criterion 11 (series → season → episode ordering) has no test data — the library holds 0 Series and 0 Episodes. No slice may claim it. See `SPEC-DECISIONS.md` decision 14. Acceptance criterion 13f became verifiable once the FLAC album from decision 35 was added and is now claimed by slice 009.
 
 ## 6. Plan Forks
 

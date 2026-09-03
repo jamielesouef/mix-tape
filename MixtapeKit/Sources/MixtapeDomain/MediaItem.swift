@@ -23,9 +23,11 @@ public nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
     public let parentPrimaryImageTag: String?
     /// The album a track belongs to; the item id its art is fetched against (decision 25).
     public let albumID: String?
+    /// Media container for an audio track, used to decide direct-stream vs HLS (slice 009).
+    public let container: String?
     public let playback: PlaybackState
 
-    public init(id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?, indexNumber: Int?, parentIndexNumber: Int?, seriesName: String?, albumArtist: String?, primaryImageTag: String?, backdropImageTag: String?, parentPrimaryImageTag: String?, albumID: String? = nil, playback: PlaybackState) {
+    public init(id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?, indexNumber: Int?, parentIndexNumber: Int?, seriesName: String?, albumArtist: String?, primaryImageTag: String?, backdropImageTag: String?, parentPrimaryImageTag: String?, albumID: String? = nil, container: String? = nil, playback: PlaybackState) {
         self.id = id
         self.name = name
         self.kind = kind
@@ -40,6 +42,7 @@ public nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
         self.backdropImageTag = backdropImageTag
         self.parentPrimaryImageTag = parentPrimaryImageTag
         self.albumID = albumID
+        self.container = container
         self.playback = playback
     }
 }

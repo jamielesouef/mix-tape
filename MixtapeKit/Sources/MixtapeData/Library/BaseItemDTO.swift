@@ -19,6 +19,7 @@ nonisolated struct BaseItemDTO: Decodable {
     let albumArtist: String?
     let albumId: String?
     let albumPrimaryImageTag: String?
+    let container: String?
     let imageTags: [String: String]?
     let backdropImageTags: [String]?
     let userData: UserItemDataDTO?
@@ -37,6 +38,7 @@ nonisolated struct BaseItemDTO: Decodable {
         case albumArtist = "AlbumArtist"
         case albumId = "AlbumId"
         case albumPrimaryImageTag = "AlbumPrimaryImageTag"
+        case container = "Container"
         case imageTags = "ImageTags"
         case backdropImageTags = "BackdropImageTags"
         case userData = "UserData"

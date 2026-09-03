@@ -32,6 +32,28 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
         return try PlaybackMapper.resolution(from: dto)
     }
 
+    /// `/Audio/{itemId}/universal` with the native-container list and no bitrate cap (decision 43),
+    /// authenticated with `ApiKey` in the query (decision 42). A non-decodable container means the
+    /// server transcodes to HLS; that fires the fallback log at `.info` (decision 23).
+    public func audioStream(track: MediaItem, session: UserSession) -> AudioStream {
+        var components = URLComponents(url: session.serverURL.appending(path: "/Audio/\(track.id)/universal"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [
+            URLQueryItem(name: "userId", value: session.userID),
+            URLQueryItem(name: "deviceId", value: session.deviceID),
+            URLQueryItem(name: "container", value: "flac,alac,m4a,mp3,aac,wav,aiff"),
+            URLQueryItem(name: "transcodingContainer", value: "ts"),
+            URLQueryItem(name: "transcodingProtocol", value: "hls"),
+            URLQueryItem(name: "audioCodec", value: "aac"),
+            URLQueryItem(name: "ApiKey", value: session.accessToken),
+        ]
+        let url = components?.url ?? session.serverURL
+        let native = isNativeAudioContainer(track.container)
+        if native == false {
+            AppLogger.playback.info("audio HLS fallback fired for track \(track.id) (container \(track.container ?? "?"))")
+        }
+        return AudioStream(url: url, playMethod: native ? .directPlay : .transcode)
+    }
+
     /// All three reports share one body (§8; decision 32). Each is logged on `network` and
     /// rethrown; the use case decides to swallow (§8).
     public func reportStart(_ report: PlaybackReport, session: UserSession) async throws {

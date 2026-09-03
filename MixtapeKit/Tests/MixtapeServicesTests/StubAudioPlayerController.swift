@@ -1,0 +1,49 @@
+//  StubAudioPlayerController.swift
+//  MixtapeServicesTests
+//
+//  Created by Jamie Le Souëf on 03/09/2026.
+//
+
+import Foundation
+import MixtapeDomain
+import MixtapeInfrastructure
+
+/// Records calls and lets a test fire the player and remote callbacks.
+@MainActor
+final class StubAudioPlayerController: AudioPlayerControlling {
+    var onPositionChange: ((Duration) -> Void)?
+    var onEnded: (() -> Void)?
+    var onFailure: ((MixtapeError) -> Void)?
+    var onRemotePlay: (() -> Void)?
+    var onRemotePause: (() -> Void)?
+    var onRemoteNext: (() -> Void)?
+    var onRemotePrevious: (() -> Void)?
+    var onRemoteSeek: ((Duration) -> Void)?
+
+    private(set) var loadedURLs: [URL] = []
+    private(set) var nextEnabledHistory: [Bool] = []
+    private(set) var stopCount = 0
+
+    func load(url: URL) {
+        loadedURLs.append(url)
+    }
+
+    func play() {}
+    func pause() {}
+    func seek(to _: Duration) {}
+
+    func stop() {
+        stopCount += 1
+    }
+
+    func updateNowPlaying(_: NowPlayingInfo) {}
+
+    func setNextTrackEnabled(_ enabled: Bool) {
+        nextEnabledHistory.append(enabled)
+    }
+
+    /// Simulate the current track finishing.
+    func finishTrack() {
+        onEnded?()
+    }
+}

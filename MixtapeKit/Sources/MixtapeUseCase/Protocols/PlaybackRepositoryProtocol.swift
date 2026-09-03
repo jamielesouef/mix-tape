@@ -7,9 +7,10 @@
 import MixtapeDomain
 
 /// Engineering doc §5, corrected by decision 12: `resolveVideo` returns sources, the use case
-/// picks the method. The audio URL arrives in slice 009.
+/// picks the method. `audioStream` builds the universal-audio URL and the `PlayMethod` beside it (decision 40).
 public nonisolated protocol PlaybackRepositoryProtocol: Sendable {
     func resolveVideo(itemID: String, startAt: Duration, session: UserSession) async throws -> VideoSourceResolution
+    func audioStream(track: MediaItem, session: UserSession) -> AudioStream
     func reportStart(_ report: PlaybackReport, session: UserSession) async throws
     func reportProgress(_ report: PlaybackReport, session: UserSession) async throws
     func reportStopped(_ report: PlaybackReport, session: UserSession) async throws

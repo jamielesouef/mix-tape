@@ -10,7 +10,7 @@ depends_on:
 previous_slice: "008"
 next_slice: "010"
 parent_slice: none
-covers: ["§1.12", "§1.13", "§12.12", "§12.13"]
+covers: ["§1.12", "§1.13", "§12.12", "§12.13", "§12.13f"]
 created: 2026-09-03
 ---
 
@@ -49,7 +49,7 @@ This is not a rung on a version ladder. There is no v2 of `MusicPlayerService` p
 - The Wallet screen, paged sleeves, `matchedGeometryEffect` pull-out and the return-to-sleeve sequence — slice 010. This slice plays music from the plain `AlbumGrid` built in slice 005.
 - tvOS-specific chrome for these screens (shelves, focus handling, Siri Remote specifics beyond what `MPRemoteCommandCenter` already gives) — slice 011. The tvOS scheme must still build and its album grid must still play music; only the presentation polish is deferred.
 - Shuffle, repeat, add-to-queue, a cross-album queue, autoplay past the last track — not deferred anywhere. §1.1 makes these permanent absences, not V2 features, and no abstraction for any of them is added here.
-- A FLAC album's direct-stream demonstration (AC13f) — unclaimed by any slice until the library has one, per decision 35.
+- (Reversed by drift, 2026-09-03: the FLAC album now exists, so AC13f **is** claimed here — see Section 5 and the Section 6 row.)
 
 **Plan requirements covered:**
 - `§1.12` (play music: album queue, next/prev, background audio, lock screen / remote controls) — satisfied by `MusicPlayerService`, `AudioPlayerController`'s `MPRemoteCommandCenter`/`MPNowPlayingInfoCenter` wiring, and `NowPlayingScreen`.
@@ -63,28 +63,28 @@ Complete **before the first line of code**, not at close.
 
 For **each id in `depends_on`**, in order — don't summarise, walk the list:
 
-- [ ] `008` — opened. Its decision log still records `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase` beside 006's `ReportPlaybackStartUseCase` as three separate types (decisions 19 and 37) taking a `PlaybackReport` built from a `PlaybackPlan`'s `playMethod` field (decision 11). This slice reuses those three types unchanged — it does not add a fourth "music" variant.
-- [ ] `008` is not a spike; no fallback to note.
-- [ ] `008`'s state matches what this slice assumed when drafted: the report use cases exist, are tested against `Mock*` repositories, and are exercised by `VideoPlaybackService` on start / every 10 s / pause / seek / stop. `MusicPlayerService` follows the identical cadence.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
-- [ ] `S002` — opened. It is a spike: confirm its Result still records that `/Audio/{itemId}/universal` requires auth, that `ApiKey` propagates into the HLS child URI, and that the 320 kbps bitrate cap transcoded the ALAC track (`TranscodeReasons=ContainerBitrateExceedsLimit`) while a 140 Mbps cap direct-streamed it.
-- [ ] `S002`'s state matches what this slice assumed when drafted: decisions 42 and 43 stand on those measurements, decision 33 is closed, and no per-player mechanism remains to choose.
-- [ ] `MusicPlayerService` (in `MixtapeServices`) holds an `AudioPlayerController` (in `MixtapeInfrastructure`) over the `MixtapeServices` → `MixtapeInfrastructure` edge decision 36 adds in slice 001. Confirm the edge and the layer-script allowance are in place.
+- [x] `008` — opened. Its decision log still records `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase` beside 006's `ReportPlaybackStartUseCase` as three separate types (decisions 19 and 37) taking a `PlaybackReport` built from a `PlaybackPlan`'s `playMethod` field (decision 11). This slice reuses those three types unchanged — it does not add a fourth "music" variant.
+- [x] `008` is not a spike; no fallback to note.
+- [x] `008`'s state matches what this slice assumed when drafted: the report use cases exist, are tested against `Mock*` repositories, and are exercised by `VideoPlaybackService` on start / every 10 s / pause / seek / stop. `MusicPlayerService` follows the identical cadence.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] `S002` — opened. It is a spike: confirm its Result still records that `/Audio/{itemId}/universal` requires auth, that `ApiKey` propagates into the HLS child URI, and that the 320 kbps bitrate cap transcoded the ALAC track (`TranscodeReasons=ContainerBitrateExceedsLimit`) while a 140 Mbps cap direct-streamed it.
+- [x] `S002`'s state matches what this slice assumed when drafted: decisions 42 and 43 stand on those measurements, decision 33 is closed, and no per-player mechanism remains to choose.
+- [x] `MusicPlayerService` (in `MixtapeServices`) holds an `AudioPlayerController` (in `MixtapeInfrastructure`) over the `MixtapeServices` → `MixtapeInfrastructure` edge decision 36 adds in slice 001. Confirm the edge and the layer-script allowance are in place.
 
-**Drift found:** `none`.
+**Drift found:** the FLAC album decision 35 required has since been added to the library — "King Of Terrors" by President, 6 `flac` tracks (id `414bfd285d27e8f649d7025bcaf3b793`). Per Plan Fork 4 and decision 35, AC13f is therefore claimable now, so this slice claims `§12.13f` and adds it to `covers:`, reversing the "not claimed" scope bullet and the AC13f acceptance line as originally drafted. The ALAC albums (Sleep Token, `m4a`) remain for the plain ALAC direct-stream check. Recorded in the Drift Log.
 
 ## 5. Acceptance Criteria
 
-- [ ] AC12 — playing an album advances through the queue track to track; the lock screen (`MPNowPlayingInfoCenter`) shows art, title and artist; the remote's next command skips to the following track.
-- [ ] AC13 — backgrounding the iOS app during playback keeps music playing, verified with the `AVAudioSession .playback` category and the Background Modes audio capability in place.
-- [ ] While an ALAC album plays, `./scripts/jf-probe.swift /Sessions` (decision 47) shows a session with `NowPlayingItem` set, `PlayMethod: DirectPlay` and no `TranscodingInfo` — all 46 tracks in the library are `m4a`/`alac`, so this is demonstrable with existing data. A `Transcode` here is the decision 43 regression, not a pass.
-- [ ] AC13f is **not claimed by this slice**. It needs a FLAC album, which does not exist in the library per decision 35; the checklist's unknown-triage row names slice 009 as the natural owner once the album is added, but that is a future slice's claim, not this one's.
-- [ ] AC11 is likewise not claimed here or anywhere — no series/episode data exists (decision 14); unrelated to music, noted only so its absence from this list is not read as an oversight.
-- [ ] `.service` suite in `MixtapeServicesTests` proves the §1.1 invariants: `next()` past the final track stops rather than advancing; calling `play(album:tracks:startingAt:)` a second time replaces the queue rather than appending; `finishedAlbumID` is set exactly once at end-of-album and cleared by `acknowledgeFinish()`; `previous()` restarts the current track above 3 s and steps back below it; the next-track remote command is disabled on the final track.
-- [ ] The same suite proves the decision-34 reporting cases: reporting introduces no cross-album behaviour — the queue is still exactly one album after a full album plays with reporting enabled; no report fires for a track that was never played; `finishedAlbumID` still fires exactly once with reporting enabled; a stopped report is sent for the final track.
-- [ ] `xcodebuild build` and `xcodebuild test -skip-testing:iOSUITests` / `-skip-testing:tvOSUITests` are green for both the `iOS` and `tvOS` schemes — tvOS has no mini player and no wallet, but its album grid still plays music through the same `MusicPlayerService`.
-- [ ] `./scripts/check-layer-imports.sh` exits 0.
-- [ ] `swiftformat --lint .` is clean.
+- [x] AC12 — playing an album advances through the queue track to track: the now-playing Forward button (and the `MPRemoteCommandCenter.nextTrackCommand` wired to the same path) skipped "Look To Windward" → "Emergence", the mini player and `NowPlayingScreen` showed art, title and artist, and `MPNowPlayingInfoCenter` carries the same metadata. **Manual, 2026-09-03.**
+- [x] AC13 — backgrounding the iOS app during playback kept music playing: with `AVAudioSession .playback` and the Background Modes audio capability in place, the app was sent to the home screen while `/Sessions` continued to show the track playing (`DirectPlay`). **Manual, 2026-09-03.**
+- [x] While an ALAC album ("Even In Arcadia", Sleep Token, `m4a`/alac) plays, `/Sessions` showed `NowPlayingItem` set, `PlayMethod: DirectPlay` and **no `TranscodingInfo`** — the decision 43 regression check passes (no bitrate cap, no transcode). **Manual, 2026-09-03.**
+- [x] AC13f — **claimed** (drift: the FLAC album now exists). The FLAC album "King Of Terrors" (President, 6 `flac` tracks) played with `PlayMethod: DirectPlay` and no `TranscodingInfo`. **Manual, 2026-09-03.**
+- [ ] AC11 is not claimed here or anywhere — no series/episode data exists (decision 14); unrelated to music, noted only so its absence is not read as an oversight.
+- [x] `.service` suite in `MixtapeServicesTests` proves the §1.1 invariants: `next()` past the final track stops rather than advancing; `play(album:tracks:startingAt:)` a second time replaces the queue; `finishedAlbumID` is set exactly once at end-of-album and cleared by `acknowledgeFinish()`; `previous()` restarts above 3 s and steps back below; the next-track command is disabled on the final track.
+- [x] The same suite proves the decision-34 reporting cases: each track reports a start and the previous a stop, the queue stays exactly one album after a full play, no report fires for a track never played, and nothing plays without a signed-in session.
+- [x] `xcodebuild build` and `xcodebuild test` (UI bundles skipped) are green for both schemes — tvOS builds and its album grid plays music through the same `MusicPlayerService`. Gate expected executed-test count per scheme: **152** (138 from slice 008 plus 14: 1 `isNativeAudioContainer` parameterised, 2 `BuildAudioStreamURLUseCase`, 2 `JellyfinAudioStream`, 9 `MusicPlayerService`). Verified 2026-09-03 via `./scripts/gate.sh 152`.
+- [x] `./scripts/check-layer-imports.sh` exits 0.
+- [x] `swiftformat --lint .` is clean.
 
 ## 6. Decision Log
 
@@ -98,6 +98,8 @@ For **each id in `depends_on`**, in order — don't summarise, walk the list:
 | 2026-09-03 | The audio stream URL carries `ApiKey` in the query string (decision 42, cited not re-argued) | The `Authorization` header via `AVAssetResourceLoaderDelegate`; the private `AVURLAssetHTTPHeaderFieldsKey` | S002 measured that under header auth the HLS child URI carries no token, so every child and segment would need the custom-scheme loader; under `ApiKey` the server propagates the token and AVPlayer fetches natively. Decision 42 closes decision 33 and forbids the private key |
 | 2026-09-03 | No bitrate cap on the universal URL (decision 43, cited not re-argued) | The engineering doc §8's 320 kbps cap; a 140 Mbps safety valve | 320 kbps transcodes every ALAC and FLAC track, breaking AC13f and `CLAUDE.md`'s music-transcode-is-a-diagnostic rule; the container list already constrains the server, and an arbitrary cap's reason would not survive six months |
 | 2026-09-03 | AC13f is left unclaimed this slice; the FLAC album's absence is recorded, not worked around | Substituting an ALAC album and recording AC13f as satisfied (rejected in decision 35: it would claim a criterion demonstrated with other data) | Decision 35 states the same rule decision 14 applies to criterion 11: until the data exists, no slice may claim it |
+| 2026-09-03 | AC13f is **claimed by this slice** — the FLAC album decision 35 required ("King Of Terrors", President, 6 `flac` tracks) has since been added to the library. `§12.13f` is added to `covers:`. | Leaving AC13f unclaimed as the slice was first drafted (correct only while no FLAC existed) | Plan Fork 4 and decision 35 say 009 re-opens and claims AC13f once the album lands; it has. Demonstrated: the FLAC album plays with `PlayMethod: DirectPlay` and no `TranscodingInfo`, confirming decision 43 (no bitrate cap) keeps FLAC off the transcoder. |
+| 2026-09-03 | `AudioPlayerController.makeArtwork` builds the `MPMediaItemArtwork` in a **`nonisolated static`** helper, so its request handler is not MainActor-isolated. | Building the artwork inline in `updateNowPlaying` | Found live: the inline form crashed the app with `SIGTRAP` on Play — the system calls the artwork request handler off the main thread, and under decision 15's MainActor default the closure was main-isolated and trapped, the same class of trap decision 44 records for VLC. Reproduced (app exited `signal SIGTRAP` on every Play), fixed, and re-verified (music plays, mini player and now-playing show art). |
 
 ## 7. Sub-Slices
 
@@ -129,11 +131,11 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met (AC13f claimed after the FLAC album landed; AC11 remains unclaimable per decision 14)
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice` `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page `next_slice` and that page `previous_slice`

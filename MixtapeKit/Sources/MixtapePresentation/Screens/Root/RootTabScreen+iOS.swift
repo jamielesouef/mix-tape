@@ -31,6 +31,9 @@
                     .accessibilityIdentifier(RootTabIdentifiers.settingsTab)
                 }
             }
+            .tabViewBottomAccessory {
+                MiniPlayer()
+            }
         }
     }
 
