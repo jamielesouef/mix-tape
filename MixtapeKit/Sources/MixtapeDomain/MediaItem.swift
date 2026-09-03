@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public nonisolated struct MediaItem: Sendable, Identifiable, Equatable {
+public nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
     public let id: String
     public let name: String
     public let kind: MediaKind
@@ -21,9 +21,11 @@ public nonisolated struct MediaItem: Sendable, Identifiable, Equatable {
     public let backdropImageTag: String?
     /// Album art inherited by tracks (decision 25: a track's own tags are empty).
     public let parentPrimaryImageTag: String?
+    /// The album a track belongs to; the item id its art is fetched against (decision 25).
+    public let albumID: String?
     public let playback: PlaybackState
 
-    public init(id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?, indexNumber: Int?, parentIndexNumber: Int?, seriesName: String?, albumArtist: String?, primaryImageTag: String?, backdropImageTag: String?, parentPrimaryImageTag: String?, playback: PlaybackState) {
+    public init(id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?, indexNumber: Int?, parentIndexNumber: Int?, seriesName: String?, albumArtist: String?, primaryImageTag: String?, backdropImageTag: String?, parentPrimaryImageTag: String?, albumID: String? = nil, playback: PlaybackState) {
         self.id = id
         self.name = name
         self.kind = kind
@@ -37,6 +39,7 @@ public nonisolated struct MediaItem: Sendable, Identifiable, Equatable {
         self.primaryImageTag = primaryImageTag
         self.backdropImageTag = backdropImageTag
         self.parentPrimaryImageTag = parentPrimaryImageTag
+        self.albumID = albumID
         self.playback = playback
     }
 }

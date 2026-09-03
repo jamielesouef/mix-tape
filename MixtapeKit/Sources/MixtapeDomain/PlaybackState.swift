@@ -6,7 +6,7 @@
 
 /// Server-reported playback state for an item. `isWatched` is the server's `UserData.Played`
 /// as mapped (decision 8); the 0.9 rule lives in `reachesWatchedThreshold` for reporting time.
-public nonisolated struct PlaybackState: Sendable, Equatable {
+public nonisolated struct PlaybackState: Sendable, Hashable {
     public let position: Duration
     public let isWatched: Bool
 

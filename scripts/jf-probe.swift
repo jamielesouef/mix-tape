@@ -5,7 +5,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 //  Server-observable acceptance checks go through this script (SPEC-DECISIONS.md
-//  decision 47). Usage: ./scripts/jf-probe.swift /Sessions
+//  decision 47). Usage: ./scripts/jf-probe.swift [METHOD] /Sessions [json-body]
 //  Reads JELLYFIN_BASE_URL and JELLYFIN_API_KEY from the gitignored
 //  .jellyfin-dev.env at the repository root (decision 45). Prints the HTTP status
 //  on the first line and the response body after it. Never prints the token.
@@ -14,12 +14,17 @@ import Foundation
 
 var arguments = CommandLine.arguments
 var method = "GET"
-if arguments.count == 3 {
+var body: String?
+if arguments.count >= 3, arguments[1].uppercased() == arguments[1] {
     method = arguments.remove(at: 1).uppercased()
 }
 
+if arguments.count == 3 {
+    body = arguments.remove(at: 2)
+}
+
 guard arguments.count == 2 else {
-    print("usage: jf-probe.swift [METHOD] </server/path?query>")
+    print("usage: jf-probe.swift [METHOD] </server/path?query> [json-body]")
     exit(2)
 }
 
@@ -60,6 +65,10 @@ guard let url = URL(string: baseURL + arguments[1]) else {
 var request = URLRequest(url: url)
 request.httpMethod = method
 request.setValue(token, forHTTPHeaderField: "X-Emby-Token")
+if let body {
+    request.httpBody = Data(body.utf8)
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+}
 
 let task = URLSession.shared.dataTask(with: request) { data, response, error in
     if let error {

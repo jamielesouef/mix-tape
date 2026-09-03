@@ -67,6 +67,7 @@ let package = Package(
         .testTarget(
             name: "MixtapeDataTests",
             dependencies: ["MixtapeData", "MixtapeInfrastructure", "MixtapeUseCase", "MixtapeDomain"],
+            resources: [.process("Fixtures")],
         ),
     ],
 )

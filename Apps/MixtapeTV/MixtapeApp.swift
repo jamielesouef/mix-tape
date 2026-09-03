@@ -15,6 +15,9 @@ struct MixtapeApp: App {
         WindowGroup {
             RootScreen()
                 .environment(\.sessionService, container.sessionService)
+                .environment(\.libraryService, container.libraryService)
+                .environment(\.seriesService, container.seriesService)
+                .environment(\.imageService, container.imageService)
         }
     }
 }

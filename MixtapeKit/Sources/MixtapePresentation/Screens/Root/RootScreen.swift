@@ -7,8 +7,7 @@
 import MixtapeServices
 import SwiftUI
 
-/// Switches on `SessionService.state`. `.signedIn` shows `SettingsScreen` until 005 delivers
-/// `RootTabScreen` (fork F2).
+/// Switches on `SessionService.state` (engineering doc §10): splash, the sign-in flow, or the tabs.
 public struct RootScreen: View {
     @Environment(\.sessionService) private var sessionService
 
@@ -22,7 +21,7 @@ public struct RootScreen: View {
             case .signedOut:
                 SignInFlow()
             case .signedIn:
-                SettingsScreen()
+                RootTabScreen()
             }
         }
         .task {
@@ -42,5 +41,7 @@ public struct RootScreen: View {
 }
 
 #Preview("signed in") {
-    RootScreen().environment(\.sessionService, MockSessionService.signedIn())
+    RootScreen()
+        .environment(\.sessionService, MockSessionService.signedIn())
+        .environment(\.libraryService, MockLibraryService.loaded())
 }

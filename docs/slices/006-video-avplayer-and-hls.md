@@ -5,7 +5,7 @@ priority: P0
 complexity: L
 ladder: "AVPlayer path v1 of 2 — the direct-VLC path is slice 007, shared seam: the `VideoPlayerControlling` protocol (defined here, in `MixtapeInfrastructure`) and the `PlaybackMethod.directVLC` case this slice's use case already resolves to but does not yet play"
 depends_on:
-  - { id: "005", type: hard, note: "needs MovieDetailScreen (Play button wired here), RootTabScreen, AppContainer and the @Entry wiring, and LibraryService for item detail" }
+  - { id: "005", type: hard, note: "as shipped: MovieDetailScreen(item:) renders inert Play/Resume buttons and reads LibraryService.details[item.id] filled by loadDetail(id:); RootTabScreen is the signed-in root; AppContainer builds LibraryService, SeriesService and ImageService with @Entry keys libraryService, seriesService, imageService; services take SessionService by constructor and call handleSessionExpiry() on .sessionExpired; MediaItem gained albumID and Hashable, LoadState and Page gained Equatable; MockMedia in MixtapeServices exposes preview sample data" }
   - { id: "S002", type: hard, note: "measured that /Videos/{itemId}/stream is anonymous on 10.11.11 and that ApiKey in the query plays on AVPlayer; decision 42 chose ApiKey on that evidence and closed decision 33. This slice's stream URL is built on that decision" }
 previous_slice: "005"
 next_slice: "007"

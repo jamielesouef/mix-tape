@@ -10,3 +10,5 @@ public nonisolated enum LoadState<Value: Sendable>: Sendable {
     case loaded(Value)
     case failed(MixtapeError)
 }
+
+extension LoadState: Equatable where Value: Equatable {}

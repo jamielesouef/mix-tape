@@ -15,3 +15,5 @@ public nonisolated struct Page<Element: Sendable>: Sendable {
         self.startIndex = startIndex
     }
 }
+
+extension Page: Equatable where Element: Equatable {}

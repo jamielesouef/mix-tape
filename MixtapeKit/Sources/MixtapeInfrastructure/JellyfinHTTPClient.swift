@@ -126,9 +126,12 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
         }
     }
 
+    /// Sorted keys so a request body is byte-for-byte deterministic; the server does not care and tests can compare it.
     private func encode(_ body: some Encodable) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
         do {
-            return try JSONEncoder().encode(body)
+            return try encoder.encode(body)
         } catch {
             throw MixtapeError.decoding
         }

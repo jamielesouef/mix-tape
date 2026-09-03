@@ -17,6 +17,9 @@ import MixtapeUseCase
 @MainActor
 struct AppContainer {
     let sessionService: SessionService
+    let libraryService: LibraryService
+    let seriesService: SeriesService
+    let imageService: ImageService
 
     init() {
         let configuration = URLSessionConfiguration.default
@@ -39,5 +42,21 @@ struct AppContainer {
             restoreSession: RestoreSessionUseCase(store: sessionStore),
             signOut: SignOutUseCase(store: sessionStore),
         )
+
+        let libraryRepository = JellyfinLibraryRepository(client: client, appVersion: appVersion)
+        libraryService = LibraryService(
+            fetchLibraries: FetchLibrariesUseCase(repository: libraryRepository),
+            fetchLibraryItems: FetchLibraryItemsUseCase(repository: libraryRepository),
+            fetchItemDetail: FetchItemDetailUseCase(repository: libraryRepository),
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository),
+            fetchContinueWatching: FetchContinueWatchingUseCase(repository: libraryRepository),
+            sessionService: sessionService,
+        )
+        seriesService = SeriesService(
+            fetchSeasons: FetchSeasonsUseCase(repository: libraryRepository),
+            fetchEpisodes: FetchEpisodesUseCase(repository: libraryRepository),
+            sessionService: sessionService,
+        )
+        imageService = ImageService(builder: JellyfinImageURLBuilder(), sessionService: sessionService)
     }
 }

@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public nonisolated struct Library: Sendable, Identifiable, Equatable {
+public nonisolated struct Library: Sendable, Identifiable, Hashable {
     public let id: String
     public let name: String
     public let kind: LibraryKind

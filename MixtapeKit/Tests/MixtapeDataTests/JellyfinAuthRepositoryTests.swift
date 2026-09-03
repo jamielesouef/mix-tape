@@ -53,7 +53,7 @@ struct JellyfinAuthRepositoryTests {
         let session = try await repository.authenticate(userName: "jamie", password: "pw", server: server)
         #expect(session == UserSession(serverURL: baseURL, userID: "user-1", userName: "jamie", accessToken: "tok-1", deviceID: "device-1"))
         #expect(stub.lastRequest?.url?.path() == "/Users/AuthenticateByName")
-        #expect(stub.lastBody() == #"{"Username":"jamie","Pw":"pw"}"#)
+        #expect(stub.lastBody() == #"{"Pw":"pw","Username":"jamie"}"#)
     }
 
     @Test func `authenticate without A token is A decoding error`() async {

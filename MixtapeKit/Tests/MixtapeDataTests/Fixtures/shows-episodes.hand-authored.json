@@ -1,0 +1,9 @@
+{
+  "_source": "Hand-authored from docs/jellyfin-openapi.json (BaseItemDtoQueryResult / BaseItemDto). The dev server holds 0 Episodes, so this is not a capture.",
+  "Items": [
+    {"Name": "Pilot", "Id": "episode-0001", "Type": "Episode", "Overview": "It begins.", "RunTimeTicks": 15000000000, "IndexNumber": 1, "ParentIndexNumber": 1, "SeriesName": "The Show", "SeriesId": "series-0001", "SeasonId": "season-0001", "ImageTags": {"Primary": "e1tag"}, "BackdropImageTags": [], "UserData": {"PlaybackPositionTicks": 6000000000, "Played": false, "PlayCount": 0, "IsFavorite": false, "Key": "k3", "ItemId": "episode-0001"}},
+    {"Name": "Second", "Id": "episode-0002", "Type": "Episode", "Overview": null, "RunTimeTicks": 15000000000, "IndexNumber": 2, "ParentIndexNumber": 1, "SeriesName": "The Show", "SeriesId": "series-0001", "SeasonId": "season-0001", "ImageTags": {}, "BackdropImageTags": [], "UserData": {"PlaybackPositionTicks": 0, "Played": true, "PlayCount": 1, "IsFavorite": false, "Key": "k4", "ItemId": "episode-0002"}}
+  ],
+  "TotalRecordCount": 2,
+  "StartIndex": 0
+}
