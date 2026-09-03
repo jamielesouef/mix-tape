@@ -4,21 +4,27 @@ Mix Tape's architecture follows the Swift MV template from the trimr project.
 
 ## Project structure
 
-Application source, unit tests, and UI tests are separated by platform:
+Superseded by engineering doc §3 — see `SPEC-DECISIONS.md`, decision 1. The layout is one local SPM package with six library targets, two thin app targets, and platform-split UI tests:
 
 ```text
-source/
-├── iOS/          # iOS application source and assets
-└── tvOS/         # tvOS application source and assets
-tests/
-├── iOS/          # iOS unit tests (Swift Testing)
-└── tvOS/         # tvOS unit tests (Swift Testing)
-uiTess/
+Apps/
+├── MixtapeiOS/   # App target: App.swift, Assets, Info.plist. Nothing else
+└── MixtapeTV/    # App target: App.swift, Assets, Info.plist. Nothing else
+MixtapeKit/
+├── Package.swift
+├── Sources/      # MixtapeDomain, MixtapeUseCase, MixtapeServices,
+│                 # MixtapeInfrastructure, MixtapeData, MixtapePresentation
+└── Tests/        # MixtapeDomainTests, MixtapeUseCaseTests,
+                  # MixtapeServicesTests, MixtapeDataTests
+uiTests/
 ├── iOS/          # iOS UI tests (XCUITest)
 └── tvOS/         # tvOS UI tests (XCUITest)
+scripts/check-layer-imports.sh
 ```
 
-The UI test directory is named `uiTess/` in this repository. Place new files in the appropriate platform directory. The layer and feature organization below applies within each platform's source directory; `AppDomain`, `AppServices`, and the other `App*` names describe the architectural layers, not top-level repository paths.
+The layers are SPM targets, not folders inside an app target — `Package.swift` declares the dependency edges and the compiler enforces them. Unit tests live in `MixtapeKit/Tests/` beside the targets they cover. UI tests stay platform-split at the repository root, since XCUITest bundles belong to app targets rather than to the package.
+
+The layer and feature organisation below applies inside each source target. `AppDomain`, `AppServices` and the other `App*` names in this document are the generic template's names for those layers; this project spells them `Mixtape*`.
 
 ## Core rule
 
@@ -126,8 +132,8 @@ struct AppRoot: App {
 
 ## Testing
 
-- Keep iOS unit tests in `tests/iOS/` and tvOS unit tests in `tests/tvOS/`.
-- Keep iOS UI tests in `uiTess/iOS/` and tvOS UI tests in `uiTess/tvOS/`.
+- Keep unit tests in `MixtapeKit/Tests/<Target>Tests/`, beside the target they cover.
+- Keep iOS UI tests in `uiTests/iOS/` and tvOS UI tests in `uiTests/tvOS/`.
 - Swift Testing only (`@Test`, `@Suite`) for unit tests.
 - Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 - Test behaviour, not the mock's plumbing.

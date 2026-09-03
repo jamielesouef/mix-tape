@@ -5,8 +5,14 @@ report progress back.
 
 `docs/engineering-doc.md` is the source of truth. Appendix A in it is the
 architecture template. `docs/jellyfin-openapi.json` (Jellyfin 10.11.11, OpenAPI
-3.0.1) is the API contract. When this file and the engineering doc disagree, the
-engineering doc wins.
+3.0.1) is the API contract.
+
+Precedence, highest first: **`SPEC-DECISIONS.md`**, then the engineering doc,
+then `docs/architecture.md`, then this file. Read `SPEC-DECISIONS.md` before
+acting on a layout, naming or platform-target question — it records answers that
+contradict what the older docs say. If you find two docs disagreeing and
+`SPEC-DECISIONS.md` is silent, stop and say so rather than picking the reading
+that makes the task easier.
 
 ## Target
 
@@ -87,11 +93,21 @@ container, no service locator, no `.shared`.
 
 ## Testing
 
-Swift Testing (`@Test`, `@Suite`) for unit tests. XCTest only for XCUITest.
+Swift Testing (`@Test`, `@Suite`) — never XCTest.
 Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 Test behaviour, not the mock's plumbing. Inject a clock; never sleep.
 Repositories are tested against a stubbed `URLProtocol` — never a live server.
-XCUITest drives off accessibility identifiers, never visible text.
+
+**No XCUITest this round.** The `iOSUITests` and `tvOSUITests` targets stay
+wired up and their stub files stay in place, but no UI test is written and none
+runs in a gate. Do not add one, and do not "temporarily" enable the targets to
+check something.
+
+Accessibility identifiers are **still required** on every screen, per
+engineering doc §9 — they are what makes the deferred UI tests writable, and
+retrofitting them across a finished app is far more work than writing them
+beside the view. The accessibility pass and the Reduce Transparency pass both
+remain in scope.
 
 ## The development server
 
@@ -111,14 +127,26 @@ Only the 15 capabilities in engineering doc §1 are in scope. Everything in
 "Out of scope for V1" is not to be built, and gets no abstraction, no protocol
 method, and no TODO.
 
+Deferred beyond that, this round only: **XCUITest** and CI. Both are coming
+back, so leave their seams intact — accessibility identifiers for the first,
+gate commands that a workflow can call for the second. Do not build either.
+
 ## Slice gate criteria
 
 A slice is done only when all of the following hold. Do not start the next slice
 until they do.
 
 1. `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
-2. `xcodebuild test` passes for both schemes — new tests included, none skipped,
-   none commented out.
+2. `xcodebuild test` passes for both schemes, unit tests only — new tests
+   included, none skipped, none commented out:
+
+   ```
+   -skip-testing:iOSUITests      # iOS scheme
+   -skip-testing:tvOSUITests     # tvOS scheme
+   ```
+
+   Skipping the UI bundles is the *only* permitted exclusion. Skipping a unit
+   test is never a way to pass this gate.
 3. `./scripts/check-layer-imports.sh` exits 0. **Slice 1 creates this script**
    (engineering doc §13 step 1); until it exists, slice 1 is the only slice that
    may run, and creating it is part of slice 1's outcome.

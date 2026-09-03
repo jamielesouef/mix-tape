@@ -61,6 +61,22 @@ git commit -m "Phase 0: build workspace, lean CLAUDE.md, remove CI"
 
 ---
 
+## Resolved before Phase 1 — see SPEC-DECISIONS.md
+
+All open questions are answered and recorded: layout is engineering doc §3
+(`Apps/` + `MixtapeKit/`), tvOS deployment target is 26.0, the UI test directory
+is `uiTests/`, and XCUITest is deferred to a later round with accessibility
+identifiers and both passes kept in scope. `docs/architecture.md` was rewritten
+where it contradicted those, since the repo's precedence rules would otherwise
+have let the stale section outrank the engineering doc.
+
+Two things are deferred and will come back — **XCUITest** and **CI**. Both are
+recorded as deferrals with their seams named, not as scope cuts.
+
+The list below is kept for the record; nothing on it is still open.
+
+---
+
 ## Things for the Phase 1 spec audit to rank
 
 Not blockers, but they are contradictions in the spec set and the audit should
