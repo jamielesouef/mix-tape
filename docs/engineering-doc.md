@@ -749,7 +749,7 @@ Never test a repository against a real Jellyfin instance in CI.
 
 ## 12. Acceptance criteria
 
-1. Entering `192.168.1.10:8096` with no scheme resolves and connects.
+1. Entering `localhost:8096` with no scheme resolves and connects.
 2. Wrong password shows an inline error and does not clear the username field.
 3. Quick Connect on tvOS: code appears, approving in Jellyfin Web signs the app in within 10 s.
 4. Force-quit and relaunch lands directly on Home — no sign-in prompt.
@@ -945,3 +945,4 @@ Jellyfin's own OpenAPI spec is served by every instance at `{base}/api-docs/swag
 - [DeviceProfile reference](https://typescript-sdk.jellyfin.org/interfaces/generated-client.DeviceProfile.html)
 - [PlaybackInfoResponse reference](https://typescript-sdk.jellyfin.org/interfaces/generated-client.PlaybackInfoResponse.html)
 - [Jellyfin video playback walkthrough](https://gist.github.com/kylehowells/74f538c766a244a3666319860a937030)
+

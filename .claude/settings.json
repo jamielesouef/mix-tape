@@ -1,0 +1,19 @@
+{
+  "model": "fable",
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
+  "subagentPromptCacheTtl": "1h",
+  "workflowSizeGuideline": "large",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(swift build*)",
+      "Bash(swift test*)",
+      "Bash(xcodebuild *)",
+      "Bash(git *)"
+    ]
+  }
+}
