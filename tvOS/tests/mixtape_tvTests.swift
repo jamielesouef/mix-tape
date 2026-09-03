@@ -1,0 +1,19 @@
+//
+//  mixtape_tvTests.swift
+//  mixtape.tvTests
+//
+//  Created by Jamie Le Souef on 3/9/2026.
+//
+
+import Testing
+@testable import mixtape_tv
+
+struct mixtape_tvTests {
+
+    @Test func example() async throws {
+        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+        // Swift Testing Documentation
+        // https://developer.apple.com/documentation/testing
+    }
+
+}
