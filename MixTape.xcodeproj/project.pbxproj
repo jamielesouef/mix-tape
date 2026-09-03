@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		37DF3C9EC57CFA531043BCDD /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E75168AE26D45AAA6609D96 /* Foundation.framework */; };
 		4A71723935982B7E51279C49 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E75168AE26D45AAA6609D96 /* Foundation.framework */; };
-		7B49B3FFE47B778F7531EF38 /* MixTapeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6534BF7416A2D80385E1A71F /* MixTapeApp.swift */; };
-		A80362172C4BCD6B7460998E /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 6C4FFBE169630005A157B2AA /* Shared */; };
 		BE7C4A1D03A8F02F937840A7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2C3140A472E3A0835DF80417 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -48,7 +46,6 @@
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C3140A472E3A0835DF80417 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		6534BF7416A2D80385E1A71F /* MixTapeApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MixTapeApp.swift; sourceTree = "<group>"; };
 		698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = mixtape.entitlements; sourceTree = "<group>"; };
 		8E75168AE26D45AAA6609D96 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		CD253DCA4821B7C7D9FA50DD /* iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -59,26 +56,54 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D9916F273048EEF4005E88CA /* Exceptions for "tvOS" folder in "tvOS" target */ = {
+		D9916F5430490179005E88CA /* Exceptions for "source" folder in "iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				source/Assets.xcassets,
-				source/ContentView.swift,
-				source/mixtape_tvApp.swift,
+				iOS/Assets.xcassets,
+				iOS/ContentView.swift,
+				iOS/mixtapeApp.swift,
+				tvOS/Assets.xcassets,
+				tvOS/ContentView.swift,
+				tvOS/mixtape_tvApp.swift,
+			);
+			target = 000000000000000100000000 /* iOS */;
+		};
+		D9916F5530490179005E88CA /* Exceptions for "source" folder in "tvOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				tvOS/Assets.xcassets,
+				tvOS/ContentView.swift,
+				tvOS/mixtape_tvApp.swift,
 			);
 			target = D9916EF43048EEED005E88CA /* tvOS */;
 		};
-		D9916F283048EEF4005E88CA /* Exceptions for "tvOS" folder in "tvOSTests" target */ = {
+		D9916F6130490180005E88CA /* Exceptions for "tests" folder in "iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				tests/mixtape_tvTests.swift,
+				iOS/mixtapeTests.swift,
+				tvOS/mixtape_tvTests.swift,
+			);
+			target = 000000000000000100000000 /* iOS */;
+		};
+		D9916F6230490190005E88CA /* Exceptions for "uiTess" folder in "iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				iOS/mixtapeUITests.swift,
+				tvOS/mixtape_tvUITests.swift,
+			);
+			target = 000000000000000100000000 /* iOS */;
+		};
+		D9916F63304901A9005E88CA /* Exceptions for "tests" folder in "tvOSTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				tvOS/mixtape_tvTests.swift,
 			);
 			target = D9916F003048EEEE005E88CA /* tvOSTests */;
 		};
-		D9916F293048EEF4005E88CA /* Exceptions for "tvOS" folder in "tvOSUITests" target */ = {
+		D9916F64304901AF005E88CA /* Exceptions for "uiTess" folder in "tvOSUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				uiTests/mixtape_tvUITests.swift,
+				tvOS/mixtape_tvUITests.swift,
 			);
 			target = D9916F0A3048EEEE005E88CA /* tvOSUITests */;
 		};
@@ -90,19 +115,31 @@
 			path = MixTapeUITests;
 			sourceTree = "<group>";
 		};
-		D9916EE63048EEA8005E88CA /* iOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = iOS;
-			sourceTree = "<group>";
-		};
-		D9916EE83048EEB7005E88CA /* tvOS */ = {
+		D9916F433049011D005E88CA /* source */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D9916F273048EEF4005E88CA /* Exceptions for "tvOS" folder in "tvOS" target */,
-				D9916F283048EEF4005E88CA /* Exceptions for "tvOS" folder in "tvOSTests" target */,
-				D9916F293048EEF4005E88CA /* Exceptions for "tvOS" folder in "tvOSUITests" target */,
+				D9916F5430490179005E88CA /* Exceptions for "source" folder in "iOS" target */,
+				D9916F5530490179005E88CA /* Exceptions for "source" folder in "tvOS" target */,
 			);
-			path = tvOS;
+			path = source;
+			sourceTree = "<group>";
+		};
+		D9916F4430490161005E88CA /* tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D9916F6130490180005E88CA /* Exceptions for "tests" folder in "iOS" target */,
+				D9916F63304901A9005E88CA /* Exceptions for "tests" folder in "tvOSTests" target */,
+			);
+			path = tests;
+			sourceTree = "<group>";
+		};
+		D9916F4530490169005E88CA /* uiTess */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D9916F6230490190005E88CA /* Exceptions for "uiTess" folder in "iOS" target */,
+				D9916F64304901AF005E88CA /* Exceptions for "uiTess" folder in "tvOSUITests" target */,
+			);
+			path = uiTess;
 			sourceTree = "<group>";
 		};
 		EBC3EF2C8E2F9B740B5056FF /* MixTapeTests */ = {
@@ -117,7 +154,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A80362172C4BCD6B7460998E /* Shared in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,10 +200,10 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				D9916EE83048EEB7005E88CA /* tvOS */,
-				D9916EE63048EEA8005E88CA /* iOS */,
+				D9916F4530490169005E88CA /* uiTess */,
+				D9916F4430490161005E88CA /* tests */,
+				D9916F433049011D005E88CA /* source */,
 				000000000000000000000020 /* Products */,
-				6534BF7416A2D80385E1A71F /* MixTapeApp.swift */,
 				2C3140A472E3A0835DF80417 /* Assets.xcassets */,
 				698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */,
 				B394716148F03B9EE388BDF7 /* Frameworks */,
@@ -229,9 +265,13 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				D9916F433049011D005E88CA /* source */,
+				D9916F4430490161005E88CA /* tests */,
+				D9916F4530490169005E88CA /* uiTess */,
+			);
 			name = iOS;
 			packageProductDependencies = (
-				6C4FFBE169630005A157B2AA /* Shared */,
 			);
 			productName = MixTape;
 			productReference = 000000000000000000000120 /* iOS.app */;
@@ -381,7 +421,6 @@
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				9AB7612BDCAB5F25F0405F2D /* XCLocalSwiftPackageReference "../Shared" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -471,7 +510,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7B49B3FFE47B778F7531EF38 /* MixTapeApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1066,21 +1104,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCLocalSwiftPackageReference section */
-		9AB7612BDCAB5F25F0405F2D /* XCLocalSwiftPackageReference "../Shared" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../Shared;
-		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		6C4FFBE169630005A157B2AA /* Shared */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9AB7612BDCAB5F25F0405F2D /* XCLocalSwiftPackageReference "../Shared" */;
-			productName = Shared;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }
