@@ -6,7 +6,7 @@ complexity: M
 ladder: none
 depends_on:
   - { id: "006", type: hard, note: "needs PlaybackPlan.playMethod, ResolveVideoPlaybackUseCase and VideoPlaybackService's play/stop lifecycle to hang reporting off" }
-  - { id: "007", type: hard, note: "AC9 is demonstrated on the F1 mkv, which only plays via the .directVLC branch 007 wires in" }
+  - { id: "007", type: hard, note: "as shipped: VLCPlayerController conforms to VideoPlayerControlling and is selected by AppContainer for .directVLC; VideoPlaybackService drives both players through the same interface and already sends the start report on play (decision 37). 008 adds progress/stopped reports and resume; note the 006 Drift Log finding that /Sessions PlayState.PlayMethod reads DirectPlay even during transcode on 10.11.11, so gate on TranscodingInfo, not PlayMethod" }
 previous_slice: "007"
 next_slice: "009"
 parent_slice: none

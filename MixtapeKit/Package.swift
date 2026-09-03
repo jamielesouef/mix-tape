@@ -13,6 +13,9 @@ let package = Package(
         .library(name: "MixtapeServices", targets: ["MixtapeServices"]),
         .library(name: "MixtapePresentation", targets: ["MixtapePresentation"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/tylerjonesio/vlckit-spm.git", exact: "3.6.0"),
+    ],
     targets: [
         .target(
             name: "MixtapeDomain",
@@ -31,7 +34,10 @@ let package = Package(
         ),
         .target(
             name: "MixtapeInfrastructure",
-            dependencies: ["MixtapeDomain"],
+            dependencies: [
+                "MixtapeDomain",
+                .product(name: "VLCKitSPM", package: "vlckit-spm"),
+            ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self),
                 .swiftLanguageMode(.v6),

@@ -56,35 +56,35 @@ No fork against the plan is taken in this slice; every departure from the engine
 Complete **before the first line of code**, not at close.
 
 **006 — Video: AVPlayer direct and HLS**
-- [ ] Opened it. Its decision log still says what this slice assumed: `VideoPlayerControlling` lives in `MixtapeInfrastructure` with `load(url:startAt:headers:)`, `play()`, `pause()`, `seek(to:)`, `teardown()`, `makeView() -> AnyView`; `VideoPlaybackService` selects its controller from `plan.method`; `ResolveVideoPlaybackUseCase` already resolves F1 to `.directVLC`; the `MixtapeServices` → `MixtapeInfrastructure` edge from decision 36 is in place.
-- [ ] Not a spike — n/a.
-- [ ] Its state matches what this slice assumed when drafted, not when it was written.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened it. Its decision log still says what this slice assumed: `VideoPlayerControlling` lives in `MixtapeInfrastructure` with `load(url:startAt:headers:)`, `play()`, `pause()`, `seek(to:)`, `teardown()`, `makeView() -> AnyView`; `VideoPlaybackService` selects its controller from `plan.method`; `ResolveVideoPlaybackUseCase` already resolves F1 to `.directVLC`; the `MixtapeServices` → `MixtapeInfrastructure` edge from decision 36 is in place.
+- [x] Not a spike — n/a.
+- [x] Its state matches what this slice assumed when drafted, not when it was written.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **S001 — Does VLCKit resolve as an SPM binary dependency with iOS 26 and tvOS 26 simulator slices and link into `MixtapeInfrastructure` under Swift 6 mode with MainActor default isolation?**
-- [ ] Opened it. Its decision log still says what this slice assumed.
-- [ ] It's answered, and the answer — not the hoped-for answer — is what this slice is built on. Note whether the fallback (vendored `binaryTarget(path:)`) was taken.
-- [ ] If S001 recorded no tvOS slice for VLCKit at all, that is a decision-level change (tvOS `.directVLC` has no player) that S001 itself sends back to the human rather than resolving — confirm it was actually resolved, one way or the other, before building on it here.
-- [ ] Its state matches what this slice assumed when drafted, not when it was written.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened it. Its decision log still says what this slice assumed.
+- [x] It's answered, and the answer — not the hoped-for answer — is what this slice is built on. Note whether the fallback (vendored `binaryTarget(path:)`) was taken.
+- [x] If S001 recorded no tvOS slice for VLCKit at all, that is a decision-level change (tvOS `.directVLC` has no player) that S001 itself sends back to the human rather than resolving — confirm it was actually resolved, one way or the other, before building on it here.
+- [x] Its state matches what this slice assumed when drafted, not when it was written.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **S002 — Can `AVPlayerController` and `VLCPlayerController` each send `Authorization: MediaBrowser …` on a stream request using public API only?**
-- [ ] Opened it. Its Result still records what this slice is built on: VLC plays a URL carrying `ApiKey` in the query; VLC's own HTTP access has no header option; the `avio://` route works but swaps HTTP stacks.
-- [ ] It's answered for the VLC player, and decision 42 — `ApiKey` in the query string for both players, header route rejected — is still the standing decision on that evidence.
-- [ ] Its state matches what this slice assumed when drafted: decision 33 is closed, so there is no per-player fallback left to note.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened it. Its Result still records what this slice is built on: VLC plays a URL carrying `ApiKey` in the query; VLC's own HTTP access has no header option; the `avio://` route works but swaps HTTP stacks.
+- [x] It's answered for the VLC player, and decision 42 — `ApiKey` in the query string for both players, header route rejected — is still the standing decision on that evidence.
+- [x] Its state matches what this slice assumed when drafted: decision 33 is closed, so there is no per-player fallback left to note.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
-**Drift found:** none.
+**Drift found:** none. S001 recorded the SPM route working on both iOS 26.5 and tvOS 26.5 simulators, so tvOS `.directVLC` has a player and the fallback branch of AC does not apply. The 005 env-file drift (the credentials file names a different user id from the account the app signs in as) carries here too, so AC7 matches the `/Sessions` entry by `Client` / `DeviceName`.
 
 ## 5. Acceptance Criteria
 
-- [ ] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes with the VLCKit dependency in place.
-- [ ] `xcodebuild test -skip-testing:iOSUITests` / `-skip-testing:tvOSUITests` is green for both schemes.
-- [ ] `./scripts/check-layer-imports.sh` exits 0, and a manual grep confirms `VLCPlayerController.swift` is the only file anywhere under `Sources/` that imports `MobileVLCKit` or `TVVLCKit` (no file imports a bare `VLCKit`; that module exists only in the macOS slice).
-- [ ] `swiftformat --lint .` is clean.
-- [ ] `MixtapeServicesTests`, `.service` tag: a `PlaybackPlan` with `method == .directVLC` causes `VideoPlaybackService` to select the VLC controller rather than the AVPlayer one, proven against a stub `VideoPlayerControlling` — not the real `VLCVideoView` — and the start report still fires once with `PlayMethod: DirectPlay`.
-- [ ] AC7: on the simulator, sign in, open F1 (`mkv`/h264/aac, 48.4 s), tap Play. It plays in-app through `VLCVideoView` with working play/pause, scrub and close on the custom overlay. `./scripts/jf-probe.swift /Sessions` against `http://localhost:8096` (decision 47) shows this device's session with `NowPlayingItem` set, `PlayMethod: DirectPlay`, and no `TranscodingInfo` — the start report from 006 (decision 37) makes the session visible, so an absent `NowPlayingItem` is a failure, not a pass. The criterion's literal `hevc/dts` wording is satisfied by F1's `mkv` container instead, per decision 14: `mkv` routes to VLC by container regardless of codec, and no `hevc/dts` file exists in the library.
-- [ ] If S001's answer left no working tvOS slice for VLCKit, the fallback S001 recorded is what this criterion and the tvOS build gate actually run against, and that is noted in Section 6 rather than silently assumed away.
+- [x] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes with the VLCKit dependency in place.
+- [x] `xcodebuild test -skip-testing:iOSUITests` / `-skip-testing:tvOSUITests` is green for both schemes. Gate expected executed-test count per scheme: **131** (130 from slice 006 plus one `VideoPlaybackService` `.directVLC` controller-selection case). Verified 2026-09-03 via `./scripts/gate.sh 131`.
+- [x] `./scripts/check-layer-imports.sh` exits 0, and a manual grep confirms `VLCPlayerController.swift` is the only file under `Sources/` that imports `MobileVLCKit` or `TVVLCKit` (no bare `import VLCKit`). Verified: `grep -rlE 'import (MobileVLCKit|TVVLCKit|VLCKit)' MixtapeKit/Sources` returns only `VLCPlayerController.swift`.
+- [x] `swiftformat --lint .` is clean.
+- [x] `MixtapeServicesTests` (`.service`): a `PlaybackPlan` with `method == .directVLC` makes `VideoPlaybackService` select the VLC controller, not the AVPlayer one, against a stub `VideoPlayerControlling`, and the start report still fires once with `PlayMethod: DirectPlay`.
+- [x] AC7: on the iPhone 17 Pro simulator, signed in, opened F1 (`mkv`/h264/aac, 48.4 s), tapped Play. It played in-app through the VLC surface with a working play/pause button, scrubber and Close on the custom overlay (Close returned to the detail screen). `/Sessions` showed this device with `NowPlayingItem: F1`, `PlayMethod: DirectPlay`, and **no `TranscodingInfo`** — direct play, no server transcode. The `hevc/dts` wording is satisfied by F1's `mkv` container per decision 14 (mkv routes to VLC by container). **Manual, 2026-09-03; no automated test touched the server.**
+- [x] S001 left a working tvOS slice for VLCKit (both simulators, decision 44), so the fallback branch of this criterion does not apply; the tvOS scheme builds and links against `TVVLCKit`.
 
 ## 6. Decision Log
 
@@ -98,6 +98,7 @@ Complete **before the first line of code**, not at close.
 | 2026-09-03 | `VLCPlayerController` presents its own hand-built overlay (play/pause, scrub, close) rather than a transport shared with `AVPlayerController`. See `SPEC-DECISIONS.md` decision 18. | One shared representable and overlay for both players, built against a raw `AVPlayerLayer` on the AVPlayer side to make the two symmetric. | Decision 18 keeps `AVPlayerController` on the native `VideoPlayer` transport (Picture in Picture and AirPlay free), and accepts that VLC — which has no equivalent SwiftUI transport — needs a custom overlay instead; `VideoPlayerControlling` still means Presentation only ever sees `AnyView`, so the asymmetry stops at the infrastructure layer. |
 | 2026-09-03 | The VLCKit dependency edge is added to `Package.swift` in this slice, not in slice 001. | Adding a placeholder or speculative VLCKit dependency in slice 001 ahead of S001's result, so the manifest would not need editing again here. | Slice 001's own decision log defers this edge to 007 pending S001, so slice 001 gates green with zero third-party dependencies; 007 is the first slice that actually needs VLCKit to compile, so it is the first slice that adds it. |
 | 2026-09-03 | VLCKit arrives as the community SPM package `tylerjonesio/vlckit-spm` pinned `exact: "3.6.0"`, product `VLCKitSPM`, and `VLCPlayerController.swift` imports `MobileVLCKit` / `TVVLCKit` behind `#if os(iOS)` / `#if os(tvOS)`. See S001's Result and decision 44. | A local `binaryTarget(path:)` vendoring the 778.7 MB xcframework (S001's pre-authorised fallback); building VLCKit from VideoLAN's source repo; the 4.0 alpha line. | S001 proved the SPM route resolves and links a real executable on both the iOS 26.5 and tvOS 26.5 simulators under decision 15's settings with zero warnings, so the fallback buys nothing and would put a 778.7 MB binary in the repo. VideoLAN publishes no `Package.swift` (checked `code.videolan.org/videolan/VLCKit` at tag `4.0.0a21`), so the community package is the only SPM coordinate. Pinned `exact` because the package's own platform floors (iOS 11, tvOS 11) and upstream re-tags give a range nothing to protect. |
+| 2026-09-03 | The `VLCLogging` conformer implements `level` as a **nonisolated computed property** (`{ get { .warning } set {} }`), not a stored `var`, because `nonisolated` cannot apply to a mutable stored property under decision 15's MainActor default. The public `VLCVideoView` is only forward-declared in the shipped headers, so the player draws into a plain `UIView` set as `drawable`. On tvOS the overlay shows a read-only `ProgressView` because `Slider` is unavailable there (the interactive Siri Remote scrub is slice 011). | A stored `nonisolated var level` (does not compile); constructing `VLCVideoView` directly (unavailable — forward-declared only); a `Slider` on tvOS (unavailable) | Found while building. Without the nonisolated logger the app `SIGTRAP`s exactly as S002/decision 44 predicted — reproduced live (the app crashed to the home screen on Play until `level` was made nonisolated), then fixed and re-verified. |
 
 ## 7. Sub-Slices
 
@@ -126,11 +127,11 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice` `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page `next_slice` and that page `previous_slice`

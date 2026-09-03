@@ -24,7 +24,7 @@ Ordered by delivery sequence — the same order as the linked list.
 | 004 | Sign in — checkpoint: you can sign in | P0 | L | adw-run | Done | [004](004-sign-in.md) |
 | 005 | Browse — checkpoint: you can browse | P0 | L | adw-run | Done | [005](005-browse.md) |
 | 006 | Video: AVPlayer direct and HLS | P0 | L | adw-run | Done | [006](006-video-avplayer-and-hls.md) |
-| 007 | Video: VLC direct | P0 | M | adw-run | Not started | [007](007-video-vlc.md) |
+| 007 | Video: VLC direct | P0 | M | adw-run | Done | [007](007-video-vlc.md) |
 | 008 | Playback reporting and resume | P0 | M | adw-run | Not started | [008](008-playback-reporting-and-resume.md) |
 | 009 | Music playback — checkpoint: music plays, one album at a time | P1 | L | adw-run | Not started | [009](009-music-playback.md) |
 | 010 | The Wallet | P1 | L | adw-run | Not started | [010](010-wallet.md) |

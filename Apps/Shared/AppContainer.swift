@@ -68,7 +68,7 @@ struct AppContainer {
             makeController: { method in
                 switch method {
                 case .directAVPlayer, .transcodeHLS: AVPlayerController()
-                case .directVLC: nil // VLCPlayerController lands in slice 007
+                case .directVLC: VLCPlayerController()
                 }
             },
         )

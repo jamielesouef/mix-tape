@@ -122,4 +122,25 @@ struct VideoPlaybackServiceTests {
         }
         #expect(service.status == .idle)
     }
+
+    @Test func `a directVLC plan selects the VLC controller and still reports the start once`() async {
+        let recorder = Recorder()
+        let avPlayer = StubVideoPlayerController()
+        let vlc = StubVideoPlayerController()
+        let repository = MockPlaybackRepository(
+            resolveVideoResult: { _, _, _ in
+                VideoSourceResolution(playSessionID: "psid", sources: [
+                    MediaSourceCandidate(id: "s", container: "mkv", videoCodec: "h264", audioCodec: "aac", supportsDirectPlay: true, supportsDirectStream: true, transcodingUrl: nil, runTimeTicks: 484_050_000),
+                ])
+            },
+            reportStartResult: { report, _ in recorder.append("\(report.playMethod)") },
+        )
+        let service = makeService(repository: repository) { method in method == .directVLC ? vlc : avPlayer }
+        await service.play(item: movie, startAt: .zero)
+        #expect(service.plan?.method == .directVLC)
+        #expect(service.status == .playing)
+        #expect(vlc.calls == ["load headers=0", "play"])
+        #expect(avPlayer.calls.isEmpty)
+        #expect(recorder.urls == ["directPlay"])
+    }
 }
