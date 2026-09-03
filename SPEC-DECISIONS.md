@@ -303,20 +303,33 @@ begin.** At minimum: one `mp4/h264/aac` (exercises `.directAVPlayer`), one
 rejects (exercises `.transcodeHLS`).
 
 Not from the audit — the audit read documents and a spec, and this is not visible
-from either. The server currently holds:
+from either. `isAVPlayerNative` and the resolve branches stay unit-testable from
+their fixture table regardless — those are pure domain functions — but whether the
+resulting URLs actually play cannot be established without files.
+
+### Status — one of three branches covered
+
+A Movies library now exists with one item: `mp4`, `h264`, 1920×1080, Main
+profile. Verified end to end:
 
 ```
-Movie 0 · Series 0 · Episode 0 · MusicAlbum 4 · Audio 46
+PlaybackInfo   → SupportsDirectPlay=true, TranscodingUrl=null, ErrorCode=null
+stream?static=true → 206, content-type video/mp4
 ```
 
-Acceptance criteria 6, 7, 8, 9, 10 and 11 have nothing to run against, which is
-most of the video half of §12. `isAVPlayerNative` and the resolve branches stay
-unit-testable from their fixture table regardless — those are pure domain
-functions — but whether the resulting URLs actually play cannot be established
-without files.
+So `.directAVPlayer` is exercisable. The other two branches are not, and two
+acceptance criteria remain unreachable for reasons specific to this file:
 
-Series and episode data is still absent after the above; criterion 11 stays
-unverifiable until a TV library exists.
+| Gap | Effect |
+|---|---|
+| No `mkv`/`hevc`/`dts` source | `.directVLC` never fires. VLCKit is carried solely for this branch, and nothing exercises it — including the check that the permissive device profile keeps it off the transcoder. |
+| No source the profile rejects | `.transcodeHLS` never fires. Acceptance criterion 8 requires seeing a transcode session appear in the dashboard. |
+| **The file has no audio stream** — `MediaStreams` holds one video entry and nothing else | Acceptance criterion 6 specifies `mp4/h264/aac`. The audio-codec half of `isAVPlayerNative` is untested against real data, and nothing confirms audio actually reaches the player on the video path. |
+| **`RunTimeTicks` is 207797330 ≈ 20.8 seconds** | Acceptance criterion 9 requires watching 30 s, exiting, and resuming at ≈30 s. The clip ends first. Criterion 10 (mark watched at ≥90%) is reachable, but only across a 20-second window. |
+| Still 0 Series, 0 Episodes | Criterion 11 (series → season → episode ordering) stays unverifiable, and decision 27's `sortBy` fix has nothing to confirm it against. |
+
+Steps 6 and 8 can start. Step 7 (`VLCPlayerController` and the `.directVLC`
+branch) should not be marked complete against a library that cannot reach it.
 
 ---
 
