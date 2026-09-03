@@ -36,7 +36,7 @@ P1, L. This is the product identity of the music half of the app — §1.1 calls
 - The pull-out transition: tapping a sleeve pushes `AlbumDetailScreen` via a single `matchedGeometryEffect` namespace/modifier pair on the artwork — no bespoke transition.
 - The return-to-sleeve sequence, triggered when `MusicPlayerService.finishedAlbumID` becomes non-nil: dismiss `NowPlayingScreen`, pop `AlbumDetailScreen`, scroll to the page holding that album, pulse its sleeve border for 0.4 s, call `acknowledgeFinish()`.
 - The same return sequence run without animation on foreground, for the case where the last track finished while the app was backgrounded.
-- A pure page-index function — given an album id and the wallet's sort order, which page and slot it lives on, for both the 2×2 and 3×3 layouts — placed in `MixtapeServices` so it is unit-testable without a `MixtapePresentation` test target.
+- A pure page-index function in `MixtapeDomain` — given an album id and the wallet's sort order, which page and slot it lives on, for both the 2×2 and 3×3 layouts. A pure rule with no I/O, so Domain is its home per §4, and `MixtapePresentation` may import `MixtapeDomain`.
 - Empty wallet state (no albums, one line of copy, no spinner) and failed-load state (empty wallet plus retry), both driven by the same `LibraryService` load path 005 established.
 - `AlbumGrid` becomes tvOS-only: its iOS `#if os(iOS)` file is deleted, its tvOS `#if os(tvOS)` file and identifiers are unchanged, and it stops being reachable from any iOS screen.
 - Accessibility identifiers for the wallet surface (`WalletIdentifiers.swift`, one enum per decision 17) covering page indicator, each sleeve, and the wallet's empty/retry controls.
@@ -65,19 +65,19 @@ For **each id in `depends_on`**, in order — don't summarise, walk the list:
 - [ ] `009` — opened it. Confirm `MusicPlayerService.finishedAlbumID`, `acknowledgeFinish()`, `AlbumDetailScreen` and `NowPlayingScreen` exist and match the shapes this slice assumed when drafted (§6 signature, §1.1 invariants suite passing).
 - [ ] `009` — not a spike; no fallback to check.
 - [ ] `009`'s state matches what this slice assumed when drafted: the plain `AlbumGrid` is iOS-reachable from the Music tab and album playback already reports to the server (decision 34) before this slice starts removing the grid.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice — in particular that `MixtapePresentation` still may not import `MixtapeData`, `MixtapeUseCase` or `MixtapeInfrastructure`, which is why the page-index function goes in `MixtapeServices` rather than beside the view.
+- [ ] Architecture standards doc re-read; nothing changed underneath this slice — in particular that `MixtapePresentation` still may not import `MixtapeData`, `MixtapeUseCase` or `MixtapeInfrastructure`, and still imports `MixtapeDomain`, where the page-index rule lives.
 
 **Drift found:** `none`.
 
 ## 5. Acceptance Criteria
 
-- [ ] AC13a (reworded by decision 20): the wallet shows a fixed 2×2 block on the iPhone 17 Pro simulator in both orientations, and a fixed 3×3 block on an iPad simulator, with no reflow mid-page in either case. No iPad simulator exists on this machine at drafting time; the gate creates one first with `xcrun simctl create` against an installed iPadOS 26 runtime (list with `xcrun simctl list runtimes`), because a standard iPhone never reaches regular width and cannot demonstrate the 3×3 half on its own.
+- [ ] AC13a (reworded by decision 20): the wallet shows a fixed 2×2 block on the iPhone 17 Pro simulator in both orientations, and a fixed 3×3 block on an iPad simulator, with no reflow mid-page in either case. No iPad simulator exists on this machine at drafting time and there is no separate iPadOS runtime; the gate creates one first with `xcrun simctl create` using an iPad device type (for example `com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M4`) against the installed iOS 26.5 runtime (`com.apple.CoreSimulator.SimRuntime.iOS-26-5`), because a standard iPhone never reaches regular width and cannot demonstrate the 3×3 half on its own.
 - [ ] AC13b: tapping a sleeve lifts its artwork into `AlbumDetailScreen`'s header via `matchedGeometryEffect`; navigating back returns the artwork to the sleeve it came from.
 - [ ] AC13c: playing an album to the end stops playback, dismisses `NowPlayingScreen`, pops `AlbumDetailScreen` if open, scrolls to the wallet page holding that album, and pulses its sleeve for 0.4 s.
 - [ ] AC13d: the same sequence happens correctly, without the pulse animation, when the app was backgrounded for the final track and is foregrounded afterwards.
 - [ ] AC13e: no shuffle, repeat, or add-to-queue control exists anywhere in the music UI, and the lock screen's next-track command is disabled on the final track.
 - [ ] An empty library shows the wallet's empty state with no spinner; a failed load shows the wallet's empty state with a retry that re-triggers the load.
-- [ ] `MixtapeServicesTests` covers the wallet's page-index function returning the correct page and slot for a given album id, for both the 2×2 and 3×3 column counts, including the first and last album in a partial final page.
+- [ ] `MixtapeDomainTests`, tagged `.domain`, covers the wallet's page-index function returning the correct page and slot for a given album id, for both the 2×2 and 3×3 column counts, including the first and last album in a partial final page.
 - [ ] `WalletScreen`'s `#Preview` covers full page, partial page, empty and failed, per §9.1 and the project's `{loaded, empty, failure}` preview convention.
 - [ ] Both `iOS` and `tvOS` schemes build; the tvOS scheme still builds `AlbumGrid` as its music surface, now iOS-untouched.
 
@@ -90,7 +90,7 @@ For **each id in `depends_on`**, in order — don't summarise, walk the list:
 | 2026-09-03 | Wallet grid keyed to horizontal size class; AC13a reworded (`SPEC-DECISIONS.md` decision 20, cited not re-argued). | — | Already decided; see decision 20. |
 | 2026-09-03 | Cut the tilt-following specular highlight entirely; `DeviceAttitudeReader` is not built this round. | Building `DeviceAttitudeReader` behind Reduce Motion per §9.1's "optional, if cheap" wording. | §9.1 and §7 both gate the feature on "skip if it costs more than an afternoon" — a call an unattended run cannot make for itself. The static diagonal highlight already satisfies every acceptance criterion claimed here; `DeviceAttitudeReading` is the seam a later round can build behind without touching `AlbumSleeve`. |
 | 2026-09-03 | `AlbumGrid` stays as a real type, restricted to its tvOS `#if os(tvOS)` file; its iOS `#if os(iOS)` file is deleted rather than kept dormant. | Keeping the iOS `AlbumGrid` file in place, unreferenced, as a fallback. | A second reachable music root on iOS is exactly the kind of second entry point §1.1's invariants exist to prevent — even unreferenced, it is a future merge conflict waiting to be wired back in by mistake. Deleting it costs nothing `git` cannot restore. |
-| 2026-09-03 | The wallet's page-index computation is a pure function in `MixtapeServices`, called by `WalletPage`, not a `MixtapePresentation`-local helper. | Writing it as a private function inside the `WalletPage` view file; adding a `MixtapePresentationTests` target to test it there. | No `MixtapePresentationTests` target exists in the §3 tree and slice 001 did not create one — inventing one is out of this slice's scope. `MixtapeServices` is already a dependency of `MixtapePresentation`, so the function is reachable from the view exactly as before, and it gets a `.service`-tagged test for free. |
+| 2026-09-03 | The wallet's page-index computation is a pure function in `MixtapeDomain`, called by `WalletPage`, tested in `MixtapeDomainTests` with the `.domain` tag. | Writing it as a private function inside the `WalletPage` view file; putting it in `MixtapeServices`; adding a `MixtapePresentationTests` target. | It is a pure rule with no I/O, which is what §4 says Domain holds; `MixtapeDomainTests` already exists; `MixtapePresentation` already imports `MixtapeDomain`. Not a fork. |
 
 ## 7. Sub-Slices
 
@@ -98,8 +98,8 @@ Not split — delivered as a single slice.
 
 ## 8. Testing Strategy
 
-- **Unit / Integration / UI:** `MixtapeServicesTests` gets the wallet page-index pure function tested against both the 2×2 and 3×3 layouts, including a partial final page. The `MusicPlayerService` §1.1 invariants suite from slices 008/009 already covers `finishedAlbumID` firing exactly once and `acknowledgeFinish()` clearing it — this slice consumes that trigger and does not duplicate its tests. No UI test is written (decision 4); AC13a–AC13e are demonstrated manually on the iPhone and iPad simulators per Section 5.
-- **Test targets required:** `MixtapeServicesTests` (exists from slice 001; used here, not created).
+- **Unit / Integration / UI:** `MixtapeDomainTests` gets the wallet page-index pure function tested against both the 2×2 and 3×3 layouts, including a partial final page, tagged `.domain`. The `MusicPlayerService` §1.1 invariants suite from slices 008/009 already covers `finishedAlbumID` firing exactly once and `acknowledgeFinish()` clearing it — this slice consumes that trigger and does not duplicate its tests. No UI test is written (decision 4); AC13a–AC13e are demonstrated manually on the iPhone and iPad simulators per Section 5.
+- **Test targets required:** `MixtapeDomainTests` (exists from slice 001; used here, not created).
 
 ## 9. Keeping this document true
 

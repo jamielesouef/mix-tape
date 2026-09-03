@@ -41,7 +41,7 @@ P0. Engineering doc capability 10 names three playback methods and acceptance cr
 **Out of scope** (name the slice it's deferred to):
 - tvOS's Siri Remote-specific overlay behaviour (play/pause and swipe gestures mapped onto this same `VLCPlayerController`) — deferred to slice 011, which owns all tvOS presentation chrome.
 - Any change to `ResolveVideoPlaybackUseCase`, the `PlaybackInfo` call, or the device profile — all delivered in slice 006 and untouched here.
-- Playback reporting (`ReportPlaybackStartUseCase` and friends) — slice 008.
+- Progress and stopped reports, and resume — slice 008. The start report already fires from `VideoPlaybackService.play` (006, decision 37) and is what makes AC7's `/Sessions` check meaningful.
 - A second, VLC-specific `PlaybackMethod` case or a second stream-URL-building path — none exists; `.directVLC` reuses the same `/Videos/{itemId}/stream?static=true…` URL slice 006 already builds, differing only in which auth mechanism decision 33 assigns it.
 
 **Plan requirements covered:**
@@ -82,8 +82,8 @@ Complete **before the first line of code**, not at close.
 - [ ] `xcodebuild test -skip-testing:iOSUITests` / `-skip-testing:tvOSUITests` is green for both schemes.
 - [ ] `./scripts/check-layer-imports.sh` exits 0, and a manual grep confirms `VLCPlayerController.swift` is the only file anywhere under `Sources/` that imports `VLCKit`.
 - [ ] `swiftformat --lint .` is clean.
-- [ ] `MixtapeServicesTests`, `.service` tag: a `PlaybackPlan` with `method == .directVLC` causes `VideoPlaybackService` to select the VLC controller rather than the AVPlayer one, proven against a stub `VideoPlayerControlling` — not the real `VLCVideoView`.
-- [ ] AC7: on the simulator, sign in, open F1 (`mkv`/h264/aac, 48.4 s), tap Play. It plays in-app through `VLCVideoView` with working play/pause, scrub and close on the custom overlay. `curl` against `GET /Sessions` on `http://localhost:8096` shows no `TranscodingInfo` on this device's session — no transcode was started. (`NowPlayingItem` and `PlayMethod` appear on the session only once slice 008's start report is wired, so that half of the check belongs to 008, not here.) The criterion's literal `hevc/dts` wording is satisfied by F1's `mkv` container instead, per decision 14: `mkv` routes to VLC by container regardless of codec, and no `hevc/dts` file exists in the library.
+- [ ] `MixtapeServicesTests`, `.service` tag: a `PlaybackPlan` with `method == .directVLC` causes `VideoPlaybackService` to select the VLC controller rather than the AVPlayer one, proven against a stub `VideoPlayerControlling` — not the real `VLCVideoView` — and the start report still fires once with `PlayMethod: DirectPlay`.
+- [ ] AC7: on the simulator, sign in, open F1 (`mkv`/h264/aac, 48.4 s), tap Play. It plays in-app through `VLCVideoView` with working play/pause, scrub and close on the custom overlay. `curl` against `GET /Sessions` on `http://localhost:8096` shows this device's session with `NowPlayingItem` set, `PlayMethod: DirectPlay`, and no `TranscodingInfo` — the start report from 006 (decision 37) makes the session visible, so an absent `NowPlayingItem` is a failure, not a pass. The criterion's literal `hevc/dts` wording is satisfied by F1's `mkv` container instead, per decision 14: `mkv` routes to VLC by container regardless of codec, and no `hevc/dts` file exists in the library.
 - [ ] If S001's answer left no working tvOS slice for VLCKit, the fallback S001 recorded is what this criterion and the tvOS build gate actually run against, and that is noted in Section 6 rather than silently assumed away.
 
 ## 6. Decision Log

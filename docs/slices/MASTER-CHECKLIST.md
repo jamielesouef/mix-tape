@@ -74,7 +74,7 @@ Every in-scope capability from engineering doc §1 and every acceptance criterio
 | §1.10 Play video: AVPlayer direct, VLC direct, HLS transcode | eng doc §1 | 006 (AVPlayer, HLS), 007 (VLC), 011 (tvOS demonstration) | `ResolveVideoPlaybackUseCase` (decision 12), `AVPlayerController` (decision 18), `VLCPlayerController`; AC6, AC7, AC8 |
 | §1.11 Resume from last position; mark watched at ≥90% | eng doc §1 | 008 | `startAt` from `PlaybackState.position`; 0.9 rule at stop (decision 8); AC9, AC10 |
 | §1.12 Play music: album queue, next/prev, background, lock screen | eng doc §1 | 009 (iOS), 011 (tvOS demonstration) | `MusicPlayerService` + `AudioPlayerController`; §1.1 invariants suite; AC12, AC13 |
-| §1.13 Report playback start / progress / stop | eng doc §1 | 008 (video), 009 (music, decision 34) | Three report use cases (decision 19) called by both services; `PlayMethod` from `PlaybackPlan.playMethod` (decision 11) |
+| §1.13 Report playback start / progress / stop | eng doc §1 | 006 (start, decision 37), 008 (progress, stopped), 009 (music, decision 34) | Three report use cases (decision 19) called by both services; `PlayMethod` from `PlaybackPlan.playMethod` (decision 11) |
 | §1.14 Remote images with in-memory cache | eng doc §1 | 005 | `ImageService` (120 MB `NSCache`) + `JellyfinImageURLBuilder` (decision 25) |
 | §1.15 The Wallet | eng doc §1 | 010 | `WalletScreen`, `WalletPage`, `AlbumSleeve`, pull-out and return-to-sleeve |
 | §12.1 `localhost:8096` with no scheme connects | eng doc §12 | 004 | AC1 against the live server |
@@ -82,15 +82,15 @@ Every in-scope capability from engineering doc §1 and every acceptance criterio
 | §12.3 tvOS Quick Connect signs in within 10 s | eng doc §12 | 004 | AC3 on the Apple TV simulator (see Ordering Notes) |
 | §12.4 Relaunch lands signed in | eng doc §12 | 004 | AC4 |
 | §12.5 Home shows Continue Watching with progress bars | eng doc §12 | 005, re-verified in 008 | 005 seeds a resume point via Jellyfin Web on the 48.4 s mkv; 008 uses an app-created one |
-| §12.6 mp4/h264 plays via `.directAVPlayer`, no transcode | eng doc §12 | 006, completed in 008 | 006: no `TranscodingInfo` on the session; 008: `PlayMethod: DirectPlay` visible once the start report exists |
-| §12.7 mkv plays via `.directVLC`, no transcode | eng doc §12 | 007, completed in 008 | F1 mkv/h264/aac routes to VLC by container (decision 14); same split as §12.6 |
-| §12.8 Rejected source plays via `.transcodeHLS`, dashboard shows transcode | eng doc §12 | 006 | DEBUG launch argument `-mixtape-force-transcode` injects the restrictive profile; `TranscodingInfo` present |
+| §12.6 mp4/h264 plays via `.directAVPlayer`, no transcode | eng doc §12 | 006 | Start report sent (decision 37); `/Sessions` shows `NowPlayingItem`, `PlayMethod: DirectPlay`, no `TranscodingInfo` |
+| §12.7 mkv plays via `.directVLC`, no transcode | eng doc §12 | 007 | F1 mkv/h264/aac routes to VLC by container (decision 14); same `/Sessions` check as §12.6 |
+| §12.8 Rejected source plays via `.transcodeHLS`, dashboard shows transcode | eng doc §12 | 006 | DEBUG launch argument `-mixtape-force-transcode` injects the restrictive profile; with the start report sent, `/Sessions` shows `PlayMethod: Transcode` and `TranscodingInfo` |
 | §12.9 Watch 30 s, exit, Resume at ≈30 s | eng doc §12 | 008 | F1 mkv (48.4 s); `GET /UserItems/Resume` agrees |
 | §12.10 Finishing a movie marks it watched | eng doc §12 | 008 | Avatar mp4 (20.8 s); `UserData.Played` true |
 | §12.11 Series → season → episode ordering | eng doc §12 | — | **Unverifiable.** 0 Series, 0 Episodes (decision 14). No slice claims it. |
 | §12.12 Album advances; lock screen art/title/artist; remote next | eng doc §12 | 009 | AC12 |
 | §12.13 Backgrounding keeps music playing | eng doc §12 | 009 | AC13 |
-| §12.13a Wallet 2×2 / 3×3 fixed pages (as reworded by decision 20) | eng doc §12 | 010 | Grid keyed to horizontal size class; iPad simulator created for the 3×3 half |
+| §12.13a Wallet 2×2 / 3×3 fixed pages (as reworded by decision 20) | eng doc §12 | 010 | Grid keyed to horizontal size class; an iPad device type on the iOS 26.5 runtime is created for the 3×3 half |
 | §12.13b Sleeve lifts into album header and back | eng doc §12 | 010 | `matchedGeometryEffect` |
 | §12.13c End of album: stop, dismiss, land on the sleeve pulsing | eng doc §12 | 010 | `finishedAlbumID` → return-to-sleeve sequence |
 | §12.13d 13c after backgrounding | eng doc §12 | 010 | Same sequence without animation on foreground |
@@ -112,7 +112,6 @@ Where a slice deliberately departs from the engineering doc. A fork with no deci
 | F2 | 004 | §10 has `.signedIn` route to `RootTabScreen` | Until 005, `.signedIn` routes to `SettingsScreen` so AC14 is demonstrable in 004; 005 moves it into the Settings tab | A throwaway tab shell in 004 |
 | F3 | 006 | §8 hardcodes one device profile inside the repository | `DeviceProfile` is an injected value; DEBUG launch argument `-mixtape-force-transcode` swaps in a restrictive profile so AC8 plays live. Shipped profile unchanged (decision 14) | Fixture-only AC8; changing the shipped profile |
 | F4 | 010 | §9.1's optional tilt sheen and §7's `DeviceAttitudeReader` | Not built. §9.1 gates it on "an afternoon", which an unattended run cannot judge; `DeviceAttitudeReading` remains the named seam | Building it behind Reduce Motion |
-| F5 | 010 | No test target exists for Presentation | The wallet page-index computation is a pure function in `MixtapeServices` with a `.service` test | A `MixtapePresentationTests` target |
 
 ## 7. Unknown Triage
 
@@ -121,8 +120,8 @@ Questions raised mid-build. Each becomes a spike, a decision, or an explicit def
 | # | Question | Raised by | Disposition |
 |---|---|---|---|
 | 1 | How does `MixtapeServices` hold `VideoPlayerControlling` and `AudioPlayerController`, which §7 places in `MixtapeInfrastructure`, when §3 gives Services no edge to Infrastructure? `VideoPlayerControlling.makeView() -> AnyView` rules out moving the protocol to `MixtapeUseCase` or `MixtapeDomain`, and Infrastructure cannot import Services to conform. | Phase 2 verification | **Decided 2026-09-03 by the project owner (decision 36): add a `MixtapeServices → MixtapeInfrastructure` edge** to `Package.swift` and `check-layer-imports.sh`, applied in slice 001 so 006 and 009 inherit it. Rejected: declaring the player protocols in `MixtapeServices` and conforming in the app target (retroactive conformance across two modules, compiler warning). Pending only the paste into `SPEC-DECISIONS.md`. |
-| 2 | Does `GET /Sessions` show `PlayMethod` and `NowPlayingItem` for a stream request that has not yet sent `POST /Sessions/Playing`? | Phase 2 verification | Treated as **no** — those fields come from the start report. 006 and 007 gate on `TranscodingInfo` absence only; 008 adds the `PlayMethod` check. Confirm with `curl` during 006; if the server shows them without a report, tighten 006/007 and record drift. |
-| 3 | No iPad simulator exists, so AC13a's 3×3 half has no device. | Phase 2 verification | 010's gate creates one with `xcrun simctl create` against an installed iPadOS 26 runtime before demonstrating. |
+| 2 | Does `GET /Sessions` show `PlayMethod`, `NowPlayingItem` or `TranscodingInfo` for a stream request that has not yet sent `POST /Sessions/Playing`? | Phase 2 verification | **Measured no** (decision 37): with a transcode running, `/Sessions` shows none of the three, and `/Videos/ActiveEncodings` is 405. `ReportPlaybackStartUseCase` moves to 006 so AC6, AC7 and AC8 are claimed in full by 006 and 007. |
+| 3 | No iPad simulator exists, so AC13a's 3×3 half has no device. | Phase 2 verification | There is no iPadOS runtime and no iOS 26.0. 010's gate creates one with `xcrun simctl create` using an iPad device type against the iOS 26.5 runtime before demonstrating. |
 | 4 | When the FLAC album from decision 35 lands, which slice claims AC13f? | decision 35 | 009 re-opens and claims `§12.13f`; update the coverage row and 009's `covers:` at that point. |
 
 ## Ordering Notes
@@ -135,8 +134,8 @@ Why the delivery sequence is what it is, where it isn't obvious from `depends_on
 - **AC3 (tvOS Quick Connect) is claimed in 004, not 011.** The sign-in screens are platform-shared, the tvOS ordering (Quick Connect first) is a one-line difference, and the Apple TV simulator is the one that is booted. 011 does not re-demonstrate it.
 - **AC5 is claimed in 005 with a resume point seeded via Jellyfin Web**, because no player exists yet to create one; 008 re-verifies it with an app-created position.
 - **008 follows 007** because AC9 needs a 30 s watch and only the 48.4 s F1 mkv is long enough; the 20.8 s Avatar mp4 cannot demonstrate it. F1 routes to VLC by container.
-- **006 and 007 gate on `TranscodingInfo` only; the `PlayMethod` half of AC6 and AC7 completes in 008**, where the start report that populates it is wired (Unknown Triage row 2).
-- **009 follows 008** because decision 34 has `MusicPlayerService` call the three report use cases 008 builds.
+- **`ReportPlaybackStartUseCase` lands in 006, not 008** (decision 37). `/Sessions` shows nothing for a device until the start report is sent, so 006 and 007 need it to gate AC6, AC7 and AC8 on their own behaviour. 008 keeps progress, stopped and resume.
+- **009 follows 008** because decision 34 has `MusicPlayerService` call all three report use cases, two of which 008 builds.
 - **Settings is the signed-in root in 004** until 005 delivers `RootTabScreen` (fork F2), so AC14 has a sign-out affordance before the tab shell exists.
 - **003's tests live in `MixtapeDataTests`** (fork F1); it therefore has a real gate of its own without a fifth test target.
 - **The tvOS scheme must build at every slice from 005 onward.** Shared presentation means any iOS-only view lands in an `#if os(iOS)` file with a tvOS counterpart named for what it is; 011 replaces the minimal counterparts with real tvOS chrome.

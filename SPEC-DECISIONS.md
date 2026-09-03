@@ -856,3 +856,115 @@ deferred two slices later is not gated; it is only sequenced.
 
 AC6, AC7 and AC8 are therefore claimed in full by steps 6 and 7, not split
 across 6/7 and 8.
+
+---
+
+# Slice-set review decisions
+
+Raised by an independent read of the fourteen slice documents, before commit.
+
+## 38. The SPM test targets must be added to both scheme test actions
+
+**Decision: build step 1 adds `MixtapeDomainTests`, `MixtapeUseCaseTests`,
+`MixtapeServicesTests` and `MixtapeDataTests` as testable references to the
+`iOS` and `tvOS` scheme test actions, and its gate proves each suite actually
+ran.**
+
+Without it, gate 2 is unfalsifiable for every slice in the set. The schemes
+currently test app-hosted targets only:
+
+```
+iOS.xcscheme   → iOSTests, iOSUITests
+tvOS.xcscheme  → tvOSTests, tvOSUITests
+```
+
+The four new suites live in the package. Under `xcodebuild test -scheme iOS`
+they do not run unless referenced by that scheme's test action — so every
+slice's "`xcodebuild test` passes" gate would go green having executed none of
+the tests the slice just wrote.
+
+Compounding it: step 1 deletes `tests/`, which is `iOSTests`/`tvOSTests`' source.
+A unit-test target with no source files builds and passes trivially, so the gate
+would be green *and* empty. **Either delete those two targets or repoint them;
+do not leave them present and sourceless.**
+
+**Gate 2 gains a positive check on the test count** — the run asserts the number
+of executed tests is what the slice added, not merely that the command exited 0.
+An exit code cannot distinguish "all tests passed" from "no tests ran", and on an
+unattended run nothing else will notice the difference.
+
+This is the same failure shape as decision 37, at twelve slices instead of two.
+
+## 39. `isAVPlayerNative` treats a nil audio codec as native
+
+**Decision: the rule reads — container ∈ {`mp4`, `m4v`, `mov`} **and** video
+codec ∈ {`h264`, `hevc`} **and** (audio codec is `nil` **or** ∈ {`aac`, `mp3`,
+`alac`, `ac3`, `eac3`}).**
+
+The fixture table gains two rows, so the case is locked by a test rather than
+left to an implementer's reading:
+
+| container | video | audio | expected |
+|---|---|---|---|
+| `mp4` | `h264` | `nil` | `true` |
+| `mkv` | `h264` | `nil` | `false` |
+
+A video with no audio track has no audio to decode, so AVPlayer plays it. Under
+the rule as originally written it did not: the library's only `.directAVPlayer`
+candidate — the Avatar `mp4`, whose `MediaStreams` holds one video entry and
+nothing else — resolved to `nil` audio, failed the membership test, and routed to
+`.directVLC`, which build step 6 has no controller for. **AC6 would have failed
+against a correct implementation**, and the unit tests would have passed while it
+did, because no fixture row covered nil audio.
+
+The container check still does the real work: `mkv` with no audio is still VLC's.
+
+## 40. `BuildAudioStreamURLUseCase` returns the `PlayMethod`
+
+**Decision: it returns the stream URL and the wire `PlayMethod` together.**
+`MusicPlayerService` passes that value into the three report use cases. Music
+never constructs a `PlaybackPlan`.
+
+Build step 9 had music's reported `PlayMethod` coming from
+`PlaybackPlan.playMethod`. No such plan exists on the music path — §8 takes no
+`PlaybackInfo` round-trip for audio, so `ResolveVideoPlaybackUseCase` never runs
+and nothing produces a plan for a track. Following it literally means fabricating
+a plan to satisfy a signature.
+
+The URL builder is the only thing that knows which URL it built, so it is the
+only honest source for whether the answer is `DirectPlay` or `Transcode`. That
+also keeps it beside decision 23's HLS-fallback logging — one place decides the
+fallback fired, one place says so.
+
+Rejected — having `MusicPlayerService` inspect the URL string for `master.m3u8`.
+It needs no new return type, but it makes a URL's spelling the source of truth
+and duplicates knowledge the builder already had.
+
+Rejected — adding a `PlayMethod` parameter to the three report use cases. Most
+symmetric between the video and music paths, but it changes types steps 6 and 8
+have already built and tested.
+
+## 41. The UI test targets are already correctly named — do not rename them
+
+**Decision: no target rename. Build step 1 leaves `project.pbxproj`'s target
+names alone.**
+
+The orientation fact behind that instruction was wrong. The actual targets:
+
+| target name | productName | type |
+|---|---|---|
+| `iOSUITests` | `MixTapeUITests` | ui-testing |
+| `tvOSUITests` | `mixtape.tvUITests` | ui-testing |
+
+`-skip-testing:` keys on the **target name**, so
+`-skip-testing:iOSUITests` and `-skip-testing:tvOSUITests` already resolve
+today. `MixTapeUITests` and `mixtape.tvUITests` are `productName` values, which
+the flag never sees.
+
+Beyond being unnecessary, the rename is actively risky: it sends an unattended run
+into `project.pbxproj` to change something already correct, and every edit to that
+file is a chance for Xcode 27 to rewrite `objectVersion` from `77` to `90` — the
+failure the toolchain rule in `CLAUDE.md` exists to prevent.
+
+Step 1 still adds the package reference and the scheme test actions (decision 38),
+both of which do require project-file edits. Those are necessary; a rename is not.

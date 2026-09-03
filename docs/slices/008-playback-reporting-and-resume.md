@@ -22,7 +22,7 @@ created: 2026-09-03
 
 ## 1. Objective
 
-Every video session the app plays shows up correctly in Jellyfin's own session list while it plays, resume points round-trip through the server, and finishing a movie marks it watched — observable without any later slice, on the two video items the library already has.
+Every video session the app plays keeps Jellyfin's session list current while it plays and closes it cleanly on stop, resume points round-trip through the server, and finishing a movie marks it watched — observable without any later slice, on the two video items the library already has. The start report already exists from 006 (decision 37); this slice adds progress and stopped.
 
 ## 2. Business Value & Priority
 
@@ -31,10 +31,10 @@ Capability 11 (resume, watched-at-90%) and the video half of capability 13 (repo
 ## 3. Scope
 
 **In scope:**
-- `ReportPlaybackStartUseCase`, `ReportPlaybackProgressUseCase`, `ReportPlaybackStoppedUseCase` (decision 19) — three thin types, one `MixtapeUseCase` file each, each posting the shared §8 body (`ItemId`, `MediaSourceId`, `PlaySessionId`, `PositionTicks`, `IsPaused`, `CanSeek: true`, `PlayMethod`) through `PlaybackRepositoryProtocol`'s `reportStart`/`reportProgress`/`reportStopped`.
+- `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase` (decision 19) — two thin types, one `MixtapeUseCase` file each, each posting the shared §8 body (`ItemId`, `MediaSourceId`, `PlaySessionId`, `PositionTicks`, `IsPaused`, `CanSeek: true`, `PlayMethod`) through `PlaybackRepositoryProtocol`'s `reportProgress`/`reportStopped`. `ReportPlaybackStartUseCase` and `reportStart` already exist from 006 (decision 37) and are reused unchanged.
 - `PlayMethod` on every report comes from `PlaybackPlan.playMethod` (decision 11), never derived again from `PlaybackMethod` — the plan already carries the wire value from whichever of `supportsDirectPlay`/`supportsDirectStream` was true at resolve time.
 - Report failures are logged on the `network` category (003) and swallowed at the use-case boundary — a dropped heartbeat never becomes a `MixtapeError` the player surfaces.
-- `VideoPlaybackService` (006/007) gains the reporting cadence: on `play` start, every 10 s while playing, on pause, on seek completion, and on `stop` — never more often, regardless of how many of those events land close together.
+- `VideoPlaybackService` (006/007) gains the rest of the reporting cadence: it already reports on `play` start (006); this slice adds every 10 s while playing, on pause, on seek completion, and on `stop` — never more often, regardless of how many of those events land close together.
 - Local `isWatched` is computed once, on `stop()`, from `position / duration >= 0.9` (decision 8) and folded into the stopped report's implied state; this is the only place in the app that rule runs. List and detail mapping (005) already sets `PlaybackState.isWatched` from `UserData.Played` verbatim and is untouched here — decision 8 is explicit that these are two different moments, not two sources for one field.
 - `play(item:)`'s `startAt` comes from the item's mapped `PlaybackState.position` — the same resume point 005 already surfaces via `hasResumePoint` — so Play and Resume are one entry point with no separate "resume" code path to drift from it.
 - `MovieDetailScreen` (005) shows a Resume affordance in place of Play when `hasResumePoint` is true; wiring only, no new screen.
@@ -81,14 +81,14 @@ Mechanical:
 - [ ] `swiftformat --lint .` is clean.
 
 Behavioural:
-- [ ] `MixtapeUseCaseTests`, tagged `.useCase`: one suite per report use case, each covering a successful call and a swallowed failure that never reaches the caller as a thrown error.
+- [ ] `MixtapeUseCaseTests`, tagged `.useCase`: one suite each for `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase`, each covering a successful call and a swallowed failure that never reaches the caller as a thrown error. The start use case's suite exists from 006.
 - [ ] `MixtapeServicesTests`, tagged `.service`: a `VideoPlaybackService` reporting suite, driven by an injected clock (never a real sleep), proving the cadence is exactly start / every 10 s while playing / on pause / on seek completion / on stop, across a run that includes a pause-then-resume and a mid-track seek, with no extra report anywhere in that sequence.
 - [ ] `MixtapeServicesTests`: a case proving `isWatched` is `true` on stop when position is ≥ 90% of the F1 mkv's 48.4 s runtime, and `false` below that threshold, at 89.9 %/90.0 %/90.1 % boundaries.
 
 Acceptance (server-observable against `http://localhost:8096`):
 - [ ] AC9 — play F1 (mkv, 48.4 s) to roughly 30 s, exit the player. `MovieDetailScreen` offers Resume at ≈30 s. `GET /UserItems/Resume?userId={uid}` lists the item with `PlaybackPositionTicks` matching the app's last progress report.
 - [ ] AC10 — play Avatar (mp4, 20.8 s) to completion. `GET /Items/{itemId}?userId={uid}` (or Jellyfin Web) shows `UserData.Played: true`.
-- [ ] AC6 and AC7 completed — while Avatar plays and while F1 plays, `GET /Sessions` shows this device's session with `NowPlayingItem` set and `PlayMethod: DirectPlay`; slices 006 and 007 could only check for the absence of `TranscodingInfo`, because `PlayMethod` reaches the session through the start report this slice wires.
+- [ ] After `stop()`, `GET /Sessions` shows this device's session with `NowPlayingItem` cleared — the stopped report closed what 006's start report opened.
 - [ ] AC5 re-verified — using the resume point this slice's own reporting created (not the one seeded via Jellyfin Web in 005), Home's Continue Watching row shows a progress bar matching that position after `LibraryService.refresh()` runs.
 
 ## 6. Decision Log
@@ -97,7 +97,7 @@ Acceptance (server-observable against `http://localhost:8096`):
 
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
-| 2026-09-03 | Reporting is three use case types — `ReportPlaybackStartUseCase`, `ReportPlaybackProgressUseCase`, `ReportPlaybackStoppedUseCase` (SPEC-DECISIONS #19) | A single `ReportPlaybackUseCase` with an `action:` parameter | Three thin structs sharing one repository cost almost nothing and each gets its own test; one type with a switch collapses three different payload shapes into one signature and satisfies the one-type-per-use-case rule only on paper |
+| 2026-09-03 | Reporting is three use case types — `ReportPlaybackStartUseCase` (006, decision 37), `ReportPlaybackProgressUseCase` and `ReportPlaybackStoppedUseCase` (here) (SPEC-DECISIONS #19) | A single `ReportPlaybackUseCase` with an `action:` parameter | Three thin structs sharing one repository cost almost nothing and each gets its own test; one type with a switch collapses three different payload shapes into one signature and satisfies the one-type-per-use-case rule only on paper |
 | 2026-09-03 | `isWatched` runs the `>= 0.9` rule only at stop time, during active local playback (SPEC-DECISIONS #8) | Computing `isWatched` from position/duration on every mapped list and detail response too | `PlayedPercentage` never arrives from this server, so a mapper doing that would compute from `nil`; the two rules apply at different moments and 005 already handles the at-rest case from `UserData.Played` |
 | 2026-09-03 | Every report's `PlayMethod` is read from `PlaybackPlan.playMethod`, set at resolve time (SPEC-DECISIONS #11) | Reporting `DirectPlay` unconditionally for any non-transcode path | AC6/AC7/AC8 are verified by reading the Jellyfin session dashboard; reporting an untrue `PlayMethod` degrades the very check those criteria depend on |
 | 2026-09-03 | Progress and stopped report failures — including a 503 with `Retry-After` — are logged and swallowed, never surfaced as a playback error (SPEC-DECISIONS #9, #26) | Retrying on 503, or raising the failure into `VideoPlaybackService.status` | `Retry-After` is not honoured in V1; a dropped heartbeat must never interrupt playback, per §8 of the engineering doc |
@@ -107,7 +107,7 @@ Acceptance (server-observable against `http://localhost:8096`):
 Not split — delivered as a single slice.
 
 ## 8. Testing Strategy
-- **Unit / Integration / UI:** unit only. `.useCase`-tagged tests for the three report use cases against a `Stub` `PlaybackRepositoryProtocol` (success and swallowed-failure cases). `.service`-tagged tests for `VideoPlaybackService`'s reporting cadence and the stop-time `isWatched` rule, against a stub `VideoPlayerControlling` and an injected clock. No XCUITest — deferred per decision 4. No CI gate is added or restored.
+- **Unit / Integration / UI:** unit only. `.useCase`-tagged tests for the progress and stopped report use cases against a `Stub` `PlaybackRepositoryProtocol` (success and swallowed-failure cases); the start use case is tested in 006. `.service`-tagged tests for `VideoPlaybackService`'s reporting cadence and the stop-time `isWatched` rule, against a stub `VideoPlayerControlling` and an injected clock. No XCUITest — deferred per decision 4. No CI gate is added or restored.
 - **Test targets required:** `MixtapeUseCaseTests` and `MixtapeServicesTests`, both already created in 001; no new target needed.
 
 ## 9. Keeping this document true

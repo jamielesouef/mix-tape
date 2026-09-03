@@ -4,7 +4,7 @@
     "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
   },
   "subagentPromptCacheTtl": "1h",
-  "workflowSizeGuideline": "large",
+  "workflowSizeGuideline": "medium",
   "permissions": {
     "allow": [
       "Read",
