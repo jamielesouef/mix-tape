@@ -61,24 +61,25 @@ Priority P0 — no other slice can start until this tree, these targets and this
 
 `depends_on` is empty — this is the first slice in the linked list, so there is no prior slice's state to check and no spike to confirm answered.
 
-- [ ] `SPEC-DECISIONS.md` read in full (decisions 1–47); decisions 1, 2, 3, 4, 15, 16, 45 and 47 confirmed as still current and unamended as of 2026-09-03.
-- [ ] `docs/engineering-doc.md` §2, §3 and §13 step 1 re-read; nothing in this slice's scope contradicts them.
-- [ ] `CLAUDE.md`'s slice gate criteria and toolchain-mismatch rules (Xcode 27 host, Xcode 26.6/Swift 6.2 target; `objectVersion = 77` pin) re-read.
-- [ ] Current tree confirmed against the brief's orientation facts: `source/iOS`, `source/tvOS`, `tests/iOS`, `tests/tvOS`, `uiTess/` exist; `Apps/`, `MixtapeKit`, `scripts/` do not.
+- [x] `SPEC-DECISIONS.md` read in full (decisions 1–47); decisions 1, 2, 3, 4, 15, 16, 45 and 47 confirmed as still current and unamended as of 2026-09-03.
+- [x] `docs/engineering-doc.md` §2, §3 and §13 step 1 re-read; nothing in this slice's scope contradicts them.
+- [x] `CLAUDE.md`'s slice gate criteria and toolchain-mismatch rules (Xcode 27 host, Xcode 26.6/Swift 6.2 target; `objectVersion = 77` pin) re-read.
+- [x] Current tree confirmed against the brief's orientation facts: `source/iOS`, `source/tvOS`, `tests/iOS`, `tests/tvOS`, `uiTess/` exist; `Apps/`, `MixtapeKit`, `scripts/` do not.
 
 **Drift found:** none — this is the slice that establishes the baseline every later pre-flight checks against.
 
 ## 5. Acceptance Criteria
 
-- [ ] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
-- [ ] `xcodebuild test -skip-testing:iOSUITests` passes for `iOS`; `xcodebuild test -skip-testing:tvOSUITests` passes for `tvOS`; the simulator is resolved at runtime via `xcrun simctl list devices available`, never a hardcoded `OS=`. **Each run's result bundle or log shows exactly 4 tests executed** — one per package test target — and names all four suites (decision 38). Exit 0 with fewer than 4 executed tests is a gate failure. Every later slice's gate 2 states its own expected count the same way.
-- [ ] `./scripts/check-layer-imports.sh` exits 0 against the committed tree, then exits non-zero when a deliberate bad import (e.g. `import SwiftUI` added to a file under `Sources/MixtapeDomain`) is introduced, and exits 0 again once that import is removed.
-- [ ] `swiftformat --lint .` is clean against the new `.swiftformat` config.
-- [ ] `grep -ciE 'objectVersion' MixTape.xcodeproj/project.pbxproj` returns `2` — the case-insensitive match is deliberate, because the second setting is `preferredProjectObjectVersion` with a capital `O` — and `grep -iE 'objectVersion' MixTape.xcodeproj/project.pbxproj` shows `77` on both lines.
-- [ ] `grep -c defaultIsolation MixtapeKit/Package.swift` returns `6`.
-- [ ] `git status` shows the `source/`, `tests/`, root `Assets.xcassets` removal and the `uiTess/` → `uiTests/` rename as tracked moves/deletions, not orphaned untracked files.
-- [ ] `.jellyfin-dev.env` exists, `git check-ignore .jellyfin-dev.env` prints its path, and the file does not appear in `git status`. `grep -rn` for its `JELLYFIN_PASSWORD` and `JELLYFIN_TOKEN` values across the repository finds nothing outside the file itself.
-- [ ] `./scripts/jf-probe.swift /Sessions` prints `200` and a JSON array — an auth-required path, so a missing file, wrong key or empty token fails here as a `401` rather than in slice 004 or 006 — and its output contains no substring of the token.
+- [x] `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
+- [x] `xcodebuild test -skip-testing:iOSUITests` passes for `iOS`; `xcodebuild test -skip-testing:tvOSUITests` passes for `tvOS`; the simulator is resolved at runtime via `xcrun simctl list devices available`, never a hardcoded `OS=`. **Each run's result bundle or log shows exactly 4 tests executed** — one per package test target — and names all four suites (decision 38). Exit 0 with fewer than 4 executed tests is a gate failure. Every later slice's gate 2 states its own expected count the same way.
+- [x] `./scripts/check-layer-imports.sh` exits 0 against the committed tree, then exits non-zero when a deliberate bad import (e.g. `import SwiftUI` added to a file under `Sources/MixtapeDomain`) is introduced, and exits 0 again once that import is removed.
+- [x] `swiftformat --lint .` is clean against the new `.swiftformat` config.
+- [x] `grep -ciE 'objectVersion' MixTape.xcodeproj/project.pbxproj` returns `2` — the case-insensitive match is deliberate, because the second setting is `preferredProjectObjectVersion` with a capital `O` — and `grep -iE 'objectVersion' MixTape.xcodeproj/project.pbxproj` shows `77` on both lines.
+- [x] `grep -c defaultIsolation MixtapeKit/Package.swift` returns `6`.
+- [x] `git status` shows the `source/`, `tests/`, root `Assets.xcassets` removal and the `uiTess/` → `uiTests/` rename as tracked moves/deletions, not orphaned untracked files.
+- [x] `.jellyfin-dev.env` exists, `git check-ignore .jellyfin-dev.env` prints its path, and the file does not appear in `git status`. `grep -rn` for its `JELLYFIN_PASSWORD` and `JELLYFIN_TOKEN` values across the repository finds nothing outside the file itself.
+  Verified 2026-09-03: the API key appears in no other file. The password is a four-character common English word, so a bare grep for it matches prose in the docs; a whole-word grep across `.swift`, `.sh`, `.plist`, `.json`, `.pbxproj` and `.xcscheme` sources finds it only where that word occurs in ordinary comments, never as a credential.
+- [x] `./scripts/jf-probe.swift /Sessions` prints `200` and a JSON array — an auth-required path, so a missing file, wrong key or empty token fails here as a `401` rather than in slice 004 or 006 — and its output contains no substring of the token.
 
 ## 6. Decision Log
 
@@ -92,6 +93,18 @@ Priority P0 — no other slice can start until this tree, these targets and this
 | 2026-09-03 | The four package test targets are added to both scheme test actions, `iOSTests` and `tvOSTests` are deleted along with `tests/`, and gate 2 asserts the executed test count (decision 38, cited not re-argued) | Leaving the schemes testing only the app-hosted targets; keeping `iOSTests`/`tvOSTests` present with no source | A package test target not referenced by the scheme never runs, so every slice's gate 2 would pass having executed none of its tests; a sourceless unit-test target passes trivially, so the gate would be green and empty |
 | 2026-09-03 | No UI test target rename — `iOSUITests` and `tvOSUITests` are already the target names; `MixTapeUITests` and `mixtape.tvUITests` are `productName` values, which `-skip-testing:` never sees (decision 41) | Renaming the targets, as this slice was first drafted to do | The flags resolve today, and every unnecessary `project.pbxproj` edit is a chance for Xcode 27 to rewrite `objectVersion` from 77 to 90 |
 | 2026-09-03 | A gitignored `.jellyfin-dev.env` holds the local server's base URL, username, password and token (decision 45), and `scripts/jf-probe.swift` is the one tool every server-observable acceptance check uses (decision 47) — both cited, not re-argued | Environment variables exported at launch; leaving server-observable criteria to a human; allowing a command-line HTTP client at project level | Decision 45: environment variables vanish on restart and a resumed run silently loses four criteria. Decision 47: the global deny list beats any project allow entry, so that entry was inert and has been removed; `Bash(./scripts/*)` is already allowed and proven, so the probe widens nothing |
+| 2026-09-03 | `scripts/jf-probe.swift` reads the token from `JELLYFIN_API_KEY`, the key decision 45 names and the one the existing `.jellyfin-dev.env` carries — not the `JELLYFIN_TOKEN` this slice's Section 3 text says. | Renaming the key in the env file to match this document. | Decision 45 outranks the slice text and says step 1 must not recreate or move the file; its own comments name the key `JELLYFIN_API_KEY`. |
+| 2026-09-03 | `macosx` is removed from `SUPPORTED_PLATFORMS` on the `iOS` and `iOSUITests` targets, with the macOS-only deployment-target and runpath settings beside it. | Leaving the multiplatform settings in place because no gate builds for macOS. | Decision 16: iOS and tvOS only. A `SUPPORTED_PLATFORMS` that names `macosx` is a macOS target by another spelling. |
+| 2026-09-03 | The UI test targets are repointed rather than renamed: `iOSUITests` synchronises `uiTests/iOS`, `tvOSUITests` synchronises `uiTests/tvOS`, and `TEST_TARGET_NAME` becomes `iOS` / `tvOS` — the real target names. | Leaving the dangling `MixTapeUITests` folder reference and the `MixTape` / `mixtape.tv` test-target names. | `-skip-testing` still builds the UI bundles for testing, so a bundle with no sources or a host reference that resolves to no target fails gate 2. Decision 41 forbids renaming the targets, not fixing references to them. |
+| 2026-09-03 | Each library target gets one header-comment-only Swift file so the package resolves. | A placeholder `enum` per target. | SwiftPM rejects a target with no source files; a comment-only file compiles and introduces no type that a later slice would have to delete. |
+| 2026-09-03 | Each app target gets a real `Info.plist` merged by `GENERATE_INFOPLIST_FILE = YES` via `INFOPLIST_FILE`. | Turning generation off and hand-writing the full plist; expressing the keys as `INFOPLIST_KEY_*` build settings. | `NSAppTransportSecurity` is a dictionary and `UIBackgroundModes` an array; neither has an `INFOPLIST_KEY_*` spelling. Keeping generation on leaves the `CFBundle*` keys where the project already sets them. |
+| 2026-09-03 | `scripts/gate.sh <expected-tests>` runs the four gate commands, resolves the simulators at runtime, and asserts the executed test count through `xcrun xcresulttool` on a result bundle written to a scratch directory. | Reading the count off the `xcodebuild` log by eye each slice. | Decision 38 makes the count part of gate 2 on every slice, and `CLAUDE.md` asks for gate commands a future CI workflow can call; a log grep cannot tell a Swift Testing run from an XCTest one. |
+| 2026-09-03 | The tvOS app target's `SWIFT_DEFAULT_ACTOR_ISOLATION` is changed from `nonisolated` to `MainActor`. | Leaving it, since the package targets carry their own isolation setting under decision 15. | Engineering doc §2 sets `MainActor` at project level for every target; the tvOS value was a template default that contradicts it and would leave the tvOS composition root nonisolated. |
+| 2026-09-03 | The existing "Check Layer Imports" build phase keeps its place on the `iOS` target and its path is corrected from `${SRCROOT}/../scripts/` to `${SRCROOT}/scripts/`. It is not added to `tvOS`. | Adding the phase to both app targets. | `SRCROOT` is the repository root, so the old path pointed outside the repository. The tvOS target inherits `ENABLE_USER_SCRIPT_SANDBOXING = YES` from the project, which would block the script reading `MixtapeKit/Sources`; the gate runs the script directly anyway. |
+| 2026-09-03 | The tvOS deployment target lives only in `TVOS_DEPLOYMENT_TARGET = 26.0`; `APPLETVOS_DEPLOYMENT_TARGET` is removed (decision 2, cited not re-argued). | Keeping both names at 26.0. | Two names for one value is the disagreement decision 2 exists to end; `TVOS_DEPLOYMENT_TARGET` is the name Xcode's tvOS templates and the two tvOS targets already use. |
+| 2026-09-03 | The stale `Foundation.framework` file reference — a hardcoded `iPhoneOS26.0.sdk` path — and its build files are removed. | Leaving it in the `iOSUITests` Frameworks phase. | The path does not exist under Xcode 27 and system frameworks link by name without an explicit reference. |
+| 2026-09-03 | The two UI test targets set `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`, overriding the project-level `MainActor` default that §2 sets for the app. | Editing the XCTest stub classes to opt out; dropping the project-level setting and keeping it per app target. | `XCTestCase` overrides (`setUpWithError`, `init(invocation:)`) are nonisolated in XCTest, so a `MainActor` default makes the template stubs fail to compile and `-skip-testing` still builds those bundles. Decision 4 says the stubs stay untouched; a build setting on the two targets touches neither them nor the app-level invariant. |
+| 2026-09-03 | `MixtapeKit` is referenced twice in the project file, as Xcode itself does: an `XCLocalSwiftPackageReference` in `packageReferences` for product linking, **and** a `PBXFileReference` (`lastKnownFileType = wrapper`) in the main group. | The package reference alone; an `.xctestplan` naming the package test targets; adding the test targets to the scheme's `BuildAction`. | With only the package reference, `xcodebuild test` resolved none of the four package testables — "There are no test bundles available to test" — and neither a test plan nor build-action entries changed that. The folder reference is what makes the package's test targets visible to the scheme; it was confirmed by `build-for-testing` producing the four `.xctest` bundles only after it was added. This is the trap decision 38 predicted, and the gate's test-count assertion is what caught it. |
 
 ## 7. Sub-Slices
 
@@ -120,11 +133,11 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
