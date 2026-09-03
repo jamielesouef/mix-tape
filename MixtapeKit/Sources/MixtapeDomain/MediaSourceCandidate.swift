@@ -7,13 +7,24 @@
 /// One `MediaSource` from a `PlaybackInfo` response, before method selection.
 /// `PlaybackRepositoryProtocol.resolveVideo` returns these; `ResolveVideoPlaybackUseCase`
 /// turns them into a `PlaybackPlan` (decision 12).
-nonisolated struct MediaSourceCandidate: Sendable, Equatable {
-    let id: String
-    let container: String
-    let videoCodec: String?
-    let audioCodec: String?
-    let supportsDirectPlay: Bool
-    let supportsDirectStream: Bool
-    let transcodingUrl: String?
-    let runTimeTicks: Int64?
+public nonisolated struct MediaSourceCandidate: Sendable, Equatable {
+    public let id: String
+    public let container: String
+    public let videoCodec: String?
+    public let audioCodec: String?
+    public let supportsDirectPlay: Bool
+    public let supportsDirectStream: Bool
+    public let transcodingUrl: String?
+    public let runTimeTicks: Int64?
+
+    public init(id: String, container: String, videoCodec: String?, audioCodec: String?, supportsDirectPlay: Bool, supportsDirectStream: Bool, transcodingUrl: String?, runTimeTicks: Int64?) {
+        self.id = id
+        self.container = container
+        self.videoCodec = videoCodec
+        self.audioCodec = audioCodec
+        self.supportsDirectPlay = supportsDirectPlay
+        self.supportsDirectStream = supportsDirectStream
+        self.transcodingUrl = transcodingUrl
+        self.runTimeTicks = runTimeTicks
+    }
 }

@@ -71,26 +71,27 @@ Status-code mapping:
 
 Complete **before the first line of code**, not at close.
 
-- [ ] Opened `001-package-skeleton-and-gates.md`. Its decision log still says what this slice assumed: `MixtapeInfrastructure` exists as a `Package.swift` target with `.defaultIsolation(MainActor.self)` and `.swiftLanguageMode(.v6)`, `MixtapeDataTests` exists (this slice's tests live there, not in a new `MixtapeInfrastructureTests` target — see Section 6), and `check-layer-imports.sh` runs as part of the gate.
-- [ ] 001 is not a spike — n/a.
-- [ ] 001's state matches what this slice assumed when drafted, not when 001 was written.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
-- [ ] Opened `002-domain-model-and-pure-rules.md`. Its decision log still says what this slice assumed: `MixtapeError` has exactly the cases in engineering doc §4 with no `.forbidden` case (decision 9), and the type compiles standalone in `MixtapeDomain` with no dependency this client needs to route around.
-- [ ] 002 is not a spike — n/a.
-- [ ] 002's state matches what this slice assumed when drafted, not when 002 was written.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened `001-package-skeleton-and-gates.md`. Its decision log still says what this slice assumed: `MixtapeInfrastructure` exists as a `Package.swift` target with `.defaultIsolation(MainActor.self)` and `.swiftLanguageMode(.v6)`, `MixtapeDataTests` exists (this slice's tests live there, not in a new `MixtapeInfrastructureTests` target — see Section 6), and `check-layer-imports.sh` runs as part of the gate.
+- [x] 001 is not a spike — n/a.
+- [x] 001's state matches what this slice assumed when drafted, not when 001 was written.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] Opened `002-domain-model-and-pure-rules.md`. Its decision log still says what this slice assumed: `MixtapeError` has exactly the cases in engineering doc §4 with no `.forbidden` case (decision 9), and the type compiles standalone in `MixtapeDomain` with no dependency this client needs to route around.
+- [x] 002 is not a spike — n/a.
+- [x] 002's state matches what this slice assumed when drafted, not when 002 was written.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **Drift found:** none.
 
 ## 5. Acceptance Criteria
 
-- [ ] Both `iOS` and `tvOS` schemes build.
-- [ ] `MixtapeDataTests`' `JellyfinHTTPClientTests` suite, tagged `.repository`, passes against a stubbed `URLProtocol` — no live server call anywhere in the suite.
-- [ ] Every row of the status-code mapping table above is exercised, including 400, 403, 405, 415 and 503 all resolving to `.transport`, and both `/QuickConnect/Enabled` and `/QuickConnect/Initiate` resolving their 401 to `.quickConnectUnavailable` rather than `.invalidCredentials`.
-- [ ] The header is asserted byte-for-byte with a token present and with `AuthContext.token == nil`, confirming the `Token` component is omitted, not sent empty, in the latter case.
-- [ ] A PascalCase fixture decodes correctly through a test-only `Decodable` type with explicit `CodingKeys`, proving the client's `JSONDecoder` carries no key-decoding strategy of its own.
-- [ ] `./scripts/check-layer-imports.sh` exits 0.
-- [ ] `swiftformat --lint .` is clean.
+- [x] Both `iOS` and `tvOS` schemes build.
+- [x] Gate 2 expected executed-test count per scheme: **28** — 15 Domain, 11 in `JellyfinHTTPClientTests` (parameterised tests count once each), plus the two remaining placeholders in `MixtapeUseCaseTests` and `MixtapeServicesTests`. Verified 2026-09-03 via `./scripts/gate.sh 28`.
+- [x] `MixtapeDataTests`' `JellyfinHTTPClientTests` suite, tagged `.repository`, passes against a stubbed `URLProtocol` — no live server call anywhere in the suite.
+- [x] Every row of the status-code mapping table above is exercised, including 400, 403, 405, 415 and 503 all resolving to `.transport`, and both `/QuickConnect/Enabled` and `/QuickConnect/Initiate` resolving their 401 to `.quickConnectUnavailable` rather than `.invalidCredentials`.
+- [x] The header is asserted byte-for-byte with a token present and with `AuthContext.token == nil`, confirming the `Token` component is omitted, not sent empty, in the latter case.
+- [x] A PascalCase fixture decodes correctly through a test-only `Decodable` type with explicit `CodingKeys`, proving the client's `JSONDecoder` carries no key-decoding strategy of its own.
+- [x] `./scripts/check-layer-imports.sh` exits 0.
+- [x] `swiftformat --lint .` is clean.
 
 ## 6. Decision Log
 
@@ -101,6 +102,13 @@ Complete **before the first line of code**, not at close.
 | 2026-09-03 | Adopt `SPEC-DECISIONS.md` decision 9: any unmapped 4xx status maps to `.transport`, with no dedicated `.forbidden` case. | A distinct `.forbidden` case for 403. | Already settled in decision 9 — no second conformer, no test data, and the retry affordance from AC16 covers it either way. Not re-argued here. |
 | 2026-09-03 | Adopt `SPEC-DECISIONS.md` decision 10: 401 on `/QuickConnect/Initiate` maps to `.quickConnectUnavailable`, matching the existing `/QuickConnect/Enabled` carve-out, not the blanket auth-endpoint rule. | Leaving the blanket "401 on an auth endpoint → `.invalidCredentials`" rule exception-free. | Already settled in decision 10 — on tvOS, where Quick Connect is the primary sign-in path, a credentials error over a server-configuration problem the user never entered credentials for would be actively misleading. Not re-argued here. |
 | 2026-09-03 | This slice's tests live in `MixtapeDataTests`, tagged `.repository`. No `MixtapeInfrastructureTests` target is created. | A dedicated `MixtapeInfrastructureTests` target mirroring the other three layer test targets one-for-one. | `MixtapeData` is the only consumer of `JellyfinHTTPClient` and already imports `MixtapeInfrastructure` per the §3 dependency table, so a fifth test target would exist to hold tests for exactly one type, with no other Infrastructure type gaining tests this round. Recorded here as well as in 001 because it is this slice's own testing strategy, not just 001's target list. |
+| 2026-09-03 | The device name is a stored property of `JellyfinHTTPClient` (`init(session:deviceName:)`; the composition root passes `DeviceName.current`, which is `` because `UIDevice` is), not a field of `AuthContext`. `DeviceName.current` is the platform-split pair `DeviceName+iOS.swift` / `DeviceName+tvOS.swift`. | Adding `deviceName` to `AuthContext`; reading `UIDevice.current.name` inside header assembly. | `AuthContext` keeps the four fields §4 and §7 give it, and a test can inject a fixed name to assert the header byte-for-byte — which reading the device inside the client would make impossible. |
+| 2026-09-03 | Every Infrastructure type in this slice is `nonisolated` (as Domain is, per 002). The client's async methods therefore run off the caller's actor, so JSON decoding of a large response never runs on the main actor. | A `@concurrent` decode helper; leaving the client under the target's `MainActor` default. | With `SWIFT_APPROACHABLE_CONCURRENCY = NO`, a nonisolated async function already leaves the caller's actor, so `@concurrent` would be redundant. A `MainActor` client would make every repository call hop to main to decode. |
+| 2026-09-03 | `.transport` carries `HTTPURLResponse.localizedString(forStatusCode:)` for an unmapped HTTP status and `localizedDescription` for a `URLError` that is not one of the three unreachable codes. Success is any 2xx, so the fire-and-forget `post` accepts the 204 the report endpoints return (decision 32). | Carrying the bare status number; treating only 200 as success. | The case is documented as "human-readable, already localised", and Foundation already has the strings. `POST /Sessions/Playing/Stopped` measured 204, so a 200-only check would fail every stop report. |
+| 2026-09-03 | `JellyfinHTTPClientTests` is `.serialized`, driving a `StubURLProtocol` whose handler is a process-global `nonisolated(unsafe)` static. | A per-request routing table keyed by URL so tests could run in parallel. | `URLProtocol` registration is process-global, so the stub is shared state whatever the test does; serialising a suite of sub-millisecond tests costs nothing and keeps the stub to ten lines. |
+| 2026-09-03 | `KeychainStore` uses `kSecClassGenericPassword` items keyed by service and account, `kSecAttrAccessibleAfterFirstUnlock`, and throws a nested `KeychainStore.Failure(status:)` on any `OSStatus` other than success or not-found. | Returning `nil` on every failure; a top-level `KeychainError` type. | Swallowing an `OSStatus` hides an entitlement or accessibility misconfiguration as "signed out". The failure type is nested because nothing outside the store constructs it, so a file of its own would hold a type with one user. |
+| 2026-09-03 | `AppLogger` is a `struct` over `os.Logger` with three static instances — `network`, `playback`, `auth` — under subsystem `mobi.jamie.mixtape`, and every message is logged with `.public` privacy. | Per-call category parameter; default (`.private`) interpolation. | Three named instances mirror §7's category list exactly and make a call site read `AppLogger.network.info(...)`. Public privacy is what makes the log useful in Console; the rule that no token is ever interpolated into a message (decision 45) is what makes it safe. |
+| 2026-09-03 | Every Domain and Infrastructure declaration another module needs is `public`, with an explicit `public init` on each struct. Domain was retroactively made public here — 002 compiled only because nothing yet imported it. | The `package` access level for everything inside `MixtapeKit`; a composition root inside the package so nothing needed `public`. | The six layers are separate modules, so `internal` is invisible across them — the first Infrastructure build failed with "cannot find 'MixtapeError' in scope". `package` would suffice between layers, but `CLAUDE.md` puts the composition root in the app target, outside the package, and it has to construct services and repositories, whose signatures then drag every Domain type into `public` anyway. One access level is easier to keep right than two. |
 
 ## 7. Sub-Slices
 
@@ -129,11 +137,11 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page's `next_slice` and that page's `previous_slice`

@@ -6,10 +6,18 @@
 
 import Foundation
 
-nonisolated struct UserSession: Sendable, Equatable {
-    let serverURL: URL
-    let userID: String
-    let userName: String
-    let accessToken: String
-    let deviceID: String
+public nonisolated struct UserSession: Sendable, Equatable {
+    public let serverURL: URL
+    public let userID: String
+    public let userName: String
+    public let accessToken: String
+    public let deviceID: String
+
+    public init(serverURL: URL, userID: String, userName: String, accessToken: String, deviceID: String) {
+        self.serverURL = serverURL
+        self.userID = userID
+        self.userName = userName
+        self.accessToken = accessToken
+        self.deviceID = deviceID
+    }
 }

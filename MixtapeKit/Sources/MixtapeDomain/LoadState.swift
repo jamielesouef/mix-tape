@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated enum LoadState<Value: Sendable>: Sendable {
+public nonisolated enum LoadState<Value: Sendable>: Sendable {
     case idle
     case loading
     case loaded(Value)

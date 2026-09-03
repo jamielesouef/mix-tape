@@ -5,7 +5,7 @@
 //
 
 /// Decisions 24 and 28: three cases, never wrapped in an optional.
-nonisolated enum QuickConnectUIState: Sendable, Equatable {
+public nonisolated enum QuickConnectUIState: Sendable, Equatable {
     case idle
     case waiting(code: String)
     case failed(MixtapeError)

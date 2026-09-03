@@ -7,7 +7,7 @@
 /// Whether AVPlayer can play the source directly. Container ∈ {mp4, m4v, mov} and video
 /// codec ∈ {h264, hevc} and the audio codec is absent (no audio track, decision 39) or
 /// ∈ {aac, mp3, alac, ac3, eac3}. Comparison is case-insensitive.
-nonisolated func isAVPlayerNative(container: String, videoCodec: String?, audioCodec: String?) -> Bool {
+public nonisolated func isAVPlayerNative(container: String, videoCodec: String?, audioCodec: String?) -> Bool {
     let containers: Set = ["mp4", "m4v", "mov"]
     let videoCodecs: Set = ["h264", "hevc"]
     let audioCodecs: Set = ["aac", "mp3", "alac", "ac3", "eac3"]

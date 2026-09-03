@@ -5,7 +5,7 @@
 //
 
 /// Which local player plays the item (decision 11 keeps this distinct from `PlayMethod`).
-nonisolated enum PlaybackMethod: Sendable, Equatable {
+public nonisolated enum PlaybackMethod: Sendable, Equatable {
     /// Native container and codecs; AVPlayer plays the static stream.
     case directAVPlayer
     /// Container or codec AVPlayer refuses; VLCKit plays the static stream.

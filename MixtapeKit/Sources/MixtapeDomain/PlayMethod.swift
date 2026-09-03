@@ -5,6 +5,6 @@
 //
 
 /// Jellyfin's wire `PlayMethod`, reported back to the server (decision 11).
-nonisolated enum PlayMethod: Sendable, Equatable {
+public nonisolated enum PlayMethod: Sendable, Equatable {
     case directPlay, directStream, transcode
 }
