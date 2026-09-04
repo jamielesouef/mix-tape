@@ -42,15 +42,17 @@
         }
     }
 
-    #Preview("loaded") {
-        MusicTabScreen().environment(\.libraryService, MockLibraryService.loaded())
-    }
+    #if DEBUG
+        #Preview("loaded") {
+            MusicTabScreen().environment(\.libraryService, MockLibraryService.loaded())
+        }
 
-    #Preview("empty") {
-        MusicTabScreen().environment(\.libraryService, MockLibraryService.empty())
-    }
+        #Preview("empty") {
+            MusicTabScreen().environment(\.libraryService, MockLibraryService.empty())
+        }
 
-    #Preview("failure") {
-        MusicTabScreen().environment(\.libraryService, MockLibraryService.failed())
-    }
+        #Preview("failure") {
+            MusicTabScreen().environment(\.libraryService, MockLibraryService.failed())
+        }
+    #endif
 #endif

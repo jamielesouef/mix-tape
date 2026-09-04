@@ -26,20 +26,22 @@ struct TrackRow: View {
     }
 }
 
-#Preview("loaded") {
-    List {
-        TrackRow(track: MockMedia.tracks[0])
+#if DEBUG
+    #Preview("loaded") {
+        List {
+            TrackRow(track: MockMedia.tracks[0])
+        }
     }
-}
 
-#Preview("empty") {
-    List {
-        TrackRow(track: MockMedia.movies[0])
+    #Preview("empty") {
+        List {
+            TrackRow(track: MockMedia.movies[0])
+        }
     }
-}
 
-#Preview("failure") {
-    List {
-        TrackRow(track: MockMedia.tracks[1])
+    #Preview("failure") {
+        List {
+            TrackRow(track: MockMedia.tracks[1])
+        }
     }
-}
+#endif

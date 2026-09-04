@@ -48,14 +48,16 @@ public struct ServerEntryScreen: View {
     }
 }
 
-#Preview("empty") {
-    ServerEntryScreen().environment(\.sessionService, MockSessionService.signedOut())
-}
+#if DEBUG
+    #Preview("empty") {
+        ServerEntryScreen().environment(\.sessionService, MockSessionService.signedOut())
+    }
 
-#Preview("failure") {
-    ServerEntryScreen().environment(\.sessionService, MockSessionService.failed(.notAJellyfinServer))
-}
+    #Preview("failure") {
+        ServerEntryScreen().environment(\.sessionService, MockSessionService.failed(.notAJellyfinServer))
+    }
 
-#Preview("loaded") {
-    ServerEntryScreen().environment(\.sessionService, MockSessionService.serverValidated())
-}
+    #Preview("loaded") {
+        ServerEntryScreen().environment(\.sessionService, MockSessionService.serverValidated())
+    }
+#endif

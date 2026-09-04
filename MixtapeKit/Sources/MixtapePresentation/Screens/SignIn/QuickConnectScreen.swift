@@ -58,15 +58,17 @@ public struct QuickConnectScreen: View {
     }
 }
 
-#Preview("waiting") {
-    QuickConnectScreen(onCancel: {}).environment(\.sessionService, MockSessionService.quickConnectWaiting())
-}
+#if DEBUG
+    #Preview("waiting") {
+        QuickConnectScreen(onCancel: {}).environment(\.sessionService, MockSessionService.quickConnectWaiting())
+    }
 
-#Preview("failure") {
-    QuickConnectScreen(onCancel: {}, onUsePassword: {})
-        .environment(\.sessionService, MockSessionService.quickConnectFailed(.quickConnectUnavailable))
-}
+    #Preview("failure") {
+        QuickConnectScreen(onCancel: {}, onUsePassword: {})
+            .environment(\.sessionService, MockSessionService.quickConnectFailed(.quickConnectUnavailable))
+    }
 
-#Preview("idle") {
-    QuickConnectScreen(onCancel: {}).environment(\.sessionService, MockSessionService.serverValidated())
-}
+    #Preview("idle") {
+        QuickConnectScreen(onCancel: {}).environment(\.sessionService, MockSessionService.serverValidated())
+    }
+#endif

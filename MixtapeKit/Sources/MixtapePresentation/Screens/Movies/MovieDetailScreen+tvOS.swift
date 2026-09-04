@@ -97,24 +97,26 @@
         }
     }
 
-    #Preview("loaded") {
-        NavigationStack {
-            MovieDetailScreen(item: MockMedia.movies[1])
+    #if DEBUG
+        #Preview("loaded") {
+            NavigationStack {
+                MovieDetailScreen(item: MockMedia.movies[1])
+            }
+            .environment(\.libraryService, MockLibraryService.loaded())
         }
-        .environment(\.libraryService, MockLibraryService.loaded())
-    }
 
-    #Preview("empty") {
-        NavigationStack {
-            MovieDetailScreen(item: MockMedia.movies[0])
+        #Preview("empty") {
+            NavigationStack {
+                MovieDetailScreen(item: MockMedia.movies[0])
+            }
+            .environment(\.libraryService, MockLibraryService.empty())
         }
-        .environment(\.libraryService, MockLibraryService.empty())
-    }
 
-    #Preview("failure") {
-        NavigationStack {
-            MovieDetailScreen(item: MockMedia.movies[1])
+        #Preview("failure") {
+            NavigationStack {
+                MovieDetailScreen(item: MockMedia.movies[1])
+            }
+            .environment(\.libraryService, MockLibraryService.failed())
         }
-        .environment(\.libraryService, MockLibraryService.failed())
-    }
+    #endif
 #endif

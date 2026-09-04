@@ -45,20 +45,22 @@ struct PosterCard: View {
     }
 }
 
-#Preview("loaded") {
-    PosterCard(item: MockMedia.movies[1])
-        .frame(width: 160)
-        .environment(\.imageService, MockImageService.make())
-}
+#if DEBUG
+    #Preview("loaded") {
+        PosterCard(item: MockMedia.movies[1])
+            .frame(width: 160)
+            .environment(\.imageService, MockImageService.make())
+    }
 
-#Preview("empty") {
-    PosterCard(item: MockMedia.albums[0], aspectRatio: 1)
-        .frame(width: 160)
-        .environment(\.imageService, MockImageService.make())
-}
+    #Preview("empty") {
+        PosterCard(item: MockMedia.albums[0], aspectRatio: 1)
+            .frame(width: 160)
+            .environment(\.imageService, MockImageService.make())
+    }
 
-#Preview("failure") {
-    PosterCard(item: MockMedia.movies[0])
-        .frame(width: 160)
-        .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-}
+    #Preview("failure") {
+        PosterCard(item: MockMedia.movies[0])
+            .frame(width: 160)
+            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+    }
+#endif

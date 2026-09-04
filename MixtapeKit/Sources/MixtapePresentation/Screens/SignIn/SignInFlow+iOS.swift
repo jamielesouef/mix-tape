@@ -27,15 +27,17 @@
         }
     }
 
-    #Preview("server entry") {
-        SignInFlow().environment(\.sessionService, MockSessionService.signedOut())
-    }
+    #if DEBUG
+        #Preview("server entry") {
+            SignInFlow().environment(\.sessionService, MockSessionService.signedOut())
+        }
 
-    #Preview("sign in") {
-        SignInFlow().environment(\.sessionService, MockSessionService.serverValidated())
-    }
+        #Preview("sign in") {
+            SignInFlow().environment(\.sessionService, MockSessionService.serverValidated())
+        }
 
-    #Preview("failure") {
-        SignInFlow().environment(\.sessionService, MockSessionService.failed(.serverUnreachable))
-    }
+        #Preview("failure") {
+            SignInFlow().environment(\.sessionService, MockSessionService.failed(.serverUnreachable))
+        }
+    #endif
 #endif

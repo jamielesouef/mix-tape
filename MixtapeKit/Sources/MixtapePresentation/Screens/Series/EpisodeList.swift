@@ -35,23 +35,25 @@ struct EpisodeList: View {
     }
 }
 
-#Preview("loaded") {
-    NavigationStack {
-        EpisodeList(seriesID: "series-1", seasonID: "season-1")
+#if DEBUG
+    #Preview("loaded") {
+        NavigationStack {
+            EpisodeList(seriesID: "series-1", seasonID: "season-1")
+        }
+        .environment(\.seriesService, MockSeriesService.loaded())
     }
-    .environment(\.seriesService, MockSeriesService.loaded())
-}
 
-#Preview("empty") {
-    NavigationStack {
-        EpisodeList(seriesID: "series-1", seasonID: "season-2")
+    #Preview("empty") {
+        NavigationStack {
+            EpisodeList(seriesID: "series-1", seasonID: "season-2")
+        }
+        .environment(\.seriesService, MockSeriesService.loaded())
     }
-    .environment(\.seriesService, MockSeriesService.loaded())
-}
 
-#Preview("failure") {
-    NavigationStack {
-        EpisodeList(seriesID: "series-1", seasonID: "season-1")
+    #Preview("failure") {
+        NavigationStack {
+            EpisodeList(seriesID: "series-1", seasonID: "season-1")
+        }
+        .environment(\.seriesService, MockSeriesService.make(episodes: ["season-1": .failed(.serverUnreachable)]))
     }
-    .environment(\.seriesService, MockSeriesService.make(episodes: ["season-1": .failed(.serverUnreachable)]))
-}
+#endif

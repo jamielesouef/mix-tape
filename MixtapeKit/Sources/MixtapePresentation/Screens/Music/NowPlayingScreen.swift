@@ -76,14 +76,16 @@ public struct NowPlayingScreen: View {
     }
 }
 
-#Preview("loaded") {
-    NowPlayingScreen().environment(\.musicPlayerService, MockMusicPlayerService.playing())
-}
+#if DEBUG
+    #Preview("loaded") {
+        NowPlayingScreen().environment(\.musicPlayerService, MockMusicPlayerService.playing())
+    }
 
-#Preview("empty") {
-    NowPlayingScreen().environment(\.musicPlayerService, MockMusicPlayerService.idle())
-}
+    #Preview("empty") {
+        NowPlayingScreen().environment(\.musicPlayerService, MockMusicPlayerService.idle())
+    }
 
-#Preview("failure") {
-    NowPlayingScreen().environment(\.musicPlayerService, MockMusicPlayerService.idle())
-}
+    #Preview("failure") {
+        NowPlayingScreen().environment(\.musicPlayerService, MockMusicPlayerService.idle())
+    }
+#endif

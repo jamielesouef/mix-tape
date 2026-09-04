@@ -65,23 +65,25 @@ public struct SeriesDetailScreen: View {
     }
 }
 
-#Preview("loaded") {
-    NavigationStack {
-        SeriesDetailScreen(series: MockMedia.series)
+#if DEBUG
+    #Preview("loaded") {
+        NavigationStack {
+            SeriesDetailScreen(series: MockMedia.series)
+        }
+        .environment(\.seriesService, MockSeriesService.loaded())
     }
-    .environment(\.seriesService, MockSeriesService.loaded())
-}
 
-#Preview("empty") {
-    NavigationStack {
-        SeriesDetailScreen(series: MockMedia.series)
+    #Preview("empty") {
+        NavigationStack {
+            SeriesDetailScreen(series: MockMedia.series)
+        }
+        .environment(\.seriesService, MockSeriesService.empty())
     }
-    .environment(\.seriesService, MockSeriesService.empty())
-}
 
-#Preview("failure") {
-    NavigationStack {
-        SeriesDetailScreen(series: MockMedia.series)
+    #Preview("failure") {
+        NavigationStack {
+            SeriesDetailScreen(series: MockMedia.series)
+        }
+        .environment(\.seriesService, MockSeriesService.failed())
     }
-    .environment(\.seriesService, MockSeriesService.failed())
-}
+#endif

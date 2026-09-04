@@ -44,23 +44,25 @@
         }
     }
 
-    #Preview("loaded") {
-        NavigationStack {
-            PosterShelf(title: "Movies", items: MockMedia.movies) {}
+    #if DEBUG
+        #Preview("loaded") {
+            NavigationStack {
+                PosterShelf(title: "Movies", items: MockMedia.movies) {}
+            }
+            .environment(\.imageService, MockImageService.make())
         }
-        .environment(\.imageService, MockImageService.make())
-    }
 
-    #Preview("empty") {
-        NavigationStack {
-            PosterShelf(title: "Movies", items: []) {}
+        #Preview("empty") {
+            NavigationStack {
+                PosterShelf(title: "Movies", items: []) {}
+            }
         }
-    }
 
-    #Preview("failure") {
-        NavigationStack {
-            PosterShelf(title: "Shows", items: [MockMedia.series]) {}
+        #Preview("failure") {
+            NavigationStack {
+                PosterShelf(title: "Shows", items: [MockMedia.series]) {}
+            }
+            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
         }
-        .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-    }
+    #endif
 #endif

@@ -62,14 +62,16 @@ public struct VideoPlayerScreen: View {
     }
 }
 
-#Preview("loaded") {
-    VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.playing())
-}
+#if DEBUG
+    #Preview("loaded") {
+        VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.playing())
+    }
 
-#Preview("empty") {
-    VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.preparing())
-}
+    #Preview("empty") {
+        VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.preparing())
+    }
 
-#Preview("failure") {
-    VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.failed(.noPlayableSource))
-}
+    #Preview("failure") {
+        VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.failed(.noPlayableSource))
+    }
+#endif

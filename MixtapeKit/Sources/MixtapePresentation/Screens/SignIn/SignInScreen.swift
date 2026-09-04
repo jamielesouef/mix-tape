@@ -55,15 +55,17 @@ public struct SignInScreen: View {
     }
 }
 
-#Preview("loaded") {
-    SignInScreen(onUseQuickConnect: {}).environment(\.sessionService, MockSessionService.serverValidated())
-}
+#if DEBUG
+    #Preview("loaded") {
+        SignInScreen(onUseQuickConnect: {}).environment(\.sessionService, MockSessionService.serverValidated())
+    }
 
-#Preview("failure") {
-    SignInScreen(onUseQuickConnect: {})
-        .environment(\.sessionService, MockSessionService.signInFailed(.invalidCredentials))
-}
+    #Preview("failure") {
+        SignInScreen(onUseQuickConnect: {})
+            .environment(\.sessionService, MockSessionService.signInFailed(.invalidCredentials))
+    }
 
-#Preview("empty") {
-    SignInScreen(onUseQuickConnect: {}).environment(\.sessionService, MockSessionService.signedOut())
-}
+    #Preview("empty") {
+        SignInScreen(onUseQuickConnect: {}).environment(\.sessionService, MockSessionService.signedOut())
+    }
+#endif

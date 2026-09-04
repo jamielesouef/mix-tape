@@ -42,14 +42,16 @@ public struct SettingsScreen: View {
     }
 }
 
-#Preview("loaded") {
-    SettingsScreen().environment(\.sessionService, MockSessionService.signedIn())
-}
+#if DEBUG
+    #Preview("loaded") {
+        SettingsScreen().environment(\.sessionService, MockSessionService.signedIn())
+    }
 
-#Preview("empty") {
-    SettingsScreen().environment(\.sessionService, MockSessionService.signedOut())
-}
+    #Preview("empty") {
+        SettingsScreen().environment(\.sessionService, MockSessionService.signedOut())
+    }
 
-#Preview("failure") {
-    SettingsScreen().environment(\.sessionService, MockSessionService.failed(.sessionExpired))
-}
+    #Preview("failure") {
+        SettingsScreen().environment(\.sessionService, MockSessionService.failed(.sessionExpired))
+    }
+#endif

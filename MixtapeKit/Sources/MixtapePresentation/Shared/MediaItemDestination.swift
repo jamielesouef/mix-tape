@@ -27,22 +27,24 @@ struct MediaItemDestination: View {
     }
 }
 
-#Preview("loaded") {
-    NavigationStack {
-        MediaItemDestination(item: MockMedia.movies[1])
+#if DEBUG
+    #Preview("loaded") {
+        NavigationStack {
+            MediaItemDestination(item: MockMedia.movies[1])
+        }
+        .environment(\.libraryService, MockLibraryService.loaded())
     }
-    .environment(\.libraryService, MockLibraryService.loaded())
-}
 
-#Preview("empty") {
-    NavigationStack {
-        MediaItemDestination(item: MockMedia.tracks[0])
+    #Preview("empty") {
+        NavigationStack {
+            MediaItemDestination(item: MockMedia.tracks[0])
+        }
     }
-}
 
-#Preview("failure") {
-    NavigationStack {
-        MediaItemDestination(item: MockMedia.series)
+    #Preview("failure") {
+        NavigationStack {
+            MediaItemDestination(item: MockMedia.series)
+        }
+        .environment(\.seriesService, MockSeriesService.failed())
     }
-    .environment(\.seriesService, MockSeriesService.failed())
-}
+#endif

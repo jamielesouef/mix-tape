@@ -228,6 +228,7 @@
 				D9916EF13048EEED005E88CA /* Sources */,
 				D9916EF23048EEED005E88CA /* Frameworks */,
 				D9916EF33048EEED005E88CA /* Resources */,
+				C0DE0130000000000000A001 /* Check Layer Imports */,
 			);
 			buildRules = (
 			);
@@ -356,6 +357,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		B5A28072A198C1156566389F /* Check Layer Imports */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -371,7 +373,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/scripts/check-layer-imports.sh\"\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			shellScript = "set -e\n\"${SRCROOT}/scripts/check-layer-imports.sh\"\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		C0DE0130000000000000A001 /* Check Layer Imports */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check Layer Imports";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/check-layer-imports.stamp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\"${SRCROOT}/scripts/check-layer-imports.sh\"\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -680,6 +702,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J2VZJQ63FQ;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Apps/MixtapeTV/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -712,6 +735,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J2VZJQ63FQ;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Apps/MixtapeTV/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

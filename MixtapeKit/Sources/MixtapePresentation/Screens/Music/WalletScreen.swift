@@ -48,8 +48,8 @@
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .accessibilityIdentifier(WalletIdentifiers.pager)
-                switch libraryService.pages[library.id] {
-                case .none, .idle, .loading:
+                switch phase {
+                case .loading:
                     ProgressView()
                         .controlSize(.small)
                 case let .failed(error):
@@ -59,7 +59,7 @@
                     Button("Retry") { Task { await libraryService.loadLibrary(id: library.id) } }
                         .buttonStyle(.bordered)
                         .accessibilityIdentifier(WalletIdentifiers.retryButton)
-                case .loaded where albums.isEmpty:
+                case .empty:
                     Text("No albums in this library yet.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -98,20 +98,20 @@
             sizeClass == .regular ? 3 : 2
         }
 
-        private var albums: [MediaItem] {
-            if case let .loaded(page) = libraryService.pages[library.id] {
-                return page.items
-            }
-            return []
+        private var pager: WalletPager {
+            WalletPager(state: libraryService.pages[library.id], columns: columns)
+        }
+
+        private var phase: ContentPhase<Page<MediaItem>> {
+            ContentPhase(libraryService.pages[library.id]) { $0.items.isEmpty }
         }
 
         private var pageCount: Int {
-            WalletPosition.pageCount(albumCount: albums.count, columns: columns)
+            pager.pageCount
         }
 
         private func albums(onPage page: Int) -> [MediaItem] {
-            let perPage = columns * columns
-            return Array(albums.dropFirst(page * perPage).prefix(perPage))
+            pager.albums(onPage: page)
         }
 
         /// The backgrounded case (§9.1): the last track ended while the app was away, so the wallet
@@ -127,7 +127,7 @@
         /// misses the change.
         private func returnToSleeve(animated: Bool) {
             guard let albumID = music.finishedAlbumID else { return }
-            let page = WalletPosition(albumID: albumID, in: albums.map(\.id), columns: columns)?.page
+            let page = pager.page(of: albumID)
             // Reduce Motion takes the same path as a return from the background: no paging
             // animation and no pulse (slice 012).
             guard animated, reduceMotion == false else {
@@ -161,25 +161,27 @@
         }
     }
 
-    #Preview("loaded — full and partial pages") {
-        NavigationStack {
-            WalletScreen(library: MockMedia.libraries[2])
+    #if DEBUG
+        #Preview("loaded — full and partial pages") {
+            NavigationStack {
+                WalletScreen(library: MockMedia.libraries[2])
+            }
+            .environment(\.libraryService, MockLibraryService.loaded())
+            .environment(\.imageService, MockImageService.make())
         }
-        .environment(\.libraryService, MockLibraryService.loaded())
-        .environment(\.imageService, MockImageService.make())
-    }
 
-    #Preview("empty") {
-        NavigationStack {
-            WalletScreen(library: MockMedia.libraries[2])
+        #Preview("empty") {
+            NavigationStack {
+                WalletScreen(library: MockMedia.libraries[2])
+            }
+            .environment(\.libraryService, MockLibraryService.empty())
         }
-        .environment(\.libraryService, MockLibraryService.empty())
-    }
 
-    #Preview("failure") {
-        NavigationStack {
-            WalletScreen(library: MockMedia.libraries[2])
+        #Preview("failure") {
+            NavigationStack {
+                WalletScreen(library: MockMedia.libraries[2])
+            }
+            .environment(\.libraryService, MockLibraryService.failed())
         }
-        .environment(\.libraryService, MockLibraryService.failed())
-    }
+    #endif
 #endif

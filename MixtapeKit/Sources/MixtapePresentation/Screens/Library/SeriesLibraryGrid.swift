@@ -36,24 +36,26 @@
         }
     }
 
-    #Preview("loaded") {
-        NavigationStack {
-            SeriesLibraryGrid(library: MockMedia.libraries[1])
+    #if DEBUG
+        #Preview("loaded") {
+            NavigationStack {
+                SeriesLibraryGrid(library: MockMedia.libraries[1])
+            }
+            .environment(\.libraryService, MockLibraryService.loaded())
         }
-        .environment(\.libraryService, MockLibraryService.loaded())
-    }
 
-    #Preview("empty") {
-        NavigationStack {
-            SeriesLibraryGrid(library: MockMedia.libraries[1])
+        #Preview("empty") {
+            NavigationStack {
+                SeriesLibraryGrid(library: MockMedia.libraries[1])
+            }
+            .environment(\.libraryService, MockLibraryService.empty())
         }
-        .environment(\.libraryService, MockLibraryService.empty())
-    }
 
-    #Preview("failure") {
-        NavigationStack {
-            SeriesLibraryGrid(library: MockMedia.libraries[1])
+        #Preview("failure") {
+            NavigationStack {
+                SeriesLibraryGrid(library: MockMedia.libraries[1])
+            }
+            .environment(\.libraryService, MockLibraryService.failed())
         }
-        .environment(\.libraryService, MockLibraryService.failed())
-    }
+    #endif
 #endif

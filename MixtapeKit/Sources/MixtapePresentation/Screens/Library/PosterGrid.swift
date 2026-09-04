@@ -37,23 +37,25 @@
         }
     }
 
-    #Preview("loaded") {
-        NavigationStack {
-            PosterGrid(items: MockMedia.movies) {}
+    #if DEBUG
+        #Preview("loaded") {
+            NavigationStack {
+                PosterGrid(items: MockMedia.movies) {}
+            }
+            .environment(\.imageService, MockImageService.make())
         }
-        .environment(\.imageService, MockImageService.make())
-    }
 
-    #Preview("empty") {
-        NavigationStack {
-            PosterGrid(items: []) {}
+        #Preview("empty") {
+            NavigationStack {
+                PosterGrid(items: []) {}
+            }
         }
-    }
 
-    #Preview("failure") {
-        NavigationStack {
-            PosterGrid(items: [MockMedia.series]) {}
+        #Preview("failure") {
+            NavigationStack {
+                PosterGrid(items: [MockMedia.series]) {}
+            }
+            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
         }
-        .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-    }
+    #endif
 #endif

@@ -45,20 +45,22 @@
         }
     }
 
-    #Preview("loaded") {
-        AlbumSleeve(album: MockMedia.albums[0])
-            .frame(width: 160)
-            .environment(\.imageService, MockImageService.make())
-    }
+    #if DEBUG
+        #Preview("loaded") {
+            AlbumSleeve(album: MockMedia.albums[0])
+                .frame(width: 160)
+                .environment(\.imageService, MockImageService.make())
+        }
 
-    #Preview("empty") {
-        AlbumSleeve(album: nil)
-            .frame(width: 160)
-    }
+        #Preview("empty") {
+            AlbumSleeve(album: nil)
+                .frame(width: 160)
+        }
 
-    #Preview("failure") {
-        AlbumSleeve(album: MockMedia.albums[1], isPulsing: true)
-            .frame(width: 160)
-            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-    }
+        #Preview("failure") {
+            AlbumSleeve(album: MockMedia.albums[1], isPulsing: true)
+                .frame(width: 160)
+                .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+        }
+    #endif
 #endif

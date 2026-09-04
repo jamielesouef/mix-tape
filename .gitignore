@@ -12,3 +12,6 @@ DerivedData/
 # and 46. A spike run already leaked a live token into seven scratch files;
 # this entry exists so the same mistake cannot reach a commit.
 .jellyfin-dev.env
+
+# Gate run log (slice 013): one line per ./scripts/gate.sh run. Local evidence, never committed.
+.gate-log

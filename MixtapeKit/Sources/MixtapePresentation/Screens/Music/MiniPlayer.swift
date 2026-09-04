@@ -16,7 +16,7 @@ struct MiniPlayer: View {
     @State private var showNowPlaying = false
 
     var body: some View {
-        if music.isActive, let track = music.current {
+        if let track = Self.dockedTrack(in: music) {
             // Two sibling buttons, not one nested in the other: a nested button is flattened into its
             // parent's accessibility element and VoiceOver never reaches it (slice 012).
             HStack(spacing: 12) {
@@ -59,16 +59,25 @@ struct MiniPlayer: View {
             }
         }
     }
+
+    /// The track the dock shows, or `nil` when it must not render at all: nothing playing, or an
+    /// album that has finished and is waiting for the wallet to return it. Platform-shared so it
+    /// is testable without the iOS accessory that hosts the view.
+    static func dockedTrack(in music: MusicPlayerService) -> MediaItem? {
+        music.isActive ? music.current : nil
+    }
 }
 
-#Preview("loaded") {
-    MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.playing())
-}
+#if DEBUG
+    #Preview("loaded") {
+        MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.playing())
+    }
 
-#Preview("empty") {
-    MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.idle())
-}
+    #Preview("empty") {
+        MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.idle())
+    }
 
-#Preview("failure") {
-    MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.idle())
-}
+    #Preview("failure") {
+        MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.idle())
+    }
+#endif

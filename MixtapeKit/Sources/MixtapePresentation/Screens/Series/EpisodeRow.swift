@@ -35,23 +35,25 @@ struct EpisodeRow: View {
     }
 }
 
-#Preview("loaded") {
-    List {
-        EpisodeRow(episode: MockMedia.episodes[1])
+#if DEBUG
+    #Preview("loaded") {
+        List {
+            EpisodeRow(episode: MockMedia.episodes[1])
+        }
+        .environment(\.imageService, MockImageService.make())
     }
-    .environment(\.imageService, MockImageService.make())
-}
 
-#Preview("empty") {
-    List {
-        EpisodeRow(episode: MockMedia.episodes[0])
+    #Preview("empty") {
+        List {
+            EpisodeRow(episode: MockMedia.episodes[0])
+        }
+        .environment(\.imageService, MockImageService.make())
     }
-    .environment(\.imageService, MockImageService.make())
-}
 
-#Preview("failure") {
-    List {
-        EpisodeRow(episode: MockMedia.episodes[0])
+    #Preview("failure") {
+        List {
+            EpisodeRow(episode: MockMedia.episodes[0])
+        }
+        .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
     }
-    .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-}
+#endif

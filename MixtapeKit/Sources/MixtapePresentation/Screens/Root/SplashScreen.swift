@@ -19,6 +19,8 @@ public struct SplashScreen: View {
     }
 }
 
-#Preview {
-    SplashScreen()
-}
+#if DEBUG
+    #Preview {
+        SplashScreen()
+    }
+#endif

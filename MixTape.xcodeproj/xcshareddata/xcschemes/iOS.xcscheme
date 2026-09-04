@@ -71,6 +71,16 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MixtapePresentationTests"
+               BuildableName = "MixtapePresentationTests"
+               BlueprintName = "MixtapePresentationTests"
+               ReferencedContainer = "container:MixtapeKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
             skipped = "NO"
             parallelizable = "YES">
             <BuildableReference

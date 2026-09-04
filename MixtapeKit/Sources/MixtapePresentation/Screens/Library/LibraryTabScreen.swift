@@ -93,15 +93,17 @@
         }
     }
 
-    #Preview("loaded") {
-        LibraryTabScreen(kind: .movies).environment(\.libraryService, MockLibraryService.loaded())
-    }
+    #if DEBUG
+        #Preview("loaded") {
+            LibraryTabScreen(kind: .movies).environment(\.libraryService, MockLibraryService.loaded())
+        }
 
-    #Preview("empty") {
-        LibraryTabScreen(kind: .music).environment(\.libraryService, MockLibraryService.empty())
-    }
+        #Preview("empty") {
+            LibraryTabScreen(kind: .music).environment(\.libraryService, MockLibraryService.empty())
+        }
 
-    #Preview("failure") {
-        LibraryTabScreen(kind: .tvShows).environment(\.libraryService, MockLibraryService.failed())
-    }
+        #Preview("failure") {
+            LibraryTabScreen(kind: .tvShows).environment(\.libraryService, MockLibraryService.failed())
+        }
+    #endif
 #endif

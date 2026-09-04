@@ -26,14 +26,16 @@ struct RetryView: View {
     }
 }
 
-#Preview("loaded") {
-    RetryView(error: .serverUnreachable) {}
-}
+#if DEBUG
+    #Preview("loaded") {
+        RetryView(error: .serverUnreachable) {}
+    }
 
-#Preview("empty") {
-    RetryView(error: .transport("")) {}
-}
+    #Preview("empty") {
+        RetryView(error: .transport("")) {}
+    }
 
-#Preview("failure") {
-    RetryView(error: .sessionExpired) {}
-}
+    #Preview("failure") {
+        RetryView(error: .sessionExpired) {}
+    }
+#endif

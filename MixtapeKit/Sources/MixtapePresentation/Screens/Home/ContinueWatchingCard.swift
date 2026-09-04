@@ -34,17 +34,19 @@ struct ContinueWatchingCard: View {
     }
 }
 
-#Preview("loaded") {
-    ContinueWatchingCard(item: MockMedia.movies[1])
-        .environment(\.imageService, MockImageService.make())
-}
+#if DEBUG
+    #Preview("loaded") {
+        ContinueWatchingCard(item: MockMedia.movies[1])
+            .environment(\.imageService, MockImageService.make())
+    }
 
-#Preview("empty") {
-    ContinueWatchingCard(item: MockMedia.movies[0])
-        .environment(\.imageService, MockImageService.make())
-}
+    #Preview("empty") {
+        ContinueWatchingCard(item: MockMedia.movies[0])
+            .environment(\.imageService, MockImageService.make())
+    }
 
-#Preview("failure") {
-    ContinueWatchingCard(item: MockMedia.episodes[1])
-        .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-}
+    #Preview("failure") {
+        ContinueWatchingCard(item: MockMedia.episodes[1])
+            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+    }
+#endif

@@ -33,15 +33,17 @@
         }
     }
 
-    #Preview("server entry") {
-        SignInFlow().environment(\.sessionService, MockSessionService.signedOut())
-    }
+    #if DEBUG
+        #Preview("server entry") {
+            SignInFlow().environment(\.sessionService, MockSessionService.signedOut())
+        }
 
-    #Preview("quick connect") {
-        SignInFlow().environment(\.sessionService, MockSessionService.quickConnectWaiting())
-    }
+        #Preview("quick connect") {
+            SignInFlow().environment(\.sessionService, MockSessionService.quickConnectWaiting())
+        }
 
-    #Preview("failure") {
-        SignInFlow().environment(\.sessionService, MockSessionService.failed(.serverUnreachable))
-    }
+        #Preview("failure") {
+            SignInFlow().environment(\.sessionService, MockSessionService.failed(.serverUnreachable))
+        }
+    #endif
 #endif

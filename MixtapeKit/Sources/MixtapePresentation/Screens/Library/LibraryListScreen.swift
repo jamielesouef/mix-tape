@@ -55,14 +55,16 @@ public struct LibraryListScreen: View {
     }
 }
 
-#Preview("loaded") {
-    LibraryListScreen().environment(\.libraryService, MockLibraryService.loaded())
-}
+#if DEBUG
+    #Preview("loaded") {
+        LibraryListScreen().environment(\.libraryService, MockLibraryService.loaded())
+    }
 
-#Preview("empty") {
-    LibraryListScreen().environment(\.libraryService, MockLibraryService.empty())
-}
+    #Preview("empty") {
+        LibraryListScreen().environment(\.libraryService, MockLibraryService.empty())
+    }
 
-#Preview("failure") {
-    LibraryListScreen().environment(\.libraryService, MockLibraryService.failed())
-}
+    #Preview("failure") {
+        LibraryListScreen().environment(\.libraryService, MockLibraryService.failed())
+    }
+#endif

@@ -42,20 +42,22 @@
         }
     }
 
-    #Preview("loaded") {
-        @Previewable @Namespace var namespace
-        WalletPage(albums: MockMedia.albums, columns: 2, pulsingAlbumID: MockMedia.albums[0].id, namespace: namespace) { _ in }
-            .environment(\.imageService, MockImageService.make())
-    }
+    #if DEBUG
+        #Preview("loaded") {
+            @Previewable @Namespace var namespace
+            WalletPage(albums: MockMedia.albums, columns: 2, pulsingAlbumID: MockMedia.albums[0].id, namespace: namespace) { _ in }
+                .environment(\.imageService, MockImageService.make())
+        }
 
-    #Preview("empty") {
-        @Previewable @Namespace var namespace
-        WalletPage(albums: [], columns: 3, pulsingAlbumID: nil, namespace: namespace) { _ in }
-    }
+        #Preview("empty") {
+            @Previewable @Namespace var namespace
+            WalletPage(albums: [], columns: 3, pulsingAlbumID: nil, namespace: namespace) { _ in }
+        }
 
-    #Preview("failure") {
-        @Previewable @Namespace var namespace
-        WalletPage(albums: Array(MockMedia.albums.prefix(1)), columns: 2, pulsingAlbumID: nil, namespace: namespace) { _ in }
-            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
-    }
+        #Preview("failure") {
+            @Previewable @Namespace var namespace
+            WalletPage(albums: Array(MockMedia.albums.prefix(1)), columns: 2, pulsingAlbumID: nil, namespace: namespace) { _ in }
+                .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+        }
+    #endif
 #endif

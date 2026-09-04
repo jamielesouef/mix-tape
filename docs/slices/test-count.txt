@@ -1,0 +1,15 @@
+# Expected `@Test` declarations per suite. scripts/gate.sh checks this file against the source
+# tree before building and against each result bundle after testing (slice 013, decision 38).
+# A parameterised test counts once, however many argument sets it runs.
+#
+# Change a number here deliberately, in the same commit as the test it accounts for. The gate
+# failing on this file is the point: a test removed, or moved between suites, must not pass
+# because someone typed a smaller number on a command line.
+#
+# One manifest serves both schemes, so every test must compile on iOS and tvOS alike — keep
+# tests out of `#if os(...)` bodies and test platform-shared helpers instead.
+MixtapeDomainTests 20
+MixtapeUseCaseTests 41
+MixtapeServicesTests 53
+MixtapeDataTests 42
+MixtapePresentationTests 11

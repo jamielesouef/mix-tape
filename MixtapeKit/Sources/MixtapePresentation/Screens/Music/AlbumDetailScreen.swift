@@ -82,23 +82,25 @@ public struct AlbumDetailScreen: View {
     }
 }
 
-#Preview("loaded") {
-    NavigationStack {
-        AlbumDetailScreen(album: MockMedia.albums[0])
+#if DEBUG
+    #Preview("loaded") {
+        NavigationStack {
+            AlbumDetailScreen(album: MockMedia.albums[0])
+        }
+        .environment(\.libraryService, MockLibraryService.loaded())
     }
-    .environment(\.libraryService, MockLibraryService.loaded())
-}
 
-#Preview("empty") {
-    NavigationStack {
-        AlbumDetailScreen(album: MockMedia.albums[0])
+    #Preview("empty") {
+        NavigationStack {
+            AlbumDetailScreen(album: MockMedia.albums[0])
+        }
+        .environment(\.libraryService, MockLibraryService.empty())
     }
-    .environment(\.libraryService, MockLibraryService.empty())
-}
 
-#Preview("failure") {
-    NavigationStack {
-        AlbumDetailScreen(album: MockMedia.albums[0])
+    #Preview("failure") {
+        NavigationStack {
+            AlbumDetailScreen(album: MockMedia.albums[0])
+        }
+        .environment(\.libraryService, MockLibraryService.failed())
     }
-    .environment(\.libraryService, MockLibraryService.failed())
-}
+#endif

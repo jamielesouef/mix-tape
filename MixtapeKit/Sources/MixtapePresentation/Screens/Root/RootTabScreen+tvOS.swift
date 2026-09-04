@@ -37,21 +37,23 @@
         }
     }
 
-    #Preview("loaded") {
-        RootTabScreen()
-            .environment(\.sessionService, MockSessionService.signedIn())
-            .environment(\.libraryService, MockLibraryService.loaded())
-    }
+    #if DEBUG
+        #Preview("loaded") {
+            RootTabScreen()
+                .environment(\.sessionService, MockSessionService.signedIn())
+                .environment(\.libraryService, MockLibraryService.loaded())
+        }
 
-    #Preview("empty") {
-        RootTabScreen()
-            .environment(\.sessionService, MockSessionService.signedIn())
-            .environment(\.libraryService, MockLibraryService.empty())
-    }
+        #Preview("empty") {
+            RootTabScreen()
+                .environment(\.sessionService, MockSessionService.signedIn())
+                .environment(\.libraryService, MockLibraryService.empty())
+        }
 
-    #Preview("failure") {
-        RootTabScreen()
-            .environment(\.sessionService, MockSessionService.signedIn())
-            .environment(\.libraryService, MockLibraryService.failed())
-    }
+        #Preview("failure") {
+            RootTabScreen()
+                .environment(\.sessionService, MockSessionService.signedIn())
+                .environment(\.libraryService, MockLibraryService.failed())
+        }
+    #endif
 #endif

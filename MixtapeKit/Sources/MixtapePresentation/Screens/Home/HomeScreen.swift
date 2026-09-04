@@ -61,14 +61,16 @@ public struct HomeScreen: View {
     }
 }
 
-#Preview("loaded") {
-    HomeScreen().environment(\.libraryService, MockLibraryService.loaded())
-}
+#if DEBUG
+    #Preview("loaded") {
+        HomeScreen().environment(\.libraryService, MockLibraryService.loaded())
+    }
 
-#Preview("empty") {
-    HomeScreen().environment(\.libraryService, MockLibraryService.empty())
-}
+    #Preview("empty") {
+        HomeScreen().environment(\.libraryService, MockLibraryService.empty())
+    }
 
-#Preview("failure") {
-    HomeScreen().environment(\.libraryService, MockLibraryService.failed())
-}
+    #Preview("failure") {
+        HomeScreen().environment(\.libraryService, MockLibraryService.failed())
+    }
+#endif

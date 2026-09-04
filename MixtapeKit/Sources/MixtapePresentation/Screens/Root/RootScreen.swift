@@ -32,16 +32,18 @@ public struct RootScreen: View {
     }
 }
 
-#Preview("loading") {
-    RootScreen().environment(\.sessionService, MockSessionService.loading())
-}
+#if DEBUG
+    #Preview("loading") {
+        RootScreen().environment(\.sessionService, MockSessionService.loading())
+    }
 
-#Preview("signed out") {
-    RootScreen().environment(\.sessionService, MockSessionService.signedOut())
-}
+    #Preview("signed out") {
+        RootScreen().environment(\.sessionService, MockSessionService.signedOut())
+    }
 
-#Preview("signed in") {
-    RootScreen()
-        .environment(\.sessionService, MockSessionService.signedIn())
-        .environment(\.libraryService, MockLibraryService.loaded())
-}
+    #Preview("signed in") {
+        RootScreen()
+            .environment(\.sessionService, MockSessionService.signedIn())
+            .environment(\.libraryService, MockLibraryService.loaded())
+    }
+#endif
