@@ -103,6 +103,9 @@ public nonisolated struct MockLibraryRepository: LibraryRepositoryProtocol {
     public static let sampleAlbums = [
         item(id: "album-1", name: "Even In Arcadia", kind: .musicAlbum, year: 2025, albumArtist: "Sleep Token", primary: "a1"),
         item(id: "album-2", name: "Sundowning", kind: .musicAlbum, year: 2019, albumArtist: "Sleep Token", primary: "a2"),
+        item(id: "album-3", name: "This Place Will Become Your Tomb", kind: .musicAlbum, year: 2021, albumArtist: "Sleep Token", primary: "a3"),
+        item(id: "album-4", name: "Take Me Back To Eden", kind: .musicAlbum, year: 2023, albumArtist: "Sleep Token", primary: "a4"),
+        item(id: "album-5", name: "King Of Terrors", kind: .musicAlbum, year: 2025, albumArtist: "President", primary: "a5"),
     ]
 
     public static let sampleTracks = [

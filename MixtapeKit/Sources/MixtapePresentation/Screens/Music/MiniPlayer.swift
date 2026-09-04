@@ -9,7 +9,8 @@ import MixtapeServices
 import SwiftUI
 
 /// The docked mini player above the iOS tab bar, shown whenever music is active. Tapping it opens
-/// `NowPlayingScreen`. Liquid Glass with the Reduce Transparency fallback (§9).
+/// `NowPlayingScreen`, which dismisses itself when playback stops. Liquid Glass with the Reduce
+/// Transparency fallback (§9).
 struct MiniPlayer: View {
     @Environment(\.musicPlayerService) private var music
     @State private var showNowPlaying = false
@@ -42,6 +43,12 @@ struct MiniPlayer: View {
             .accessibilityIdentifier(MiniPlayerIdentifiers.bar)
             .sheet(isPresented: $showNowPlaying) {
                 NowPlayingScreen()
+                    // End of album (§9.1) or stop: the sheet goes before the wallet returns the disc.
+                    .onChange(of: music.isActive) { _, active in
+                        if active == false {
+                            showNowPlaying = false
+                        }
+                    }
             }
         }
     }
