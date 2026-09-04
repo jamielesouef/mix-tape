@@ -8,7 +8,7 @@ depends_on:
   - { id: "010", type: hard, note: "wallet's Liquid Glass sheen and Reduce Motion gating are explicit in-scope audit targets" }
   - { id: "011", type: hard, note: "tvOS chrome and its identifier enums must exist before the audit can cover tvOS. Shipped as RootTabScreen+tvOS, LibraryTabScreen (with the Music tab's Now Playing button), PosterShelf + MovieLibraryShelf + SeriesLibraryShelf, AlbumGrid (tvOS-only), MovieDetailScreen+tvOS, and VLCPlayerView+tvOS in MixtapeInfrastructure — that overlay (like its iOS twin) draws .ultraThinMaterial with a Reduce Transparency fallback of its own, not the Presentation glass modifier, so the .glassEffect grep over MixtapePresentation does not see it" }
 previous_slice: "011"
-next_slice: none
+next_slice: "013"
 parent_slice: none
 covers: ["§12.15"]
 created: 2026-09-03
@@ -16,7 +16,7 @@ created: 2026-09-03
 
 # 012 — Accessibility and Reduce Transparency pass
 
-← [previous](011-tvos-presentation.md) · [Master Checklist](MASTER-CHECKLIST.md) · none →
+← [previous](011-tvos-presentation.md) · [Master Checklist](MASTER-CHECKLIST.md) · [next](013-presentation-tests-and-gate.md) →
 
 > **Status, owner and blockers live in the master checklist, not here.** Dependencies live in this page's front matter and nowhere else. Each fact has one home; if you find yourself writing it twice, one of the two copies is going to be wrong in a fortnight.
 
@@ -139,5 +139,10 @@ Nothing checks any of this. That's the point of putting the writes first — a w
 - [x] Decision log written as you went, not reconstructed
 - [x] Pre-flight completed and drift resolved (four drift items in the master checklist; Triage 8 and 10 closed, Triage 9 escalated with a decision candidate)
 - [x] Master checklist row current
-- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned — n/a, `next_slice: none`; this is the last slice in the set
-- [x] Both link directions checked: `previous_slice` is 011 and 011's `next_slice` is 012; there is no next
+- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned — 013's note on 012 names this slice's per-file glass gate as the thing it hardens into a per-site one
+- [x] Both link directions checked: `previous_slice` is 011 and 011's `next_slice` is 012; `next_slice` is 013 and 013's `previous_slice` is 012
+
+> **Amended 2026-09-04.** This was the last slice of the V1 set and closed with
+> `next_slice: none`. The post-V1 reconciliation opened a hardening round, so the list now
+> continues at [013](013-presentation-tests-and-gate.md). Nothing this slice delivered
+> changed; only its position in the list did.

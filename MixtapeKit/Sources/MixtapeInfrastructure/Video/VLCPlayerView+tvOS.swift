@@ -63,6 +63,7 @@
 
         /// Liquid Glass with the required Reduce Transparency fallback (engineering doc §9).
         private var transportBackground: AnyShapeStyle {
+            // glass-fallback: the ternary is the fallback — opaque black at 0.8 when reduced.
             reduceTransparency ? AnyShapeStyle(.black.opacity(0.8)) : AnyShapeStyle(.ultraThinMaterial)
         }
     }

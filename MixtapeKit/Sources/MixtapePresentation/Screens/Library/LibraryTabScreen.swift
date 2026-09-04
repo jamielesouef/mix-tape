@@ -12,6 +12,7 @@
     /// One tvOS tab per library kind (decision 26): resolves the first library of `kind` and hosts
     /// its shelf. The Music tab also carries a "Now Playing" button while music is active — the
     /// Siri Remote has no skip buttons, so `NowPlayingScreen` is the only route to next/previous.
+    /// That button sits outside the `NavigationStack` so it survives the push to an album.
     public struct LibraryTabScreen: View {
         @Environment(\.libraryService) private var libraryService
         @Environment(\.musicPlayerService) private var music
@@ -39,22 +40,6 @@
                         }
                     }
                 }
-                // An overlay, not a toolbar item (Section 6). The full-width focus section lets an
-                // up-swipe from any album card reach the button, which sits above no card of its own.
-                .overlay(alignment: .top) {
-                    if kind == .music, music.isActive {
-                        HStack {
-                            Spacer()
-                            Button("Now Playing", systemImage: "waveform") { showNowPlaying = true }
-                                .accessibilityIdentifier(LibraryTabIdentifiers.nowPlayingButton)
-                        }
-                        .padding(60)
-                        .focusSection()
-                    }
-                }
-                .navigationDestination(isPresented: $showNowPlaying) {
-                    NowPlayingScreen()
-                }
                 .navigationDestination(for: MediaItem.self) { item in
                     MediaItemDestination(item: item)
                 }
@@ -63,6 +48,29 @@
                         await libraryService.loadHome()
                     }
                 }
+            }
+            // Outside the NavigationStack, not on its root content. Inside, the button went with
+            // the root the moment AlbumDetailScreen was pushed — and that is the screen the user
+            // presses Play from, so next/previous became unreachable exactly when they were wanted.
+            // The Siri Remote has no skip buttons, so this affordance is the only route (§1.12).
+            // An overlay, not a toolbar item (Section 6). The full-width focus section lets an
+            // up-swipe from any album card reach the button, which sits above no card of its own.
+            .overlay(alignment: .top) {
+                if kind == .music, music.isActive {
+                    HStack {
+                        Spacer()
+                        Button("Now Playing", systemImage: "waveform") { showNowPlaying = true }
+                            .accessibilityIdentifier(LibraryTabIdentifiers.nowPlayingButton)
+                    }
+                    .padding(60)
+                    .focusSection()
+                }
+            }
+            // A cover, not a push. `navigationDestination(isPresented:)` is declared at the stack
+            // root, so it is unreliable once a value destination is already on the stack — which
+            // is the whole case this button now has to serve. Menu dismisses the cover.
+            .fullScreenCover(isPresented: $showNowPlaying) {
+                NowPlayingScreen()
             }
         }
 

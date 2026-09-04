@@ -35,6 +35,12 @@
             }
             // iOS 26.1 (decision 48): with nothing playing the accessory container itself must go,
             // or an empty pill sits over the bottom of every tab (Triage 9).
+            //
+            // glass-fallback: the container is system-drawn Liquid Glass and adapts to Reduce
+            // Transparency with the system setting — there is no accessory-background API on
+            // 26.1 to override it. The app-drawn pill inside it carries its own fallback via
+            // MiniPlayer's .glassChrome(). Painting an opaque rect in here as well would sit a
+            // solid block inside a glass container. Confirm on the simulator, not by grep.
             .tabViewBottomAccessory(isEnabled: music.isActive) {
                 MiniPlayer()
             }
