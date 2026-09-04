@@ -16,7 +16,7 @@ struct MusicPlayerServiceTests {
     private let album = MockLibraryRepository.sampleAlbums[0]
     private let tracks = MockLibraryRepository.sampleTracks // two tracks
 
-    private func makeService(reports: ReportLog = ReportLog(), controller: StubAudioPlayerController) -> MusicPlayerService {
+    private func makeService(reports: ReportLog = ReportLog(), controller: StubAudioPlayerController, clock: any Clock<Duration> = ContinuousClock()) -> MusicPlayerService {
         let repository = MockPlaybackRepository(
             reportStartResult: { r, _ in reports.append("start \(r.itemID)") },
             reportProgressResult: { r, _ in reports.append("progress \(r.itemID) paused=\(r.isPaused)") },
@@ -29,6 +29,7 @@ struct MusicPlayerServiceTests {
             reportProgress: ReportPlaybackProgressUseCase(repository: repository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
             sessionService: MockSessionService.signedIn(),
+            clock: clock,
         )
     }
 
@@ -146,6 +147,27 @@ struct MusicPlayerServiceTests {
         #expect(service.status == .idle)
         #expect(reports.entries.isEmpty)
         #expect(controller.loadedURLs.isEmpty)
+    }
+
+    // MARK: §6 cadences (slice 014)
+
+    @Test func `now playing refreshes every five seconds and progress reports every ten`() async {
+        let reports = ReportLog()
+        let controller = StubAudioPlayerController()
+        let clock = ManualClock()
+        let service = makeService(reports: reports, controller: controller, clock: clock)
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        let refreshesAtStart = controller.nowPlayingHistory.count
+        await clock.tick() // 5 s
+        #expect(await eventually { controller.nowPlayingHistory.count == refreshesAtStart + 1 })
+        #expect(await eventually { clock.sleeperCount == 1 }) // back asleep without a report
+        #expect(reports.entries == ["start \(tracks[0].id)"])
+        await clock.tick() // 10 s
+        #expect(await eventually { reports.entries.count == 2 })
+        #expect(controller.nowPlayingHistory.count == refreshesAtStart + 2)
+        #expect(reports.entries == ["start \(tracks[0].id)", "progress \(tracks[0].id) paused=false"])
+        #expect(controller.nowPlayingHistory.last?.isPlaying == true)
+        await service.stop()
     }
 
     private func settle() async {

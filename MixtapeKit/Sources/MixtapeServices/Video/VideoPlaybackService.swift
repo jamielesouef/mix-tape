@@ -99,6 +99,7 @@ public final class VideoPlaybackService {
             }
             self.controller = controller
             controller.onPositionChange = { [weak self] position in self?.position = position }
+            controller.onTransportEvent = { [weak self] event in self?.handleTransport(event) }
             controller.onEnded = { [weak self] in
                 Task { await self?.stop() }
             }
@@ -113,27 +114,40 @@ public final class VideoPlaybackService {
         }
     }
 
+    /// Forwards to the player. `status` and the report follow from the player's own transport
+    /// event, the same way as a pause from AVKit's controls or the VLC overlay (slice 014).
     public func togglePlayPause() {
         guard let controller else { return }
         switch status {
-        case .playing:
-            controller.pause()
-            status = .paused
-            reportOnce(isPaused: true)
-        case .paused:
-            controller.play()
-            status = .playing
-            reportOnce(isPaused: false)
-        case .idle, .preparing, .failed:
-            break
+        case .playing: controller.pause()
+        case .paused: controller.play()
+        case .idle, .preparing, .failed: break
         }
     }
 
     public func seek(to target: Duration) {
-        guard let controller else { return }
-        controller.seek(to: target)
-        position = target
-        reportOnce(isPaused: status == .paused)
+        guard status == .playing || status == .paused else { return }
+        controller?.seek(to: target)
+    }
+
+    /// §6 "on pause, on seek completion": one report per transition, whoever drove it. Idempotent —
+    /// a player that announces a state it is already in produces nothing, so the heartbeat's
+    /// `status == .playing` guard is the only pause-awareness it needs.
+    private func handleTransport(_ event: VideoTransportEvent) {
+        switch event {
+        case .paused:
+            guard status == .playing else { return }
+            status = .paused
+            reportOnce(isPaused: true)
+        case .resumed:
+            guard status == .paused else { return }
+            status = .playing
+            reportOnce(isPaused: false)
+        case let .seeked(target):
+            guard status == .playing || status == .paused else { return }
+            position = target
+            reportOnce(isPaused: status == .paused)
+        }
     }
 
     /// Tears the player down, sends the stopped report, refreshes Home, and returns to `.idle`.

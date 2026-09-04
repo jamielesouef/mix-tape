@@ -187,7 +187,9 @@ struct VideoPlaybackServiceTests {
         let service = makeService(repository: Self.loggingRepository(reports), clock: clock) { _ in controller }
         await service.play(item: movie, startAt: .zero)
         await clock.tick() // 10 s
+        #expect(await eventually { reports.entries.count == 2 })
         await clock.tick() // 20 s
+        #expect(await eventually { reports.entries.count == 3 })
         await service.stop()
         #expect(reports.entries == [
             "start pos=0 paused=false",
@@ -195,6 +197,82 @@ struct VideoPlaybackServiceTests {
             "progress pos=0 paused=false",
             "stopped pos=0 paused=false",
         ])
+    }
+
+    // MARK: Pause, resume and seek arrive from the player (slice 014, Triage 11)
+
+    @Test func `a pause from the player moves the service to paused and sends exactly one pause report`() async {
+        let reports = ReportLog()
+        let service = makeService(repository: Self.loggingRepository(reports)) { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        controller.onPositionChange?(.seconds(4))
+        controller.onTransportEvent?(.paused) // AVKit's pause button, or the VLC overlay's
+        await settle()
+        #expect(service.status == .paused)
+        #expect(reports.entries == ["start pos=0 paused=false", "progress pos=4 paused=true"])
+        controller.onTransportEvent?(.paused) // the player announcing a state it is already in
+        await settle()
+        #expect(reports.entries.count == 2)
+    }
+
+    @Test func `the heartbeat sends nothing while paused and resumes with exactly one resume report`() async {
+        let reports = ReportLog()
+        let clock = ManualClock()
+        let service = makeService(repository: Self.loggingRepository(reports), clock: clock) { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        controller.onTransportEvent?(.paused)
+        #expect(await eventually { reports.entries.count == 2 })
+        await clock.tick() // 10 s into the pause
+        await clock.tick() // 20 s
+        #expect(await eventually { clock.sleeperCount == 1 }) // the loop is back asleep, having sent nothing
+        #expect(reports.entries == ["start pos=0 paused=false", "progress pos=0 paused=true"])
+        controller.onTransportEvent?(.resumed)
+        #expect(await eventually { reports.entries.count == 3 })
+        #expect(service.status == .playing)
+        await clock.tick() // the heartbeat is back
+        #expect(await eventually { reports.entries.count == 4 })
+        await service.stop()
+        #expect(reports.entries == [
+            "start pos=0 paused=false",
+            "progress pos=0 paused=true",
+            "progress pos=0 paused=false",
+            "progress pos=0 paused=false",
+            "stopped pos=0 paused=false",
+        ])
+    }
+
+    @Test func `a seek completion reports the landed position once, paused or not`() async {
+        let reports = ReportLog()
+        let service = makeService(repository: Self.loggingRepository(reports)) { _ in controller }
+        await service.play(item: movie, startAt: .zero)
+        controller.onTransportEvent?(.seeked(.seconds(7))) // the system scrubber
+        await settle()
+        #expect(service.position == .seconds(7))
+        controller.onTransportEvent?(.paused)
+        await settle()
+        controller.onTransportEvent?(.seeked(.seconds(9)))
+        await settle()
+        #expect(reports.entries == [
+            "start pos=0 paused=false",
+            "progress pos=7 paused=false",
+            "progress pos=7 paused=true",
+            "progress pos=9 paused=true",
+        ])
+    }
+
+    @Test func `transport events before playback starts or after it stops are ignored`() async {
+        let reports = ReportLog()
+        let service = makeService(repository: Self.loggingRepository(reports)) { _ in controller }
+        controller.onTransportEvent?(.paused)
+        controller.onTransportEvent?(.seeked(.seconds(3)))
+        #expect(service.status == .idle)
+        #expect(service.position == .zero)
+        await service.play(item: movie, startAt: .zero)
+        await service.stop()
+        controller.onTransportEvent?(.resumed)
+        await settle()
+        #expect(service.status == .idle)
+        #expect(reports.entries == ["start pos=0 paused=false", "stopped pos=0 paused=false"])
     }
 
     @Test(arguments: [

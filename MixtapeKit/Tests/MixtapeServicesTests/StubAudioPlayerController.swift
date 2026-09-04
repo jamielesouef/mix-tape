@@ -23,6 +23,7 @@ final class StubAudioPlayerController: AudioPlayerControlling {
     private(set) var loadedURLs: [URL] = []
     private(set) var nextEnabledHistory: [Bool] = []
     private(set) var stopCount = 0
+    private(set) var nowPlayingHistory: [NowPlayingInfo] = []
 
     func load(url: URL) {
         loadedURLs.append(url)
@@ -36,7 +37,9 @@ final class StubAudioPlayerController: AudioPlayerControlling {
         stopCount += 1
     }
 
-    func updateNowPlaying(_: NowPlayingInfo) {}
+    func updateNowPlaying(_ info: NowPlayingInfo) {
+        nowPlayingHistory.append(info)
+    }
 
     func setNextTrackEnabled(_ enabled: Bool) {
         nextEnabledHistory.append(enabled)

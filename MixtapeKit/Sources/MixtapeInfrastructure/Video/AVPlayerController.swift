@@ -15,13 +15,18 @@ import SwiftUI
 /// Picture and AirPlay come from the platform.
 public final class AVPlayerController: VideoPlayerControlling {
     public var onPositionChange: ((Duration) -> Void)?
+    public var onTransportEvent: ((VideoTransportEvent) -> Void)?
     public var onEnded: (() -> Void)?
     public var onFailure: ((MixtapeError) -> Void)?
 
     private let player = AVPlayer()
     private var timeObserver: Any?
     private var endObserver: (any NSObjectProtocol)?
+    private var jumpObserver: (any NSObjectProtocol)?
     private var statusObservation: NSKeyValueObservation?
+    private var rateObservation: NSKeyValueObservation?
+    /// The `startAt` seek in `load` jumps the time too; that jump is not a user seek.
+    private var isSeekingToStart = false
 
     public init() {}
 
@@ -31,7 +36,10 @@ public final class AVPlayerController: VideoPlayerControlling {
         let item = AVPlayerItem(url: url)
         player.replaceCurrentItem(with: item)
         if startAt > .zero {
-            player.seek(to: Self.time(startAt), toleranceBefore: .zero, toleranceAfter: .zero)
+            isSeekingToStart = true
+            player.seek(to: Self.time(startAt), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                Task { @MainActor in self?.isSeekingToStart = false }
+            }
         }
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { [weak self] time in
             MainActor.assumeIsolated { // the observer runs on the main queue
@@ -48,6 +56,27 @@ public final class AVPlayerController: VideoPlayerControlling {
             let message = item.error?.localizedDescription ?? "Playback failed"
             Task { @MainActor in
                 self?.onFailure?(.transport(message))
+            }
+        }
+        // AVKit's transport drives the player directly (decision 18), so the player's own state is
+        // the only account of a pause or resume the service can get (slice 014).
+        rateObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            let status = player.timeControlStatus
+            let ended = player.currentItem.map { $0.duration.isNumeric && $0.currentTime() >= $0.duration } ?? false
+            Task { @MainActor in
+                switch status {
+                case .paused where ended == false: self?.onTransportEvent?(.paused)
+                case .playing: self?.onTransportEvent?(.resumed)
+                case .paused, .waitingToPlayAtSpecifiedRate: break // the end-of-item pause precedes onEnded; waiting is buffering, not a pause
+                @unknown default: break
+                }
+            }
+        }
+        // The only seek signal AVFoundation gives: fires for the system scrubber and for seek(to:) alike.
+        jumpObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.timeJumpedNotification, object: item, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { // delivered on the main queue
+                guard let self, self.isSeekingToStart == false else { return }
+                self.onTransportEvent?(.seeked(Self.duration(self.player.currentTime())))
             }
         }
     }
@@ -73,7 +102,13 @@ public final class AVPlayerController: VideoPlayerControlling {
             NotificationCenter.default.removeObserver(endObserver)
         }
         endObserver = nil
+        if let jumpObserver {
+            NotificationCenter.default.removeObserver(jumpObserver)
+        }
+        jumpObserver = nil
         statusObservation = nil
+        rateObservation = nil
+        isSeekingToStart = false
         player.pause()
         player.replaceCurrentItem(with: nil)
     }

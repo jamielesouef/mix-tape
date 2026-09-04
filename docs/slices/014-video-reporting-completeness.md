@@ -107,45 +107,47 @@ authorised its absence.
 
 ## 4. Pre-Flight Validation
 
-- [ ] **013** — opened. `MixtapePresentationTests` exists and is in both schemes; the gate
+- [x] **013** — opened. `MixtapePresentationTests` exists and is in both schemes; the gate
       derives its own count, so adding this slice's tests does not need a command-line change.
-- [ ] **006** — opened. Decision 18 (`VideoPlayer`, not `AVPlayerLayer`) and decision 37
+- [x] **006** — opened. Decision 18 (`VideoPlayer`, not `AVPlayerLayer`) and decision 37
       (start report lands in 006) still hold. Confirm `AVPlayerController` still presents
       AVKit's `VideoPlayer` — if slice 011's tvOS work changed the presentation, the
       `timeControlStatus` approach changes with it.
-- [ ] **007** — opened. Confirm the VLC overlay still calls `controller.toggle()` directly
+- [x] **007** — opened. Confirm the VLC overlay still calls `controller.toggle()` directly
       and that Triage 11 is still open and unclaimed by any other slice.
-- [ ] **008** — opened. Confirm the heartbeat is still 10 s and still guards on
+- [x] **008** — opened. Confirm the heartbeat is still 10 s and still guards on
       `status == .playing`, and that the `MinResumeDurationSeconds = 300` finding in the drift
       log has not been changed on the dev server — this slice's AC needs a pause observable in
       `/Sessions`, which is unaffected by the resume floor, but the same probe is used.
-- [ ] **009** (soft) — opened, for the `MPNowPlayingInfoCenter` clause only.
-- [ ] Architecture standards doc re-read. Confirm §3's edges: `MixtapeInfrastructure` still
+- [x] **009** (soft) — opened, for the `MPNowPlayingInfoCenter` clause only.
+- [x] Architecture standards doc re-read. Confirm §3's edges: `MixtapeInfrastructure` still
       may not import `MixtapeServices`, so the callback must stay a closure or protocol
       declared on the Infrastructure side.
 
-**Drift found:** `none` — or what changed, plus a row in the checklist's Drift Log.
+**Drift found:** `none`. `AVPlayerController` still presents AVKit's `VideoPlayer`; the VLC overlay still calls `controller.toggle()` and `controller.scrub(to:)` directly; the heartbeat is still 10 s guarded on `status == .playing`; `MinResumeDurationSeconds` on the dev server is not read by this slice's checks. `MixtapePresentationTests` exists from 013 and the gate reads its counts from `docs/slices/test-count.txt`.
 
 ## 5. Acceptance Criteria
 
-- [ ] **AC14a** — Play a movie on the AVPlayer path, pause with the system transport, wait
+- [x] **AC14a** — Play a movie on the AVPlayer path, pause with the system transport, wait
       15 s. `GET /Sessions` shows `IsPaused: true` and a position that does not advance.
       Resume: `IsPaused: false` and the position advances again.
-- [ ] **AC14b** — The same on the VLC path, paused from the overlay's play/pause button.
+- [x] **AC14b** — The same on the VLC path, paused from the overlay's play/pause button.
       This is the case Triage 11 recorded as broken: `/Sessions` currently keeps
       `IsPaused: false` while VLC is paused.
-- [ ] **AC14c** — Seek on either player; a progress report carrying the post-seek position
+- [x] **AC14c** — Seek on either player; a progress report carrying the post-seek position
       is sent at seek completion, not only at the next 10 s tick.
-- [ ] **AC14d** — During a pause, no progress report claims `IsPaused: false`. Verify from the
+- [x] **AC14d** — During a pause, no progress report claims `IsPaused: false`. Verify from the
       report stream, not from the final `/Sessions` state — the defect is what is sent during
       the pause, and a correct end state can hide it.
-- [ ] **AC14e** — Play an album; `MPNowPlayingInfoCenter`'s elapsed time is refreshed at
+- [x] **AC14e** — Play an album; `MPNowPlayingInfoCenter`'s elapsed time is refreshed at
       5 s intervals, not extrapolated from the playback rate alone.
-- [ ] Unit tests in `MixtapeServicesTests`: the service moves to `.paused` on the callback and
+- [x] Unit tests in `MixtapeServicesTests`: the service moves to `.paused` on the callback and
       sends exactly one pause report; the heartbeat sends nothing while paused; resume sends
       exactly one resume report. Inject a clock — never sleep.
-- [ ] `xcodebuild build` and `test` pass for both schemes, layer, glass and swiftformat clean,
+- [x] `xcodebuild build` and `test` pass for both schemes, layer, glass and swiftformat clean,
       per `CLAUDE.md` gate criteria.
+
+**Evidence, 2026-09-04, iPhone 17 Pro simulator (iOS 26.5) against `localhost:8096`, read through `scripts/jf-probe.swift /Sessions`.** *AC14a* — Avatar (mp4, AVPlayer path, 20.8 s): after the AVKit pause, `IsPaused: true` with `PositionTicks` frozen at 2 s across four samples over 16 s and `LastPlaybackCheckIn` unchanged at 07:34:43.8 (the pause report) throughout — no heartbeat claimed `IsPaused: false` during the pause, which is *AC14d* read from the check-in stream rather than the end state. Resume: `IsPaused: false`, position 3 → 8 → 12 s, check-in at 07:35:15.8 (resume report) then 07:35:23.2 (heartbeat back). *AC14b* — F1 (mkv, VLC path): pause from the overlay button, `IsPaused: true`, position frozen at 4 s across four samples over 18 s, check-in constant at 07:36:08.7; resume `IsPaused: false`, position advancing. *AC14c* — VLC: dragging the overlay scrubber from 50 % to 75 % produced a check-in at 07:37:06.55, within two seconds of the drag and off the 10 s heartbeat grid, with the reported position jumping from 24 s to 38 s; AVKit: dragging the system "Current position" slider to 70 % produced a check-in at 07:38:00.2 (start was 07:37:55.2, so not a heartbeat) with the position jumping from 3 s to 16 s. *AC14e* — verified by the `ManualClock` test (`now playing refreshes every five seconds and progress reports every ten`), not observed on a lock screen: the simulator offers no way to read `MPNowPlayingInfoCenter`'s elapsed time from outside the process. Unit tests: five new cases in `MixtapeServicesTests` (58 in the suite), including the heartbeat sending nothing across two 10 s ticks while paused. `PlayMethod` was not used as a gate anywhere, per the drift-log note.
 
 ## 6. Decision Log
 
@@ -154,6 +156,10 @@ authorised its absence.
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
 | 2026-09-04 | Both halves of the defect are fixed in one slice rather than splitting the AVKit half from Triage 11's VLC half | A 007 follow-up for VLC only, as Triage 11 proposed, with AVKit deferred | They are one defect: the heartbeat reports `IsPaused: false` through any pause on either player. Fixing one player leaves the same wrong data flowing from the other, and the seam — a status callback on `VideoPlayerControlling` — is shared. Two slices would build it twice or leave the second half depending on the first's shape anyway. |
+| 2026-09-04 | The controller is the single source of transport events. `VideoPlayerControlling` gains `onTransportEvent: ((VideoTransportEvent) -> Void)?` with `.paused`, `.resumed` and `.seeked(Duration)`; `VideoPlaybackService` moves `status` and sends its one report only from that callback, and its own `togglePlayPause()` / `seek(to:)` merely forward to the controller. The service's handler is idempotent (`.paused` while already paused is ignored), so a controller may report the same transition twice without a second report going out. | (a) Keeping the service's methods as the reporting path and having the controllers suppress the echo of their own calls; (b) two callbacks, one for state and one for seeks | (a) needs every controller to tell its own seek apart from AVKit's or the overlay's — a flag per call path — and gets the two players out of step the first time one forgets. One path means one place to test: the `Stub*` controller emits the event a real player would, and the existing "each discrete event reports exactly once" test keeps its meaning. (b) is the same seam split in two for no caller that wants only half of it. |
+| 2026-09-04 | `AVPlayerController` observes `AVPlayer.timeControlStatus` for pause and resume and `AVPlayerItem.timeJumpedNotification` for seek completion, ignoring the jump its own `startAt` seek causes and the `.paused` the player reports when the item plays to its end. | Intercepting AVKit's transport UI; polling the rate from the one-second time observer | AVKit's `VideoPlayer` offers no transport hooks (decision 18 chose it for exactly the system controls that make the hooks unreachable). `timeControlStatus` is the player's own account of playing versus paused and `timeJumped` is its only seek signal; both cover a scrub in the system UI as well as a call from the service. The end-of-item `.paused` is skipped because `onEnded` follows it and a pause report at the final frame would be a fourth report for a stop. |
+| 2026-09-04 | `MusicPlayerService`'s periodic task ticks every 5 s: every tick refreshes `MPNowPlayingInfoCenter`, every second tick sends the 10 s progress report. `progressInterval` stays 10 s and gains a `nowPlayingInterval` of 5 s beside it. | A second task for now-playing; a `Timer` | One loop, one clock, one cancellation — and the injected `ManualClock` drives both cadences in the same test. A second task is a second thing to cancel in `finish()`, `stop()` and `deinit`. |
+| 2026-09-04 | The `ManualClock` tests wait on the observable condition (`eventually { … }`, yields only, never a sleep) after each tick instead of asserting straight after `tick()` returns. Applied to the new cadence tests and to 008's `progress fires once per interval while playing`, whose assertions are unchanged. | Leaving the fixed-yield `settle()` pattern | The first full gate run failed both tests while the same suite passed three times alone: `tick()` resumes the sleeper and yields once, but the loop body runs on its own task, and under the load of a full run (and a second `xcodebuild` on the machine) one yield was not enough. A fixed yield count is a sleep in disguise; waiting for the state the assertion needs is what "inject a clock, never sleep" means in practice. |
 
 ## 7. Sub-Slices
 
@@ -187,12 +193,12 @@ Commit this file alongside the code, with the slice id in the subject (`014: …
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] §1.13 satisfied for pause and seek, and the coverage table row updated to name 014
-- [ ] Triage 11 closed in the master checklist, with the fix named
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `015`'s `depends_on` reflects what actually shipped
-- [ ] Both link directions checked: this page's `next_slice` and `015`'s `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] §1.13 satisfied for pause and seek, and the coverage table row updated to name 014
+- [x] Triage 11 closed in the master checklist, with the fix named
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `015`'s `depends_on` reflects what actually shipped
+- [x] Both link directions checked: this page's `next_slice` and `015`'s `previous_slice`

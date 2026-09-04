@@ -14,6 +14,7 @@
     /// answers every call. `Stub*` doubles for tests live in the test targets.
     public final class MockVideoPlayerController: VideoPlayerControlling {
         public var onPositionChange: ((Duration) -> Void)?
+        public var onTransportEvent: ((VideoTransportEvent) -> Void)?
         public var onEnded: (() -> Void)?
         public var onFailure: ((MixtapeError) -> Void)?
         public private(set) var loadedURL: URL?

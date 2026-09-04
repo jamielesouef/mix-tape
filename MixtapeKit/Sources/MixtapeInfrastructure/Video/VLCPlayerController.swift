@@ -26,6 +26,7 @@
     /// so `VLCMedia` is created with no options.
     public final class VLCPlayerController: NSObject, VideoPlayerControlling, VLCMediaPlayerDelegate {
         public var onPositionChange: ((Duration) -> Void)?
+        public var onTransportEvent: ((VideoTransportEvent) -> Void)?
         public var onEnded: (() -> Void)?
         public var onFailure: ((MixtapeError) -> Void)?
 
@@ -62,8 +63,11 @@
             model.isPlaying = false
         }
 
+        /// VLC has no seek-completion signal; the position is set synchronously, so the event
+        /// carries the target (slice 014).
         public func seek(to position: Duration) {
             player.time = VLCTime(int: Int32(position.components.seconds * 1000))
+            onTransportEvent?(.seeked(position))
         }
 
         public func teardown() {
@@ -86,7 +90,10 @@
 
         /// Overlay scrub: `fraction` is 0…1 of the media.
         func scrub(to fraction: Double) {
-            player.position = Float(min(max(fraction, 0), 1))
+            let clamped = min(max(fraction, 0), 1)
+            player.position = Float(clamped)
+            let length = Double(player.media?.length.intValue ?? 0) / 1000
+            onTransportEvent?(.seeked(.seconds(clamped * length)))
         }
 
         /// Siri Remote scrub: a signed step from the current position, clamped at zero.
@@ -116,7 +123,11 @@
                 onFailure?(.transport("VLC could not play this item"))
             case .playing:
                 model.isPlaying = true
-            case .paused, .stopped:
+                onTransportEvent?(.resumed)
+            case .paused:
+                model.isPlaying = false
+                onTransportEvent?(.paused)
+            case .stopped:
                 model.isPlaying = false
             default:
                 break

@@ -18,6 +18,8 @@ import UIKit
 @Observable
 public final class MusicPlayerService {
     public static let progressInterval: Duration = .seconds(10)
+    /// §6: `MPNowPlayingInfoCenter` is refreshed every 5 s while a track plays (slice 014).
+    public static let nowPlayingInterval: Duration = .seconds(5)
 
     /// Always exactly one album (§1.1).
     public private(set) var album: MediaItem?
@@ -208,18 +210,25 @@ public final class MusicPlayerService {
         currentIndex = nil
     }
 
+    /// One loop on the 5 s now-playing cadence; every second tick is the 10 s progress report, so
+    /// both §6 cadences share one task, one clock and one cancellation.
     private func startProgressReporting(track: MediaItem, stream: AudioStream) {
         progressTask?.cancel()
         progressTask = Task { [weak self] in
+            var elapsed: Duration = .zero
             while true {
                 guard let clock = self?.clock else { return }
                 do {
-                    try await clock.sleep(for: Self.progressInterval)
+                    try await clock.sleep(for: Self.nowPlayingInterval)
                 } catch {
                     return
                 }
                 guard let self, Task.isCancelled == false else { return }
                 guard status == .playing, current?.id == track.id, let session else { continue }
+                refreshNowPlaying()
+                elapsed += Self.nowPlayingInterval
+                guard elapsed >= Self.progressInterval else { continue }
+                elapsed = .zero
                 await reportProgress(report(for: track, position: position, isPaused: false, stream: stream), session: session)
             }
         }
