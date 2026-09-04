@@ -1,15 +1,15 @@
 //  RootTabScreen+tvOS.swift
 //  MixtapePresentation
 //
-//  Created by Jamie Le Souëf on 03/09/2026.
+//  Created by Jamie Le Souëf on 04/09/2026.
 //
 
 #if os(tvOS)
     import MixtapeServices
     import SwiftUI
 
-    /// tvOS: the minimal counterpart that keeps the scheme building. Slice 011 replaces it with
-    /// the five-tab shelf chrome (Home / Movies / Shows / Music / Settings, decision 26).
+    /// tvOS: Home, Movies, Shows, Music, Settings across the top (decision 26). No mini player and no
+    /// wallet — §1.1 keeps the wallet iOS-only and tvOS on conventional shelves.
     public struct RootTabScreen: View {
         public init() {}
 
@@ -18,11 +18,14 @@
                 Tab("Home", systemImage: "house") {
                     HomeScreen().accessibilityIdentifier(RootTabIdentifiers.homeTab)
                 }
-                Tab("Libraries", systemImage: "books.vertical") {
-                    LibraryListScreen().accessibilityIdentifier(RootTabIdentifiers.librariesTab)
+                Tab("Movies", systemImage: "film") {
+                    LibraryTabScreen(kind: .movies).accessibilityIdentifier(RootTabIdentifiers.moviesTab)
+                }
+                Tab("Shows", systemImage: "tv") {
+                    LibraryTabScreen(kind: .tvShows).accessibilityIdentifier(RootTabIdentifiers.showsTab)
                 }
                 Tab("Music", systemImage: "music.note") {
-                    MusicTabScreen().accessibilityIdentifier(RootTabIdentifiers.musicTab)
+                    LibraryTabScreen(kind: .music).accessibilityIdentifier(RootTabIdentifiers.musicTab)
                 }
                 Tab("Settings", systemImage: "gear") {
                     NavigationStack {

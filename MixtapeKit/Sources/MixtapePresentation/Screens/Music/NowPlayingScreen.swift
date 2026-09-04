@@ -45,7 +45,7 @@ public struct NowPlayingScreen: View {
         let total = track.runtime.map { Double($0.components.seconds) } ?? 1
         let value = Double(music.position.components.seconds)
         #if os(iOS)
-            // tvOS scrubbing via the Siri Remote is slice 011; here it shows a read-only bar.
+            // tvOS shows a read-only bar: engineering doc §9's tvOS table asks for no divergence here (slice 011).
             Slider(value: Binding(get: { min(value, total) }, set: { music.seek(to: .seconds($0)) }), in: 0 ... max(total, 1))
                 .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
         #else

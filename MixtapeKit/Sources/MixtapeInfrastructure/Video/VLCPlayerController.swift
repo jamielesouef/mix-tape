@@ -21,7 +21,8 @@
     /// server transcode. This is the **only** file in the codebase that imports libVLC (decision
     /// 44); the module is `MobileVLCKit` on iOS and `TVVLCKit` on tvOS, never a bare `VLCKit`.
     /// VLC has no native SwiftUI transport, so `makeView()` returns the video surface under a
-    /// hand-built overlay (decision 18). The stream URL already carries `ApiKey` (decision 42),
+    /// hand-built overlay (decision 18) — `VLCPlayerView`, one file per platform. The stream URL
+    /// already carries `ApiKey` (decision 42),
     /// so `VLCMedia` is created with no options.
     public final class VLCPlayerController: NSObject, VideoPlayerControlling, VLCMediaPlayerDelegate {
         public var onPositionChange: ((Duration) -> Void)?
@@ -88,6 +89,12 @@
             player.position = Float(min(max(fraction, 0), 1))
         }
 
+        /// Siri Remote scrub: a signed step from the current position, clamped at zero.
+        func step(by seconds: Double) {
+            let current = Double(player.time.intValue) / 1000
+            seek(to: .seconds(max(0, current + seconds)))
+        }
+
         // MARK: - VLCMediaPlayerDelegate (callbacks arrive on the main thread — S002)
 
         public func mediaPlayerTimeChanged(_: Notification) {
@@ -115,74 +122,6 @@
                 break
             }
         }
-    }
-
-    /// The overlay's observable state. VLC drives it; the SwiftUI overlay reads it.
-    @Observable
-    final class VLCTransportModel {
-        var isPlaying = false
-        var positionFraction: Double = 0
-    }
-
-    /// Hosts VLC's video surface and the custom transport (decision 18). Lives here rather than in
-    /// Presentation so the "one file imports libVLC" rule holds — it needs `VLCVideoView`.
-    private struct VLCPlayerView: View {
-        @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-        @State var model: VLCTransportModel
-        let videoView: UIView
-        let controller: VLCPlayerController
-
-        var body: some View {
-            ZStack {
-                VLCVideoSurface(videoView: videoView)
-                    .ignoresSafeArea()
-                VStack {
-                    Spacer()
-                    HStack(spacing: 16) {
-                        Button {
-                            controller.toggle()
-                        } label: {
-                            Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.title2)
-                                .frame(width: 44, height: 44)
-                        }
-                        .accessibilityIdentifier("vlcPlayer.playPauseButton")
-                        #if os(iOS)
-                            // Siri Remote scrubbing on tvOS is slice 011; here tvOS shows a read-only bar.
-                            Slider(
-                                value: Binding(get: { model.positionFraction }, set: { controller.scrub(to: $0) }),
-                                in: 0 ... 1,
-                            )
-                            .accessibilityIdentifier("vlcPlayer.scrubber")
-                        #else
-                            ProgressView(value: model.positionFraction)
-                                .accessibilityIdentifier("vlcPlayer.scrubber")
-                        #endif
-                    }
-                    .padding()
-                    .background(transportBackground, in: .rect(cornerRadius: 16))
-                    .padding()
-                }
-                .foregroundStyle(.white)
-            }
-        }
-
-        /// Liquid Glass with the required Reduce Transparency fallback (engineering doc §9).
-        private var transportBackground: AnyShapeStyle {
-            reduceTransparency ? AnyShapeStyle(.black.opacity(0.8)) : AnyShapeStyle(.ultraThinMaterial)
-        }
-    }
-
-    /// libVLC renders into any `UIView` set as the player's `drawable` (the public `VLCVideoView`
-    /// is only forward-declared), so this wraps a plain `UIView` for SwiftUI.
-    private struct VLCVideoSurface: UIViewRepresentable {
-        let videoView: UIView
-
-        func makeUIView(context _: Context) -> UIView {
-            videoView
-        }
-
-        func updateUIView(_: UIView, context _: Context) {}
     }
 
     /// libVLC calls its logger from its own thread, so this conformer must be `nonisolated` or it

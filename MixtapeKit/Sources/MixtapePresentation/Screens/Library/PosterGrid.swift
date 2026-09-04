@@ -1,27 +1,28 @@
-//  PosterGrid+tvOS.swift
+//  PosterGrid.swift
 //  MixtapePresentation
 //
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-#if os(tvOS)
+#if os(iOS)
     import MixtapeDomain
     import MixtapeServices
     import SwiftUI
 
-    /// tvOS poster grid: a plain 6-up focus grid. Slice 011 replaces this with the shelf chrome.
+    /// iOS poster grid: 2-up compact / 4-up regular, paged by asking for more as the last cell appears.
     struct PosterGrid: View {
+        @Environment(\.horizontalSizeClass) private var sizeClass
         let items: [MediaItem]
         let loadMore: () async -> Void
 
         var body: some View {
             ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 40, alignment: .top), count: 6), spacing: 48) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16, alignment: .top), count: sizeClass == .regular ? 4 : 2), spacing: 20) {
                     ForEach(items) { item in
                         NavigationLink(value: item) {
                             PosterCard(item: item)
                         }
-                        .buttonStyle(.card)
+                        .buttonStyle(.plain)
                         .accessibilityIdentifier(PosterGridIdentifiers.cell(item.id))
                         .task {
                             if item.id == items.last?.id {
@@ -30,7 +31,7 @@
                         }
                     }
                 }
-                .padding(60)
+                .padding()
             }
             .accessibilityIdentifier(PosterGridIdentifiers.grid)
         }

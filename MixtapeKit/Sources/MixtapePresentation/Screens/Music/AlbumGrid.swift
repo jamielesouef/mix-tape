@@ -9,8 +9,8 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The plain album grid, tvOS only since slice 010 — iOS has the wallet (engineering doc §1.1, §9.1).
-    /// Slice 011 gives it shelf chrome.
+    /// The tvOS album shelf — iOS has the wallet (engineering doc §1.1, §9.1). The library title over a
+    /// focus-driven grid of album cards, paged as the last card appears.
     public struct AlbumGrid: View {
         @Environment(\.libraryService) private var libraryService
         let library: Library
@@ -30,26 +30,30 @@
                     ContentUnavailableView("No albums", systemImage: "music.note")
                 case let .loaded(page):
                     ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 20, alignment: .top)], spacing: 24) {
-                            ForEach(page.items) { album in
-                                NavigationLink(value: album) {
-                                    PosterCard(item: album, aspectRatio: 1)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier(AlbumGridIdentifiers.cell(album.id))
-                                .task {
-                                    if album.id == page.items.last?.id {
-                                        await libraryService.loadMore(libraryID: library.id)
+                        VStack(alignment: .leading, spacing: 32) {
+                            Text(library.name)
+                                .font(.title.bold())
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 40, alignment: .top), count: 6), spacing: 48) {
+                                ForEach(page.items) { album in
+                                    NavigationLink(value: album) {
+                                        PosterCard(item: album, aspectRatio: 1)
+                                    }
+                                    .buttonStyle(.card)
+                                    .accessibilityIdentifier(AlbumGridIdentifiers.cell(album.id))
+                                    .task {
+                                        if album.id == page.items.last?.id {
+                                            await libraryService.loadMore(libraryID: library.id)
+                                        }
                                     }
                                 }
                             }
                         }
-                        .padding()
+                        .padding(60)
                     }
+                    .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(AlbumGridIdentifiers.grid)
                 }
             }
-            .navigationTitle(library.name)
             .task { await libraryService.loadLibrary(id: library.id) }
         }
     }

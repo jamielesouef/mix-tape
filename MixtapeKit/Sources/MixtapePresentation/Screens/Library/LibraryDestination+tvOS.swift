@@ -9,16 +9,16 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The grid for a pushed `Library`, chosen by kind. Music is the plain album grid on tvOS (§1.1).
+    /// The shelf for a `Library`, chosen by kind: the tvOS tabs host it and Home's pushes reach it.
     struct LibraryDestination: View {
         let library: Library
 
         var body: some View {
             switch library.kind {
             case .movies:
-                MovieLibraryGrid(library: library)
+                MovieLibraryShelf(library: library)
             case .tvShows:
-                SeriesLibraryGrid(library: library)
+                SeriesLibraryShelf(library: library)
             case .music:
                 AlbumGrid(library: library)
             case .unsupported:

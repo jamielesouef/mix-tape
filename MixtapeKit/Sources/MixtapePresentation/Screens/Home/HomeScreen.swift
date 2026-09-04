@@ -37,7 +37,7 @@ public struct HomeScreen: View {
                                     NavigationLink(value: item) {
                                         ContinueWatchingCard(item: item)
                                     }
-                                    .buttonStyle(.plain)
+                                    .platformCardButtonStyle()
                                     .accessibilityIdentifier(HomeIdentifiers.card(item.id))
                                 }
                             }

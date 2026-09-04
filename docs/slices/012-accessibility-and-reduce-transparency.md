@@ -6,7 +6,7 @@ complexity: M
 ladder: "accessibility pass v1 of 2 — v2 is XCUITest, deferred beyond this round (decision 4); shared seam: the accessibilityIdentifier enums this slice audits and completes"
 depends_on:
   - { id: "010", type: hard, note: "wallet's Liquid Glass sheen and Reduce Motion gating are explicit in-scope audit targets" }
-  - { id: "011", type: hard, note: "tvOS chrome and its identifier enums must exist before the audit can cover tvOS" }
+  - { id: "011", type: hard, note: "tvOS chrome and its identifier enums must exist before the audit can cover tvOS. Shipped as RootTabScreen+tvOS, LibraryTabScreen (with the Music tab's Now Playing button), PosterShelf + MovieLibraryShelf + SeriesLibraryShelf, AlbumGrid (tvOS-only), MovieDetailScreen+tvOS, and VLCPlayerView+tvOS in MixtapeInfrastructure — that overlay (like its iOS twin) draws .ultraThinMaterial with a Reduce Transparency fallback of its own, not the Presentation glass modifier, so the .glassEffect grep over MixtapePresentation does not see it" }
 previous_slice: "011"
 next_slice: none
 parent_slice: none

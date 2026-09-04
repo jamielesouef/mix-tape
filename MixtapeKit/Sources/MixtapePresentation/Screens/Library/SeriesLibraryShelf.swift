@@ -1,16 +1,16 @@
-//  MovieLibraryGrid.swift
+//  SeriesLibraryShelf.swift
 //  MixtapePresentation
 //
-//  Created by Jamie Le Souëf on 03/09/2026.
+//  Created by Jamie Le Souëf on 04/09/2026.
 //
 
-#if os(iOS)
+#if os(tvOS)
     import MixtapeDomain
     import MixtapeServices
     import SwiftUI
 
-    /// A movie library on iOS: the paged poster grid over `LibraryService.pages`. tvOS has `MovieLibraryShelf`.
-    public struct MovieLibraryGrid: View {
+    /// A TV library on tvOS: mirrors `MovieLibraryShelf` exactly (decision 26) — same call, same shelf.
+    public struct SeriesLibraryShelf: View {
         @Environment(\.libraryService) private var libraryService
         let library: Library
 
@@ -26,33 +26,32 @@
                 case let .failed(error):
                     RetryView(error: error) { await libraryService.loadLibrary(id: library.id) }
                 case let .loaded(page) where page.items.isEmpty:
-                    ContentUnavailableView("No movies", systemImage: "film")
+                    ContentUnavailableView("No shows", systemImage: "tv")
                 case let .loaded(page):
-                    PosterGrid(items: page.items) { await libraryService.loadMore(libraryID: library.id) }
+                    PosterShelf(title: library.name, items: page.items) { await libraryService.loadMore(libraryID: library.id) }
                 }
             }
-            .navigationTitle(library.name)
             .task { await libraryService.loadLibrary(id: library.id) }
         }
     }
 
     #Preview("loaded") {
         NavigationStack {
-            MovieLibraryGrid(library: MockMedia.libraries[0])
+            SeriesLibraryShelf(library: MockMedia.libraries[1])
         }
         .environment(\.libraryService, MockLibraryService.loaded())
     }
 
     #Preview("empty") {
         NavigationStack {
-            MovieLibraryGrid(library: MockMedia.libraries[0])
+            SeriesLibraryShelf(library: MockMedia.libraries[1])
         }
         .environment(\.libraryService, MockLibraryService.empty())
     }
 
     #Preview("failure") {
         NavigationStack {
-            MovieLibraryGrid(library: MockMedia.libraries[0])
+            SeriesLibraryShelf(library: MockMedia.libraries[1])
         }
         .environment(\.libraryService, MockLibraryService.failed())
     }
