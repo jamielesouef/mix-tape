@@ -87,17 +87,19 @@ before it ships.
 
 | | |
 |---|---|
-| **Answer** | |
-| **Evidence** | the two screenshots, and the scroll-shift observation — not "it looked opaque" |
-| **Date** | |
+| **Answer** | **Yes — the container renders opaque on its own.** With Reduce Transparency on, the system `tabViewBottomAccessory` container becomes a flat, solid surface: content scrolling beneath it does not shift a single pixel in the container margins outside `MiniPlayer`'s pill, and the soft blur gradient the bar casts upward is gone. §12.15 stands as slice 012 claimed. 013 closes the site with its existing annotation; the Section 5 fallback is **not** taken. |
+| **Evidence** | Measured on iPhone 17 Pro, iOS 26.5 simulator (`D7807C47-6BB6-49A0-BE48-73531DF52C98`), the existing `iOS` scheme build, album "Even In Arcadia" playing so the accessory rendered. **Method deviation:** Section 3 says a scrolled poster grid, but the dev server's Movies grid holds two posters and cannot scroll under the bar, so the album's ten-row track list was scrolled beneath it instead — black text on white cards, which is a weaker background than poster art. Two screenshots per state at two scroll positions (A, B), frames left to settle 4 s, then mean and max absolute RGB difference between A and B per region (`S003-evidence/diff.py`). Reduce Transparency **off**: container margins outside the pill max Δ 9 (left), 9 (right), 18 (top), mean 1.7–5.1 — the bar samples the content scrolling under it, and the `off_B` strip shows the blurred "10. Infinite Baths" row bleeding through the container's bottom margin. Reduce Transparency **on**: max Δ 0, 1, 0, pill interior 0 — while the control region above the accessory moved (mean Δ 12.5, max 255), proving the list did scroll; the `on_A` strip shows "7. Provider" and its separator cut hard at the container's top edge with no bleed-through. The RT-off shift is measured over low-contrast content and is a floor, not a ceiling; a first RT-off pass with one frame caught mid-transition gave 16/8/7 and is superseded by the settled pair. Files: `S003-evidence/{off,on}_{A,B}-screen.png` (downscaled full screens) and `{off,on}_{A,B}-accessory-strip.png` (full-resolution crops of the accessory band). Toggled via Settings → Accessibility → Display & Text Size, confirmed by the switch's accessibility value flipping 0 → 1 → 0; `xcrun simctl ui` has no Reduce Transparency option on this runtime. Setting restored to off afterwards. |
+| **Date** | 2026-09-04, 16:02–16:24 (22 min of the 1 h timebox) |
+
+**Caveat.** The runtime available was iOS 26.5, not 26.1. The API surface is the same and the
+behaviour is the system's, so the answer is taken as holding for the 26.1 target; if a 26.1
+runtime ever appears on a CI host, re-run the two-screenshot check there before relying on it.
 
 ## 7. Consequences
 
-- [ ] Decision recorded in the decision log of: `013`
-- [ ] Affected slices updated (scope, dependencies, acceptance criteria)
-- [ ] Master checklist spike row set to `Answered`, with the one-line answer
-- [ ] No throwaway code to delete — this spike changes nothing
-- [ ] The `// glass-fallback:` annotation at `RootTabScreen+iOS.swift:44` updated to state
-      the measured answer rather than the current assumption
-- [ ] If the answer invalidated slice 012's §12.15 claim: Architecture Drift Log updated,
-      and the coverage table's §12.15 row amended to name 013 alongside 012
+- [x] Decision recorded in the decision log of: `013`
+- [x] Affected slices updated (scope, dependencies, acceptance criteria) — 013's scope is unchanged: its last Section 3 bullet resolves the site by annotation, not by the safe-area-inset rework; its pre-flight S003 item carries the dated answer for whoever runs 013 to tick
+- [x] Master checklist spike row set to `Answered`, with the one-line answer
+- [x] No throwaway code to delete — this spike changes nothing
+- [x] The `// glass-fallback:` annotation at `RootTabScreen+iOS.swift:44` updated to state the measured answer rather than the current assumption
+- [x] If the answer invalidated slice 012's §12.15 claim: not applicable — the claim is confirmed, so the Architecture Drift Log and the §12.15 coverage row keep 012 as the owner (the row's "013 pending S003" note is resolved to the annotation path)

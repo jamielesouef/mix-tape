@@ -104,7 +104,7 @@ Complete **before the first line of code**, not at close.
       forked because the environment value is read-only. Confirm drift row (b) — the
       Infrastructure VLC overlays and the sleeve sheen sitting outside the Presentation grep —
       is still the shape this slice's per-site gate assumes.
-- [ ] **S003** — answered, and this slice is built on the measured answer, not the hoped-for
+- [ ] **S003** — answered 2026-09-04, favourably: fallback not taken, Section 3's last bullet stays the annotation. Confirm this slice is built on the measured answer, not the hoped-for
       one. Note whether the fallback was taken; if it was, Section 3's last bullet becomes the
       safe-area-inset rework and complexity rises.
 - [ ] Architecture standards doc re-read. Confirm `CLAUDE.md`'s two hard constraints are
@@ -150,6 +150,7 @@ Complete **before the first line of code**, not at close.
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
 | 2026-09-04 | Three pre-push fixes landed ahead of this slice, outside the round: tvOS `UIBackgroundModes`, the per-site rewrite of `check-glass-fallback.sh` with its `.barMaterial` regex bug fixed, and the tvOS Now Playing overlay moved outside the `NavigationStack`. Full gate re-run and passed (156/0/0 both schemes). | Holding all three for 013/014/016 | Two were one-line spec compliance and the third was a dead regex; carrying a known-wrong gate into the slice that hardens it would have meant writing 013's acceptance criteria against a script already known to be broken. The tvOS cover swap is unverified at runtime — 016 owns that check. |
+| 2026-09-04 | S003 answered favourably: the system `tabViewBottomAccessory` container renders opaque on its own under Reduce Transparency (zero pixel shift in the container margins with content scrolling beneath, iOS 26.5 simulator). The one site the hardened glass gate flags is closed by its `// glass-fallback:` annotation, now stating the measured answer. | The Section 5 fallback — gating the accessory off under `accessibilityReduceTransparency` and rendering `MiniPlayer` in a `.safeAreaInset(edge: .bottom)` | The fallback exists to fix a defect the measurement shows is not there; taking it anyway would trade a verified system behaviour for a second, placement-divergent presentation and a runtime modifier switch with Triage 9 tab-reset risk. Scope and complexity of this slice unchanged. |
 
 ## 7. Sub-Slices
 
