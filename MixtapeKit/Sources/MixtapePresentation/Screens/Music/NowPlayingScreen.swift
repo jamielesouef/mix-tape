@@ -37,6 +37,7 @@ public struct NowPlayingScreen: View {
             }
         }
         .padding(32)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(NowPlayingIdentifiers.screen)
     }
 
@@ -59,14 +60,17 @@ public struct NowPlayingScreen: View {
             Button { Task { await music.previous() } } label: {
                 Image(systemName: "backward.fill").font(.title)
             }
+            .accessibilityLabel("Previous track")
             .accessibilityIdentifier(NowPlayingIdentifiers.previousButton)
             Button { music.togglePlayPause() } label: {
                 Image(systemName: music.status == .playing ? "pause.fill" : "play.fill").font(.largeTitle)
             }
+            .accessibilityLabel(music.status == .playing ? "Pause" : "Play")
             .accessibilityIdentifier(NowPlayingIdentifiers.playPauseButton)
             Button { Task { await music.next() } } label: {
                 Image(systemName: "forward.fill").font(.title)
             }
+            .accessibilityLabel("Next track")
             .accessibilityIdentifier(NowPlayingIdentifiers.nextButton)
         }
     }

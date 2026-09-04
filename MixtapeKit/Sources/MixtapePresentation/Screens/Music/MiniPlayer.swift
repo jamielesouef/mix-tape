@@ -17,30 +17,37 @@ struct MiniPlayer: View {
 
     var body: some View {
         if music.isActive, let track = music.current {
-            Button { showNowPlaying = true } label: {
-                HStack(spacing: 12) {
-                    RemoteImage(source: .item(track, .primary), maxHeight: 120, placeholder: "music.note")
-                        .frame(width: 40, height: 40)
-                        .clipShape(.rect(cornerRadius: 6))
-                    Text(track.displayTitle)
-                        .font(.subheadline)
-                        .lineLimit(1)
-                    Spacer()
-                    Button { music.togglePlayPause() } label: {
-                        Image(systemName: music.status == .playing ? "pause.fill" : "play.fill")
-                            .font(.title3)
+            // Two sibling buttons, not one nested in the other: a nested button is flattened into its
+            // parent's accessibility element and VoiceOver never reaches it (slice 012).
+            HStack(spacing: 12) {
+                Button { showNowPlaying = true } label: {
+                    HStack(spacing: 12) {
+                        RemoteImage(source: .item(track, .primary), maxHeight: 120, placeholder: "music.note")
+                            .frame(width: 40, height: 40)
+                            .clipShape(.rect(cornerRadius: 6))
+                        Text(track.displayTitle)
+                            .font(.subheadline)
+                            .lineLimit(1)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier(MiniPlayerIdentifiers.playPauseButton)
+                    .contentShape(.rect)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .foregroundStyle(.primary)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Now playing, \(track.displayTitle)")
+                .accessibilityIdentifier(MiniPlayerIdentifiers.bar)
+                Button { music.togglePlayPause() } label: {
+                    Image(systemName: music.status == .playing ? "pause.fill" : "play.fill")
+                        .font(.title3)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(music.status == .playing ? "Pause" : "Play")
+                .accessibilityIdentifier(MiniPlayerIdentifiers.playPauseButton)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .foregroundStyle(.primary)
             .glassChrome(cornerRadius: 12)
             .padding(.horizontal)
-            .accessibilityIdentifier(MiniPlayerIdentifiers.bar)
             .sheet(isPresented: $showNowPlaying) {
                 NowPlayingScreen()
                     // End of album (§9.1) or stop: the sheet goes before the wallet returns the disc.

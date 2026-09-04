@@ -34,9 +34,11 @@
                                 .font(.title2)
                         }
                         .focused($transportFocused)
-                        .accessibilityIdentifier("vlcPlayer.playPauseButton")
+                        .accessibilityLabel(model.isPlaying ? "Pause" : "Play")
+                        .accessibilityIdentifier(VLCPlayerIdentifiers.playPauseButton)
                         ProgressView(value: model.positionFraction)
-                            .accessibilityIdentifier("vlcPlayer.scrubber")
+                            .accessibilityLabel("Playback position")
+                            .accessibilityIdentifier(VLCPlayerIdentifiers.scrubber)
                         Text("Swipe to scrub")
                             .font(.caption)
                             .foregroundStyle(.secondary)

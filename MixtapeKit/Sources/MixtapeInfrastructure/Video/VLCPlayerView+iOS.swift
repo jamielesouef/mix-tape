@@ -30,12 +30,14 @@
                                 .font(.title2)
                                 .frame(width: 44, height: 44)
                         }
-                        .accessibilityIdentifier("vlcPlayer.playPauseButton")
+                        .accessibilityLabel(model.isPlaying ? "Pause" : "Play")
+                        .accessibilityIdentifier(VLCPlayerIdentifiers.playPauseButton)
                         Slider(
                             value: Binding(get: { model.positionFraction }, set: { controller.scrub(to: $0) }),
                             in: 0 ... 1,
                         )
-                        .accessibilityIdentifier("vlcPlayer.scrubber")
+                        .accessibilityLabel("Playback position")
+                        .accessibilityIdentifier(VLCPlayerIdentifiers.scrubber)
                     }
                     .padding()
                     .background(transportBackground, in: .rect(cornerRadius: 16))

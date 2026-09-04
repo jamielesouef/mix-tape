@@ -68,6 +68,8 @@ count "$out/tvos.xcresult"
 
 echo "== ./scripts/check-layer-imports.sh"
 ./scripts/check-layer-imports.sh || { echo "GATE FAILED: layer imports"; exit 1; }
+echo "== ./scripts/check-glass-fallback.sh"
+./scripts/check-glass-fallback.sh || { echo "GATE FAILED: glass fallback"; exit 1; }
 echo "== swiftformat --lint ."
 swiftformat --lint . || { echo "GATE FAILED: swiftformat"; exit 1; }
 echo "GATE PASSED"

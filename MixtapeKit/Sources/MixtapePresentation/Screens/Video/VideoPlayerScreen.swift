@@ -57,6 +57,7 @@ public struct VideoPlayerScreen: View {
             .padding()
             .accessibilityIdentifier(VideoPlayerIdentifiers.closeButton)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(VideoPlayerIdentifiers.screen)
     }
 }

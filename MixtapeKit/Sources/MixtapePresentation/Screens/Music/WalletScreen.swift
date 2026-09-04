@@ -19,6 +19,7 @@
         @Environment(\.musicPlayerService) private var music
         @Environment(\.horizontalSizeClass) private var sizeClass
         @Environment(\.scenePhase) private var scenePhase
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @Namespace private var sleeves
         @State private var pageIndex = 0
         @State private var pulledAlbum: MediaItem?
@@ -127,7 +128,9 @@
         private func returnToSleeve(animated: Bool) {
             guard let albumID = music.finishedAlbumID else { return }
             let page = WalletPosition(albumID: albumID, in: albums.map(\.id), columns: columns)?.page
-            guard animated else {
+            // Reduce Motion takes the same path as a return from the background: no paging
+            // animation and no pulse (slice 012).
+            guard animated, reduceMotion == false else {
                 pulledAlbum = nil
                 if let page {
                     pageIndex = page

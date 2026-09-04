@@ -55,6 +55,8 @@ public struct AlbumDetailScreen: View {
                     ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
                         Button { play(startingAt: index) } label: {
                             TrackRow(track: track)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(.rect) // a .plain button hit-tests its drawn content only (Triage 10)
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier(AlbumDetailIdentifiers.trackRow(track.id))
