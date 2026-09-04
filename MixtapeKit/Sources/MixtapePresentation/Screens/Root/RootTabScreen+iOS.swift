@@ -11,6 +11,8 @@
     /// iOS: Home, Libraries, Music, Settings (engineering doc §9). The mini player docks above
     /// the tab bar in slice 009; nothing is reserved for it here beyond this comment.
     public struct RootTabScreen: View {
+        @Environment(\.musicPlayerService) private var music
+
         public init() {}
 
         public var body: some View {
@@ -31,7 +33,9 @@
                     .accessibilityIdentifier(RootTabIdentifiers.settingsTab)
                 }
             }
-            .tabViewBottomAccessory {
+            // iOS 26.1 (decision 48): with nothing playing the accessory container itself must go,
+            // or an empty pill sits over the bottom of every tab (Triage 9).
+            .tabViewBottomAccessory(isEnabled: music.isActive) {
                 MiniPlayer()
             }
         }

@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "MixtapeKit",
-    platforms: [.iOS(.v26), .tvOS(.v26)],
+    platforms: [.iOS("26.1"), .tvOS(.v26)],
     products: [
         .library(name: "MixtapeDomain", targets: ["MixtapeDomain"]),
         .library(name: "MixtapeUseCase", targets: ["MixtapeUseCase"]),

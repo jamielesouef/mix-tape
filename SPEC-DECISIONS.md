@@ -1165,3 +1165,28 @@ Two smaller dry-run findings:
   `Bash(grep*)` and `Bash(ls*)` all matched commands with arguments, and the
   deny rule's colon form `Bash(curl:*)` matched too. There is no syntax problem
   in the allow list, and no further change is needed to it.
+
+## 48. iOS deployment target rises to 26.1 — tvOS stays 26.0
+
+Slice 012 found that the empty `tabViewBottomAccessory` pill (Triage 9) can
+only be hidden with `tabViewBottomAccessory(isEnabled:content:)`, which is
+iOS 26.1+. Decision 2 pinned 26.0 everywhere and `CLAUDE.md` bars `#available`,
+so the slice escalated rather than choosing.
+
+**Decision (project owner, 2026-09-04): `IPHONEOS_DEPLOYMENT_TARGET = 26.1`
+and `.iOS("26.1")` in `Package.swift`; `TVOS_DEPLOYMENT_TARGET` stays 26.0.**
+Decision 2's "26.0 everywhere" is amended to "one value per platform, no
+`#available` between them". The `#available` ban stands.
+
+Rejected — living with the pill. It covers the bottom of every tab's content
+(the album track list, the movie detail's Play button at large text sizes) and
+was the real cause of Triage 10.
+
+Rejected — one `#available(iOS 26.1, *)` around the modifier. It keeps 26.0 in
+name only and opens the door decision 4 and `CLAUDE.md` closed.
+
+Rejected — applying the accessory modifier conditionally on 26.0. It changes
+the `TabView`'s type, so every tab's navigation stack is rebuilt whenever music
+starts or stops.
+
+The iOS 26.5 simulator installed on this machine satisfies the new floor.
