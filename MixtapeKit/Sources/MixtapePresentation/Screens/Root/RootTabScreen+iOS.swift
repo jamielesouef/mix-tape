@@ -17,22 +17,27 @@
         public init() {}
 
         public var body: some View {
+            // Identifiers on the tabs themselves, so the tab-bar items can be addressed (slice 016,
+            // Triage 17 — the same gap as tvOS, closed with the same modifier).
             TabView {
                 Tab("Home", systemImage: "house") {
-                    HomeScreen().accessibilityIdentifier(RootTabIdentifiers.homeTab)
+                    HomeScreen()
                 }
+                .accessibilityIdentifier(RootTabIdentifiers.homeTab)
                 Tab("Libraries", systemImage: "books.vertical") {
-                    LibraryListScreen().accessibilityIdentifier(RootTabIdentifiers.librariesTab)
+                    LibraryListScreen()
                 }
+                .accessibilityIdentifier(RootTabIdentifiers.librariesTab)
                 Tab("Music", systemImage: "music.note") {
-                    MusicTabScreen().accessibilityIdentifier(RootTabIdentifiers.musicTab)
+                    MusicTabScreen()
                 }
+                .accessibilityIdentifier(RootTabIdentifiers.musicTab)
                 Tab("Settings", systemImage: "gear") {
                     NavigationStack {
                         SettingsScreen().navigationTitle("Settings")
                     }
-                    .accessibilityIdentifier(RootTabIdentifiers.settingsTab)
                 }
+                .accessibilityIdentifier(RootTabIdentifiers.settingsTab)
             }
             // iOS 26.1 (decision 48): with nothing playing the accessory container itself must go,
             // or an empty pill sits over the bottom of every tab (Triage 9).

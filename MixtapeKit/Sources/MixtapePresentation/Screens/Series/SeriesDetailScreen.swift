@@ -31,7 +31,9 @@ public struct SeriesDetailScreen: View {
                 VStack(spacing: 0) {
                     Picker("Season", selection: Binding(get: { currentSeasonID ?? "" }, set: { selectedSeasonID = $0 })) {
                         ForEach(seasons) { season in
-                            Text(season.name).tag(season.id)
+                            Text(season.name)
+                                .tag(season.id)
+                                .accessibilityIdentifier(SeriesDetailIdentifiers.seasonOption(season.id))
                         }
                     }
                     .pickerStyle(.segmented)

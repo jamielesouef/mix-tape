@@ -9,10 +9,11 @@
     import MixtapeServices
     import SwiftUI
 
-    /// One tvOS tab per library kind (decision 26): resolves the first library of `kind` and hosts
-    /// its shelf. The Music tab also carries a "Now Playing" button while music is active — the
-    /// Siri Remote has no skip buttons, so `NowPlayingScreen` is the only route to next/previous.
-    /// That button sits outside the `NavigationStack` so it survives the push to an album.
+    /// One tvOS tab per library kind (decision 26): hosts the shelf of the one library of `kind`, or
+    /// a list of them when the user has several (§1.5, slice 016). The Music tab also carries a
+    /// "Now Playing" button while music is active — the Siri Remote has no skip buttons, so
+    /// `NowPlayingScreen` is the only route to next/previous. That button sits outside the
+    /// `NavigationStack` so it survives the push to an album.
     public struct LibraryTabScreen: View {
         @Environment(\.libraryService) private var libraryService
         @Environment(\.musicPlayerService) private var music
@@ -32,13 +33,19 @@
                     case let .failed(error):
                         RetryView(error: error) { await libraryService.loadHome() }
                     case let .loaded(libraries):
-                        if let library = libraries.first(where: { $0.kind == kind }) {
+                        switch LibraryTabResolution(kind: kind, in: libraries) {
+                        case let .one(library):
                             LibraryDestination(library: library)
-                        } else {
+                        case let .several(libraries):
+                            LibraryKindListScreen(libraries: libraries)
+                        case .none:
                             ContentUnavailableView("No \(name) library", systemImage: symbol, description: Text("Add a \(name) library to this Jellyfin user to see it here."))
                                 .accessibilityIdentifier(LibraryTabIdentifiers.emptyLabel(name))
                         }
                     }
+                }
+                .navigationDestination(for: Library.self) { library in
+                    LibraryDestination(library: library)
                 }
                 .navigationDestination(for: MediaItem.self) { item in
                     MediaItemDestination(item: item)
@@ -71,6 +78,13 @@
             // is the whole case this button now has to serve. Menu dismisses the cover.
             .fullScreenCover(isPresented: $showNowPlaying) {
                 NowPlayingScreen()
+            }
+            // The end of the album, or stop(), closes the cover — the same named dismissal 015 gave
+            // the iOS sheet; without it the cover sits on "Nothing playing" until Menu.
+            .onChange(of: music.isActive) { _, active in
+                if active == false {
+                    showNowPlaying = false
+                }
             }
         }
 

@@ -99,27 +99,27 @@ that Menu dismisses the cover or that focus lands sensibly inside it.
 
 ## 4. Pre-Flight Validation
 
-- [ ] **013** — opened. `MixtapePresentationTests` exists and runs in both schemes.
-- [ ] **011** — opened. Confirm the tvOS tab set is still Home / Movies / Shows / Music /
+- [x] **013** — opened. `MixtapePresentationTests` exists and runs in both schemes.
+- [x] **011** — opened. Confirm the tvOS tab set is still Home / Movies / Shows / Music /
       Settings, that `LibraryTabScreen` still resolves first-of-kind at `:34`, and that the
       Now Playing affordance is where the 2026-09-04 pre-push change left it — outside the
       `NavigationStack`, presented as a cover. **This is the highest-drift dependency in the
       round**: 011's own drift row records that 010 moved four files underneath it, and the
       pre-push change moved a fifth after 011 closed.
-- [ ] **005** — opened. Confirm `FetchLibrariesUseCase` still returns every library and that
+- [x] **005** — opened. Confirm `FetchLibrariesUseCase` still returns every library and that
       `LibraryService.libraries` is not filtered by kind anywhere upstream — if it is, this
       slice needs a data change and not just a screen.
-- [ ] **012** (soft) — opened, for the identifier enum conventions (decision 17, one enum per
+- [x] **012** (soft) — opened, for the identifier enum conventions (decision 17, one enum per
       screen) the two new identifiers must follow.
-- [ ] Dev server state checked before the acceptance run. The drift log records an orphaned
+- [x] Dev server state checked before the acceptance run. The drift log records an orphaned
       "Empty Music" `/UserViews` item that survived a library scan in 011's first run and
       needed `docker restart jellyfin` plus `POST /Library/Refresh`. **This slice deliberately
       creates a second library of a kind**, so it will leave exactly that kind of residue —
       plan its removal before creating it, and confirm `/Library/VirtualFolders` and
       `/UserViews` agree afterwards.
-- [ ] Architecture standards doc re-read.
+- [x] Architecture standards doc re-read.
 
-**Drift found:** `none` — or what changed, plus a row in the checklist's Drift Log.
+**Drift found:** `none` in 011's shape — the tab set is still Home / Movies / Shows / Music / Settings, `LibraryTabScreen` still resolves `libraries.first(where:)`, and the Now Playing button and its `.fullScreenCover` sit outside the `NavigationStack` as the pre-push fix left them. `FetchLibrariesUseCase` filters only `.unsupported`, and `LibraryService.libraries` is not filtered by kind anywhere, so the list is presentation only. 015 added one thing under this slice: 015's drift row on covered `NavigationStack` roots not being updated applies to `LibraryTabScreen`'s root too. Dev server before the run: `/Library/VirtualFolders` and `/UserViews` both list Movies and Music only; the second music library ("Music 2", `/media/music2`, a copy of the President folder) and a temporary TV library ("Shows", `/media/shows`, one fake series with two seasons so AC16d's season identifier can be queried on a live screen — decision 14's 0-Series baseline is restored at close) were added through the API with their removal planned as `DELETE /Library/VirtualFolders` plus `POST /Library/Refresh`, and `docker restart jellyfin` if `/UserViews` keeps an orphan.
 
 ## 5. Acceptance Criteria
 
@@ -129,13 +129,15 @@ that Menu dismisses the cover or that focus lands sensibly inside it.
       Adding the list does not change the single-library experience.
 - [ ] **AC16c** — In the VLC player on tvOS, focus reaches the Close button by directional
       input, or the slice records why it cannot and Menu is proven to dismiss.
-- [ ] **AC16d** — A season can be selected in `SeriesDetailScreen` by accessibility identifier,
+- [x] **AC16d** — A season can be selected in `SeriesDetailScreen` by accessibility identifier,
       and each tvOS tab-bar item carries its identifier. Verify by identifier query, not by
       reading the source. *(Ordering note: AC11's live demonstration stays blocked — 0 Series
       on the server, decision 14. This criterion is about the identifiers, not the ordering.)*
 - [ ] **AC16e** — The Now Playing cover opens from `AlbumDetailScreen`, its transport controls
       take focus, and Menu dismisses it back to the album.
-- [ ] `xcodebuild build` and `test` pass for both schemes; layer, glass and swiftformat clean.
+- [x] `xcodebuild build` and `test` pass for both schemes; layer, glass and swiftformat clean.
+
+**Evidence and gaps, 2026-09-05.** *Demonstrated:* **AC16d**, season half — on the iPhone 17 Pro simulator (the screen is platform-shared) with a temporary TV library on the dev server, `idb ui describe-point` on the segmented picker returned `seriesDetail.seasonOption.e099d3…` ("Season 1", value 1) and `seriesDetail.seasonOption.cdbc2c…` ("Season 2", value 0); tapping the second by its frame switched the episode list to `S2E1`. The temporary library was then deleted (`DELETE /Library/VirtualFolders`, `POST /Library/Refresh`), the folder removed, and `/Library/VirtualFolders`, `/UserViews` and an `Items` query all agree: no Series, Season or Episode remains, so decision 14's 0-Series baseline stands. **Unit tests:** `LibraryTabResolutionTests` (4) cover one / several / none / other-kinds-untouched on both schemes; the gate passes 184/0/0. *Not demonstrated, and why:* **AC16a, AC16b, AC16c, AC16e** need directional input on the Apple TV simulator, and on this machine nothing delivers it: `idb ui key` is refused by CoreSimulator 1155.4 ("Keyboard HID is suppressed … Use the DTUHID transport"), `idb ui swipe`/`tap` do nothing on tvOS, `idb ui describe-all` returns only the application node (no accessibility tree, so no identifier query either), and synthetic key events through System Events and through `CGEvent` posting — with the device window frontmost and focused, with "Connect Hardware Keyboard" toggled, and with the Apple TV Remote window shown and focused — never moved focus off the Home tab, nor did Escape (Menu) leave the app; a mouse drag posted on the Remote window's touch surface did nothing either. The tvOS app builds, installs, launches and shows the five tabs (screenshots), which is as far as screenshots can carry it. **AC16d, tab-bar half:** `TabContent.accessibilityIdentifier(_:)` is applied on both platforms, but `idb` exposes no identifier on the tab-bar items even on iOS (`describe-point` on each item returns `AXUniqueId: null`, and neither placement — content view or `Tab` — appears anywhere in the dumped tree), so this cannot be verified by identifier query with the tooling here. **AC16c** therefore stays open exactly as Section 2 framed it: not statically provable. The second music library ("Music 2", `/media/music2`) is **left on the dev server** so a person at the Simulator can finish AC16a/AC16b; removal is `./scripts/jf-probe.swift DELETE "/Library/VirtualFolders?name=Music%202&refreshLibrary=true"`, then `POST /Library/Refresh`, then delete `media/music2`, then confirm `/UserViews`. Recorded in the checklist's Active Blockers.
 
 ## 6. Decision Log
 
@@ -144,10 +146,13 @@ that Menu dismisses the cover or that focus lands sensibly inside it.
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
 | 2026-09-04 | Build the tvOS library list rather than amend §1.5 with a decision recording first-of-kind as intended | (a) A `SPEC-DECISIONS.md` row declaring tvOS first-of-kind deliberate and §1.5 satisfied by the tab set; (b) deferring the gap to V2 with a fork row | Project owner's call. §1.5 is an in-scope V1 capability and the deviation was never recorded anywhere that outranks a slice log, so the choice was between making the code true and making the spec true — and the spec is right: a user with two music libraries currently cannot reach one of them. |
+| 2026-09-05 | The tab set keeps §9's five tabs. A kind tab whose user has **more than one** library of that kind shows a focusable list of those libraries (`LibraryKindListScreen`, tvOS-only) at the root of its `NavigationStack`, and each row pushes the existing `LibraryDestination`; with exactly one library the tab hosts the shelf directly, as 011 shipped it. Resolution is a platform-shared pure helper, `LibraryTabResolution` (`.none` / `.one` / `.several`), so it is unit-tested on both schemes. | (a) A sixth "Libraries" tab mirroring iOS; (b) a picker in the shelf header; (c) changing first-of-kind resolution inside `LibraryDestination` | (a) is a fork against §9's tvOS tab list for a case most users never hit, and it would show a list of four when the kind tabs already partition the libraries. (b) puts a control into every shelf for the single-library majority. (c) is what Section 3 rules out. A list only where there is something to list changes nothing for one library of a kind (AC16b) and reaches every library (AC16a). |
+| 2026-09-05 | The two identifier gaps close with the SwiftUI API that puts them where a query finds them: `TabContent.accessibilityIdentifier(_:)` on each `Tab` in `RootTabScreen+tvOS` (the content views keep theirs, one enum), and `SeriesDetailIdentifiers.seasonOption(_:)` on each season `Text` in the segmented `Picker`. | Leaving the identifiers on the tab content views | An identifier on the content cannot address the tab-bar item, which is what a test switching tabs needs. |
+| 2026-09-05 | `LibraryTabScreen`'s Now Playing cover dismisses itself when `music.isActive` turns false, the same named dismissal 015 gave the iOS sheet. | Leaving it | 015 found the iOS sheet's dismissal was accidental; the tvOS cover's is absent — after an album ends it would sit showing "Nothing playing" until Menu. Same clause of §9.1, same one-line fix, found while confirming AC16e's cover. |
+| 2026-09-05 | The VLC overlay's `.onMoveCommand` is left as 011 shipped it — `.up`/`.down` still `break` — and AC16c stays open. | Changing the handler blind: dropping the `.up`/`.down` cases or moving focus programmatically | Section 2 says the trap is not statically provable and needs the simulator, and the simulator could not be driven (Section 5). A blind change could as easily create a trap as remove one, and would ship unverified in the same way. |
 
-*(The tab-set shape decision — sixth tab versus a way in from the kind tabs — is a fork
-against §9's five-tab tvOS list and gets its own row here when it is made, before it is
-implemented.)*
+*(The tab-set shape decision was made above, 2026-09-05, and is not a fork: the five tabs
+stay.)*
 
 ## 7. Sub-Slices
 

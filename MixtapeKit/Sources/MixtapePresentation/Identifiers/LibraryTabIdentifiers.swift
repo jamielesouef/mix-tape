@@ -6,6 +6,11 @@
 
 public enum LibraryTabIdentifiers {
     public static let nowPlayingButton = "libraryTab.nowPlayingButton"
+    public static let libraryList = "libraryTab.libraryList"
+
+    public static func libraryRow(_ libraryID: String) -> String {
+        "libraryTab.libraryRow.\(libraryID)"
+    }
 
     public static func emptyLabel(_ kind: String) -> String {
         "libraryTab.emptyLabel.\(kind)"
