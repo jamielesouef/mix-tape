@@ -20,7 +20,13 @@ MixtapeKit/
 uiTests/
 ├── iOS/          # iOS UI tests (XCUITest)
 └── tvOS/         # tvOS UI tests (XCUITest)
-scripts/check-layer-imports.sh
+scripts/
+├── check-layer-imports.sh   # layer edges, run by the gate and a build phase
+├── check-glass-fallback.sh  # Reduce Transparency fallback at every Material site
+├── gate.sh                  # the slice gate
+├── jf-probe.swift           # server-observable acceptance checks (decision 47)
+├── sim-type.sh              # credential entry on the iOS simulator (decision 46)
+└── tv-remote.sh, tvkey.m    # Siri Remote presses on the Apple TV simulator (decision 49)
 ```
 
 The layers are SPM targets, not folders inside an app target — `Package.swift` declares the dependency edges and the compiler enforces them. Unit tests live in `MixtapeKit/Tests/` beside the targets they cover. UI tests stay platform-split at the repository root, since XCUITest bundles belong to app targets rather than to the package.

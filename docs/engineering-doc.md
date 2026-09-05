@@ -103,7 +103,13 @@ mixtape/
 │     ├─ MixtapeServicesTests/
 │     ├─ MixtapeDataTests/
 │     └─ MixtapePresentationTests/      # slice 013: pure presentation helpers, no view rendering
-└─ scripts/check-layer-imports.sh
+└─ scripts/
+   ├─ check-layer-imports.sh            # layer edges the gate enforces (§13 step 1)
+   ├─ check-glass-fallback.sh           # every Material site reads Reduce Transparency (slice 012)
+   ├─ gate.sh                           # the slice gate, counted against docs/slices/test-count.txt (slice 013)
+   ├─ jf-probe.swift                    # server-observable acceptance checks (decision 47)
+   ├─ sim-type.sh                       # types a credential into the iOS simulator without echoing it (decision 46)
+   └─ tv-remote.sh + tvkey.m            # Siri Remote presses for the Apple TV simulator (decision 49)
 ```
 
 Dependency edges declared in `Package.swift` — nothing else is permitted to import across layers:

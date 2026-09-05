@@ -43,7 +43,7 @@ P2 because the natural end of every track is unaffected and the gesture is a del
 **Out of scope** (name the slice it's deferred to):
 
 - Any change to what a report contains, or to the §1.1 invariants. The queue is the album.
-- The tvOS live checks 016 left in Active Blockers — separate blocker, separate owner.
+- Anything on tvOS beyond confirming the fix there: 016's tvOS checks closed on 2026-09-05 (`scripts/tv-remote.sh`), and the see-through Now Playing cover is Triage 23, a separate owner.
 
 **Plan requirements covered:** none. This is a defect rung, gated on builds, tests and the scripts, plus the demonstration above.
 
@@ -51,7 +51,7 @@ P2 because the natural end of every track is unaffected and the gesture is a del
 
 - [ ] **015** — opened. Confirm `endSeekMargin` is still 1 s behind `seek(to:)` and that the evidence paragraph's FLAC finding still reads as recorded.
 - [ ] **013** — opened. `docs/slices/test-count.txt` is the count the gate reads; this slice changes it deliberately if it changes a test.
-- [ ] Dev server: "King Of Terrors" still present as FLAC, and whether "Music 2" (016's second library, a copy of the same album) is still on the server — it duplicates the album and must not be the one measured.
+- [ ] Dev server: "King Of Terrors" still present as FLAC, and only once — 016 removed its "Music 2" copy on 2026-09-05 (`/Library/VirtualFolders` and `/UserViews` list Movies and Music only); confirm that still holds so the duplicate is not the one measured.
 - [ ] Architecture standards doc re-read.
 
 **Drift found:** `none` — or what changed, plus a row in the checklist's Drift Log.

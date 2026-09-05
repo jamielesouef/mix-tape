@@ -1197,3 +1197,46 @@ the `TabView`'s type, so every tab's navigation stack is rebuilt whenever music
 starts or stops.
 
 The iOS 26.5 simulator installed on this machine satisfies the new floor.
+
+## 49. Apple TV simulator checks go through `scripts/tv-remote.sh`
+
+**Decision: acceptance checks that need Siri Remote input on the Apple TV
+simulator run `scripts/tv-remote.sh <udid> <action>...` — `up`, `down`, `left`,
+`right`, `select`, `menu`, a raw HID usage, or `type:TEXT` — and read the result
+from `xcrun simctl io <udid> screenshot`.** The script compiles `scripts/tvkey.m`
+on first use and is committed, so the checks are reproducible. Recorded
+2026-09-05, when slice 016's second pass used it to close criteria the first
+pass had left to a person at the Simulator.
+
+**Why the older tools cannot do this here.** From CoreSimulator 1155.4 (the
+Xcode 27 install) the guest hands its legacy Indigo keyboard service to the
+`dtuhidd` daemon for the lifetime of the boot. Both keyboard paths available on
+this machine ride Indigo: `idb`'s, because its newer DTUHID transport is gated
+off for Apple TV (`dtuhidd` exposes no Siri Remote trackpad, so `idb` prefers
+Indigo for the whole product family and is then refused with "Keyboard HID is
+suppressed"), and the Xcode 26.6 `Simulator.app`'s, which is the only Simulator
+app installed — the Xcode 27 beta ships none. So no key event from any tool
+reached the device, which is what 011, 012 and 016's first pass recorded as
+"tvOS checks are manual".
+
+**What the script is.** `idb`'s DTUHID keyboard path reduced to one Objective-C
+file: look up the device's `com.apple.coredevice.feature.remote.hid.digitizer`
+port through CoreSimulator's `SimDevice.lookup`, wrap it in a sim-to-host XPC
+connection (`xpc_endpoint_create_mach_port_4sim`,
+`xpc_connection_enable_sim2host_4sim`), and send `IndigoKeyboardButtonEvent`
+messages. Arrows move focus, Return is Select, Escape is Menu; typed text is
+HID usage codes with a Shift modifier where needed. It uses no app code and
+touches nothing in the product. It links private CoreSimulator and libxpc
+symbols, so it is re-checked after any Xcode or macOS update, and it needs
+`DEVELOPER_DIR` or `/Applications/Xcode.app` to resolve CoreSimulator.
+
+**What it does not do.** It cannot query accessibility identifiers — `idb` has
+no accessibility tree for tvOS — so identifier verification on tvOS stays with
+XCUITest (decision 4). It sends no Play/Pause: that is a Consumer-page usage
+with no keyboard code, and the app's own transport button covers it.
+
+**Rejected.** Patching and rebuilding `idb_companion` to allow DTUHID for Apple
+TV — a fork of a third-party binary and its toolchain for one line. A debug
+launch argument in the app that jumps to a screen — test scaffolding in the
+product that still cannot press a button. Leaving tvOS criteria to a person —
+what every tvOS slice had been paying, recorded in the checklist's drift log.

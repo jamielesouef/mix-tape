@@ -121,6 +121,14 @@ It is for manual acceptance checks only. No automated test touches it: DTO
 mapping runs against captured JSON fixtures, repositories against a stubbed
 `URLProtocol`. A test that needs the server running is a broken test.
 
+Read the server through `./scripts/jf-probe.swift` (decision 47); `curl` is
+denied on this machine. Drive the Apple TV simulator with
+`./scripts/tv-remote.sh <udid> up|down|left|right|select|menu|type:TEXT`
+(decision 49) — `idb ui key` and `idb ui remote` are refused on this
+CoreSimulator, and the Xcode 26.6 Simulator app's keyboard never reaches tvOS.
+Screenshot between presses with `xcrun simctl io <udid> screenshot`; there is
+no accessibility tree for tvOS over `idb`, so identifier queries wait for XCUITest.
+
 ## Scope
 
 Only the 15 capabilities in engineering doc §1 are in scope. Everything in
