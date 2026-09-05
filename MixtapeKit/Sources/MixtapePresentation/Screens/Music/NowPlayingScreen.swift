@@ -11,6 +11,8 @@ import SwiftUI
 /// Art, title, scrubber, previous / play / next. No shuffle, no repeat, no queue button (§1.1, §9).
 public struct NowPlayingScreen: View {
     @Environment(\.musicPlayerService) private var music
+    /// The scrubber's value while a drag is in flight; the seek is sent once, when the drag ends.
+    @State private var scrubbing: Double?
 
     public init() {}
 
@@ -47,8 +49,16 @@ public struct NowPlayingScreen: View {
         let value = Double(music.position.components.seconds)
         #if os(iOS)
             // tvOS shows a read-only bar: engineering doc §9's tvOS table asks for no divergence here (slice 011).
-            Slider(value: Binding(get: { min(value, total) }, set: { music.seek(to: .seconds($0)) }), in: 0 ... max(total, 1))
-                .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
+            // One seek per drag, on release. Seeking on every value change sent a progress report
+            // per pixel of travel — a dozen in 200 ms — which §6 forbids and which the dev server
+            // answered with 500s (slice 015, Triage 22).
+            Slider(value: Binding(get: { scrubbing ?? min(value, total) }, set: { scrubbing = $0 }), in: 0 ... max(total, 1)) { editing in
+                if editing == false, let target = scrubbing {
+                    music.seek(to: .seconds(target))
+                    scrubbing = nil
+                }
+            }
+            .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
         #else
             ProgressView(value: min(value, total), total: max(total, 1))
                 .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
@@ -70,6 +80,9 @@ public struct NowPlayingScreen: View {
             Button { Task { await music.next() } } label: {
                 Image(systemName: "forward.fill").font(.title)
             }
+            // AC13e: disabled on the final track, like the lock screen's twin (slice 015). The album
+            // ends by playing out, not by skipping past its last track.
+            .disabled(music.hasNextTrack == false)
             .accessibilityLabel("Next track")
             .accessibilityIdentifier(NowPlayingIdentifiers.nextButton)
         }

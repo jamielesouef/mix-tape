@@ -20,6 +20,10 @@ public final class MusicPlayerService {
     public static let progressInterval: Duration = .seconds(10)
     /// §6: `MPNowPlayingInfoCenter` is refreshed every 5 s while a track plays (slice 014).
     public static let nowPlayingInterval: Duration = .seconds(5)
+    /// Triage 7, rung v1 (slice 015): a seek never lands closer to the end of a track than this. Seeking
+    /// to the exact end stalls `AudioPlayerController` and `onEnded` never fires; v2 root-causes that
+    /// stall and deletes this margin, changing nothing else.
+    public static let endSeekMargin: Duration = .seconds(1)
 
     /// Always exactly one album (§1.1).
     public private(set) var album: MediaItem?
@@ -35,7 +39,17 @@ public final class MusicPlayerService {
         return queue[currentIndex]
     }
 
+    /// Whether Next has anywhere to go (§1.1: never past the last track). The same fact the lock
+    /// screen gets through `setNextTrackEnabled`, so the in-app control cannot drift from it.
+    public var hasNextTrack: Bool {
+        guard let currentIndex else { return false }
+        return currentIndex + 1 < queue.count
+    }
+
     @ObservationIgnored private var progressTask: Task<Void, Never>?
+    /// The finish a wallet has claimed (slice 015). Not observed: claiming is bookkeeping, not state
+    /// a view renders.
+    @ObservationIgnored private var claimedFinishID: String?
     @ObservationIgnored private var playSessionID = UUID().uuidString
     private let controller: any AudioPlayerControlling
     private let buildAudioStreamURL: BuildAudioStreamURLUseCase
@@ -88,6 +102,7 @@ public final class MusicPlayerService {
         self.album = album
         queue = tracks
         finishedAlbumID = nil
+        claimedFinishID = nil
         await start(index: index)
     }
 
@@ -125,7 +140,13 @@ public final class MusicPlayerService {
         await start(index: currentIndex - 1)
     }
 
-    public func seek(to target: Duration) {
+    /// Clamped short of the track's end by `endSeekMargin` (Triage 7 v1) — the one seam every seek
+    /// passes through: the in-app scrubber, the lock screen's `changePlaybackPosition`, `previous()`.
+    public func seek(to requested: Duration) {
+        var target = max(.zero, requested)
+        if let runtime = current?.runtime {
+            target = min(target, max(.zero, runtime - Self.endSeekMargin))
+        }
         controller.seek(to: target)
         position = target
         reportOnce(isPaused: status == .paused)
@@ -143,10 +164,22 @@ public final class MusicPlayerService {
         currentIndex = nil
         position = .zero
         finishedAlbumID = nil
+        claimedFinishID = nil
+    }
+
+    /// The wallet that owns the return sequence for the current finish (slice 015). `true` exactly
+    /// once per finish, and only while that finish is live — a wallet asking about an album that
+    /// has already been acknowledged, or a different album, gets `false`. Reset by `play`, `stop`,
+    /// `finish` and `acknowledgeFinish`.
+    public func claimFinish(albumID: String) -> Bool {
+        guard finishedAlbumID == albumID, claimedFinishID == nil else { return false }
+        claimedFinishID = albumID
+        return true
     }
 
     public func acknowledgeFinish() {
         finishedAlbumID = nil
+        claimedFinishID = nil
     }
 
     // MARK: - Private
@@ -206,6 +239,7 @@ public final class MusicPlayerService {
         controller.stop()
         status = .idle
         position = .zero
+        claimedFinishID = nil
         finishedAlbumID = album?.id
         currentIndex = nil
     }

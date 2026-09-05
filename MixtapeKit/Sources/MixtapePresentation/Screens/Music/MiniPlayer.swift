@@ -8,12 +8,13 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// The docked mini player above the iOS tab bar, shown whenever music is active. Tapping it opens
-/// `NowPlayingScreen`, which dismisses itself when playback stops. Liquid Glass with the Reduce
-/// Transparency fallback (§9).
+/// The docked mini player above the iOS tab bar, shown whenever music is active. Tapping it asks
+/// its host to present `NowPlayingScreen`: the sheet is not this view's, because this view leaves
+/// the hierarchy the moment music stops and could never dismiss anything (slice 015). Liquid Glass
+/// with the Reduce Transparency fallback (§9).
 struct MiniPlayer: View {
     @Environment(\.musicPlayerService) private var music
-    @State private var showNowPlaying = false
+    @Binding var showNowPlaying: Bool
 
     var body: some View {
         if let track = Self.dockedTrack(in: music) {
@@ -48,15 +49,6 @@ struct MiniPlayer: View {
             .foregroundStyle(.primary)
             .glassChrome(cornerRadius: 12)
             .padding(.horizontal)
-            .sheet(isPresented: $showNowPlaying) {
-                NowPlayingScreen()
-                    // End of album (§9.1) or stop: the sheet goes before the wallet returns the disc.
-                    .onChange(of: music.isActive) { _, active in
-                        if active == false {
-                            showNowPlaying = false
-                        }
-                    }
-            }
         }
     }
 
@@ -70,14 +62,17 @@ struct MiniPlayer: View {
 
 #if DEBUG
     #Preview("loaded") {
-        MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.playing())
+        @Previewable @State var showNowPlaying = false
+        MiniPlayer(showNowPlaying: $showNowPlaying).environment(\.musicPlayerService, MockMusicPlayerService.playing())
     }
 
     #Preview("empty") {
-        MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.idle())
+        @Previewable @State var showNowPlaying = false
+        MiniPlayer(showNowPlaying: $showNowPlaying).environment(\.musicPlayerService, MockMusicPlayerService.idle())
     }
 
     #Preview("failure") {
-        MiniPlayer().environment(\.musicPlayerService, MockMusicPlayerService.idle())
+        @Previewable @State var showNowPlaying = false
+        MiniPlayer(showNowPlaying: $showNowPlaying).environment(\.musicPlayerService, MockMusicPlayerService.idle())
     }
 #endif

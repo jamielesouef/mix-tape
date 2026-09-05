@@ -137,44 +137,46 @@ coverage table lists both slices.
 
 ## 4. Pre-Flight Validation
 
-- [ ] **013** — opened. `MixtapePresentationTests` exists and runs in both schemes. If it does
+- [x] **013** — opened. `MixtapePresentationTests` exists and runs in both schemes. If it does
       not, **stop**: this slice's whole value is that its fixes are testable, and shipping it
       on another manual demo repeats the failure it exists to correct.
-- [ ] **010** — opened. Confirm F4 and F5 still read as recorded, that the return sequence is
+- [x] **010** — opened. Confirm F4 and F5 still read as recorded, that the return sequence is
       still at `WalletScreen.swift:128-161`, and that `MusicTabScreen` / `LibraryDestination`
       are still the `+iOS` / `+tvOS` split the 2026-09-04 drift row describes.
-- [ ] **009** — opened. Confirm `finish()` still sets `status`, `currentIndex` and
+- [x] **009** — opened. Confirm `finish()` still sets `status`, `currentIndex` and
       `finishedAlbumID` together (`MusicPlayerService.swift:201-209`), and that Triage 7 is
       still open and unclaimed.
-- [ ] Confirm 014 did not change `MusicPlayerService`'s reporting loop in a way that moves
+- [x] Confirm 014 did not change `MusicPlayerService`'s reporting loop in a way that moves
       `finish()`. 014 touches the `MPNowPlayingInfoCenter` cadence in the same file.
-- [ ] Architecture standards doc re-read. `CLAUDE.md`'s product rule especially: the queue is
+- [x] Architecture standards doc re-read. `CLAUDE.md`'s product rule especially: the queue is
       the album, and the absences are absences.
 
-**Drift found:** `none` — or what changed, plus a row in the checklist's Drift Log.
+**Drift found:** one item, from 013 rather than from this slice's dependencies: `WalletScreen`'s page arithmetic already moved into `WalletPager` (013), so the return sequence resolves the page through `pager.page(of:)` rather than `WalletPosition` directly — the same seam, one hop further out. `MixtapePresentationTests` exists and runs in both schemes. `finish()` still sets `status`, `currentIndex` and `finishedAlbumID` together; 014's loop change did not move it. F4 and F5 read as recorded; `MusicTabScreen` / `LibraryDestination` are still the `+iOS` / `+tvOS` split.
 
 ## 5. Acceptance Criteria
 
-- [ ] **AC15a** — Music tab → Libraries tab → same music library → play an album to its end
+- [x] **AC15a** — Music tab → Libraries tab → same music library → play an album to its end
       with Reduce Motion **on**. The detail screen pops, the wallet pages to the album, and
       no second wallet is left holding a pushed detail. This is the race, and it fails today.
-- [ ] **AC15b** — The same with Reduce Motion off, and again with the app backgrounded for the
+- [x] **AC15b** — The same with Reduce Motion off, and again with the app backgrounded for the
       final track and foregrounded afterwards (AC13d).
-- [ ] **AC15c** — `NowPlayingScreen` is dismissed by the finish sequence. Verify by reaching
+- [x] **AC15c** — `NowPlayingScreen` is dismissed by the finish sequence. Verify by reaching
       the dismissal in a test or by instrumenting it — "the sheet was gone" is what the
       current accidental teardown also produces, and is not evidence.
-- [ ] **AC15d** — Relaunch, open a wallet whose album list has not paged far enough to include
+- [x] **AC15d** — Relaunch, open a wallet whose album list has not paged far enough to include
       the last-played album, and finish it. Either the wallet reaches the page or the event
       survives unacknowledged; it is not silently discarded.
-- [ ] **AC15e** — On the final track, `NowPlayingScreen`'s next button is disabled, matching
+- [x] **AC15e** — On the final track, `NowPlayingScreen`'s next button is disabled, matching
       the lock screen.
-- [ ] **AC15f** — The sleeve's accent border holds at full strength for 0.4 s, measured by
+- [x] **AC15f** — The sleeve's accent border holds at full strength for 0.4 s, measured by
       frame scan as 010 did, not by eye.
-- [ ] **AC15g** — Dragging the scrubber to its maximum on the final track does not stall the
+- [x] **AC15g** — Dragging the scrubber to its maximum on the final track does not stall the
       player (Triage 7 v1).
-- [ ] Tests in `MixtapePresentationTests` covering the single-owner invariant and the
+- [x] Tests in `MixtapePresentationTests` covering the single-owner invariant and the
       off-page case, and in `MixtapeServicesTests` for the finish/acknowledge contract.
-- [ ] The §1.1 invariants suite still passes unchanged — no append, no shuffle, no repeat.
+- [x] The §1.1 invariants suite still passes unchanged — no append, no shuffle, no repeat.
+
+**Evidence, 2026-09-04/05, iPhone 17 Pro simulator (iOS 26.5) against `localhost:8096`, read through `scripts/jf-probe.swift /Sessions` and `idb ui describe-all`.** Setup for every run: visit the Music tab (wallet A), then Libraries → Music (wallet B), pull "Sundowning" from B, play track 12 "Blood Sport" (m4a/ALAC, 247 s), open Now Playing from the mini player. *AC15e* — on the final track `nowPlaying.nextButton` reports `enabled: false` while `previousButton` reports `true`. *AC15g* — dragging the scrubber past its end landed the seek at runtime − 1 s and the track ended 1–2 s later every time (four runs); no stall. *AC15a* — Reduce Motion **on** (`com.apple.Accessibility ReduceMotionEnabled` written with `simctl spawn defaults`, app relaunched): after the finish, wallet B showed `wallet.pager`, its sleeves and `wallet.pageIndicator` "Page 1 of 2" with `BackButton` "Libraries" — the detail popped — and no `nowPlaying.*` or `miniPlayer.*` element remained; wallet A on the Music tab was on its wallet with no detail; `/Sessions` had no `NowPlayingItem`. *AC15b* — the same with Reduce Motion off, then the backgrounded path: Home pressed with ~10 s of the final track left, the server logged `Playback stopped … "Blood Sport"` 8 s later while the app was in the background, and the app relaunched 39 s after Home showed wallet B with the detail popped and the page indicator on page 1. *AC15c* — the sheet is now hosted by `RootTabScreen+iOS`'s `TabView`, which never leaves the hierarchy, and is closed only by that view's `onChange(of: music.isActive)`; a `showNowPlaying` flag stuck at `true` would block the next presentation, and after each finish tapping `miniPlayer.bar` on a fresh play presented the sheet again (5 `nowPlaying.*` elements). *AC15d* — not demonstrable live: the library holds 5 albums and `LibraryService.pageSize` is 60, so nothing is ever off-page on this server; covered by `WalletReturnTests` (`.pageIn` for an unloaded album, never `.honour`) and the wallet's `loadMore` branch. *AC15f* — `simctl io recordVideo` at 60 fps during the animated finish, sampled at 30 fps with `ffmpeg`, accent-blue pixel count in the wallet region per frame: 18 consecutive accent frames (0.60 s) of which 14 sit at the plateau count (0.47 s), against 010's 0.3 s; the ramps are the 2–3 frames each side. *§1.1* — nothing added lets a second album into the queue: `hasNextTrack` reads the queue, `loadMore` pages the library, `claimFinish` is bookkeeping. **Found on the way:** seeking "King Of Terrors" (FLAC) to runtime − 1 s made `AVPlayerItem` fail (`FigFilePlayer err=-12864`, status `.failed`, no `onEnded`) where the ALAC album ended cleanly — the likely root of Triage 7's stall and recorded there for v2; the scrubber sent a report per pixel of drag (Triage 22, fixed here); and the dev server's Docker VM went read-only mid-run (writes 500, reads 200, server log silent from 17:58 on 2026-09-04) and needed Docker Desktop restarted — an environment fault, not the app's.
 
 ## 6. Decision Log
 
@@ -184,6 +186,13 @@ coverage table lists both slices.
 |---|---|---|---|
 | 2026-09-04 | Triage 7 enters as a ladder: v1 clamps the scrubber's reachable maximum, v2 root-causes the stall. Seam is `MusicPlayerService.seek(to:)` | Root-causing the `AVPlayer` stall now; leaving Triage 7 open across another round | The failure is only reachable by deliberately dragging to the exact end, and 010 already demonstrated the natural finish. A clamp behind the single seek entry point is a rung, not debt — v2 deletes the clamp and touches nothing else. Leaving it open a third round is how a triage item becomes permanent. |
 | 2026-09-04 | F5's visual shortfall is recorded as a known divergence from AC13b rather than fixed or re-forked | Rebuilding the pull-out to land the artwork in the album header | §9.1 forbids a bespoke transition and the zoom transition has no matched-destination role for a subview. There is no in-spec fix available, so the honest action is to stop ticking AC13b clean, not to invent one. |
+| 2026-09-04 | The finish event has one owner, chosen by the service: `MusicPlayerService.claimFinish(albumID:)` answers `true` to the first wallet that asks for a given live finish and `false` to every later one, and is reset by `play`, `stop`, `finish` and `acknowledgeFinish`. **Only a wallet that is on screen claims** — in its `onChange`, or in `onAppear` when it comes on screen afterwards — so a hidden tab can never take the return from the wallet the user is looking at, and a finish nobody is looking at waits, unacknowledged, for the first wallet that is. The pushed `AlbumDetailScreen` pops itself: an `onChange(of: music.finishedAlbumID)` on the destination inside `WalletScreen` sets `pulledAlbum = nil` when the finished album is its own. | (a) Fixing only the re-read and deferring `acknowledgeFinish()`, with every wallet running the whole sequence; (b) the wallet holding the finished album's detail as sole owner, popping its own detail from its own `onChange`; (c) a hidden wallet claiming one task-hop later as a fallback | **(b) was the first implementation and it failed on the simulator, which is why the row was rewritten before the code shipped.** With the wallet's `onChange` instrumented, the Libraries-tab wallet whose detail was up never received the finish at all: a `NavigationStack` root covered by a pushed destination is not updated on iOS 26.5 — no body evaluation, no `onChange` — while the hidden Music-tab wallet was updated and took the return. So the covered wallet can neither pop its detail nor claim, and the pop has to ride on the pushed view, which is updated. (a) inherits the same blindness. (c) was in the first design too and is gone: with covered wallets unable to claim at all, "one hop later" only ever handed the return to a hidden tab, which is the wrong wallet by definition. |
+| 2026-09-04 | `NowPlayingScreen`'s sheet is hosted by `RootTabScreen+iOS` on the `TabView`, which never leaves the hierarchy, with the `isPresented` state owned there and handed to `MiniPlayer` as a `Binding`. `RootTabScreen` dismisses it when `music.isActive` turns false — the finish (and `stop()`) named as the dismissal — and `MiniPlayer`'s dead `onChange` is deleted. | Keeping the sheet on `MiniPlayer` and making its `onChange` reachable | It cannot be made reachable: `MiniPlayer` is removed by `tabViewBottomAccessory(isEnabled:)` the moment `isActive` turns false, and a sheet modifier on a removed view is torn down before any `onChange` on it runs. The presenter has to outlive the event it reacts to; the `TabView` is the nearest view that does. |
+| 2026-09-04 | An album the wallet has not paged to yet is paged in, not discarded: when `WalletPager.page(of:)` is `nil` the wallet calls `loadMore` and leaves the event unacknowledged; the wallet retries when its loaded album count changes. A wallet of a different music library, or an exhausted library that does not contain the album, therefore never acknowledges — the event waits for a wallet that can honour it. | Acknowledging and skipping the scroll, as 010 did; jumping to the last loaded page as a best effort | Both discard §9.1's step 2 silently — the user comes back to a wallet on the wrong page with no pulse and no explanation. `loadMore` is already a no-op when a load is in flight or the library is exhausted, so the retry terminates on its own. |
+| 2026-09-04 | `NowPlayingScreen` disables Next through a new `MusicPlayerService.hasNextTrack`, the same fact `setNextTrackEnabled` already hands the lock screen. | Computing `currentIndex + 1 < queue.count` in the view | The view would duplicate the service's rule and drift from the lock screen; the service already knows and already tells `MPRemoteCommandCenter`. |
+| 2026-09-04 | The return pulse is on for 0.15 s, held at full accent for 0.4 s, then off for 0.15 s: `withAnimation(.easeInOut(duration: 0.15))`, a 0.4 s hold, `withAnimation(.easeInOut(duration: 0.15))`, then `acknowledgeFinish()`. | Two 0.2 s ramps with no hold (as shipped); one 0.4 s ramp up and a cut | §9.1 says "a 0.4 s border pulse"; two ramps meeting at a point give 0.4 s of *change* and an instant of full accent, which 010's frame scan measured as 0.3 s visible. A hold is what makes the pulse a pulse. |
+| 2026-09-04 | Triage 7 v1: `MusicPlayerService.seek(to:)` clamps its target to the track runtime less `endSeekMargin` (1 s) — the scrubber can still be dragged to its end, but the seek that lands is short of it. | Clamping the `Slider`'s range in `NowPlayingScreen`; clamping in `AudioPlayerController` | The slice's ladder names `seek(to:)` as the one seam both rungs sit behind: v2 deletes the clamp there and touches nothing else. A narrower slider range misrepresents the runtime and leaves the lock screen's `changePlaybackPosition` (which also arrives at `seek(to:)`) unclamped. One second is the smallest margin comfortably past the position 010 found ends normally (0.97 of a multi-minute track). |
+| 2026-09-04 | `NowPlayingScreen`'s scrubber seeks once, on release (`Slider(value:in:onEditingChanged:)` with the drag held in local state), instead of on every value change. | Leaving the per-change seek; debouncing it | A drag sent a progress report per pixel of travel — the simulator log shows twelve `reportProgress` calls in 200 ms — which §6's "never more often" forbids outright, and the dev server answered the storm with 500s (later traced to Docker's disk going read-only, but the storm is real either way). Found while demonstrating AC15g; fixed here because the same drag is the gesture Triage 7 v1 is about, and recorded as Triage 22 so the finding has a home. |
 
 ## 7. Sub-Slices
 
@@ -220,12 +229,12 @@ Commit this file alongside the code, with the slice id in the subject (`015: …
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] §12.13c, §12.13d and §12.13e satisfied on every path, not only the demonstrated one
-- [ ] Triage 7 closed as ladder rung v1, with v2's trigger recorded
-- [ ] F5's checklist row notes the AC13b divergence
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] Both link directions checked: this page's `next_slice` and `016`'s `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] §12.13c, §12.13d and §12.13e satisfied on every path, not only the demonstrated one
+- [x] Triage 7 closed as ladder rung v1, with v2's trigger recorded
+- [x] F5's checklist row notes the AC13b divergence
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] Both link directions checked: this page's `next_slice` and `016`'s `previous_slice`

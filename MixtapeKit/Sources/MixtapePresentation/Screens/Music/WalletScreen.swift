@@ -24,6 +24,7 @@
         @State private var pageIndex = 0
         @State private var pulledAlbum: MediaItem?
         @State private var pulsingAlbumID: String?
+        @State private var isVisible = false
         let library: Library
 
         public init(library: Library) {
@@ -76,12 +77,28 @@
             .navigationDestination(item: $pulledAlbum) { album in
                 AlbumDetailScreen(album: album)
                     .navigationTransition(.zoom(sourceID: album.id, in: sleeves))
+                    // §9.1 step 1: the pulled disc goes back on its own. A NavigationStack root
+                    // covered by a pushed destination is not updated (measured, slice 015), so the
+                    // wallet underneath cannot pop it — but this modifier rides on the pushed view.
+                    .onChange(of: music.finishedAlbumID) { _, finished in
+                        if finished == album.id {
+                            pulledAlbum = nil
+                        }
+                    }
             }
             .task { await libraryService.loadLibrary(id: library.id) }
-            .task { returnToSleeveIfFinished(animated: false) }
+            // Appearing is how a wallet learns of a finish it was covered for: its own detail just
+            // popped, or the user came back to this tab. Animated when the scene is live, so the
+            // pulse plays after the pop; unanimated from the background (§9.1).
+            .onAppear {
+                isVisible = true
+                returnToSleeveIfFinished(animated: scenePhase == .active)
+            }
+            .onDisappear { isVisible = false }
+            // Act on the value delivered, never on a re-read of the service (slice 015).
             .onChange(of: music.finishedAlbumID) { _, finished in
-                if finished != nil {
-                    returnToSleeve(animated: scenePhase == .active)
+                if let finished {
+                    returnToSleeve(albumID: finished, animated: scenePhase == .active)
                 }
             }
             .onChange(of: scenePhase) { _, phase in
@@ -91,6 +108,10 @@
             }
             .onChange(of: pageCount) { _, count in
                 pageIndex = min(pageIndex, count - 1)
+            }
+            // Paged in further for an off-page finish (AC15d): try again with the albums we now have.
+            .onChange(of: pager.albums.count) { _, _ in
+                returnToSleeveIfFinished(animated: scenePhase == .active)
             }
         }
 
@@ -117,46 +138,55 @@
         /// The backgrounded case (§9.1): the last track ended while the app was away, so the wallet
         /// is already in its finished state when it next appears or the scene becomes active.
         private func returnToSleeveIfFinished(animated: Bool) {
-            if music.finishedAlbumID != nil {
-                returnToSleeve(animated: animated)
+            if let albumID = music.finishedAlbumID {
+                returnToSleeve(albumID: albumID, animated: animated)
             }
         }
 
-        /// §9.1 "putting it back": pop the detail, page to the sleeve, pulse it for 0.4 s, then
-        /// acknowledge. `acknowledgeFinish()` runs last so nothing observing `finishedAlbumID`
-        /// misses the change.
-        private func returnToSleeve(animated: Bool) {
-            guard let albumID = music.finishedAlbumID else { return }
-            let page = pager.page(of: albumID)
+        /// §9.1 "putting it back", the wallet's half: the wallet on screen claims the return — the
+        /// service answers exactly one claimant per finish — pages, pulses and acknowledges. A wallet
+        /// that is not on screen does nothing now and asks again when it appears, so a hidden tab
+        /// can never take the return from the wallet the user is looking at, and a finish nobody is
+        /// looking at waits, unacknowledged, for the first wallet that is.
+        private func returnToSleeve(albumID: String, animated: Bool) {
+            guard isVisible else { return }
+            guard case let .honour(page) = WalletReturn(finished: albumID, pager: pager) else {
+                Task { await libraryService.loadMore(libraryID: library.id) } // AC15d
+                return
+            }
+            guard music.claimFinish(albumID: albumID) else { return }
+            putBack(albumID: albumID, page: page, animated: animated)
+        }
+
+        /// Page to the sleeve, pulse it, acknowledge — the owner's half of the sequence.
+        /// `acknowledgeFinish()` always runs at least one hop after the `onChange` that delivered the
+        /// finish, so a second wallet's `onChange` never evaluates against an event already cleared.
+        private func putBack(albumID: String, page: Int, animated: Bool) {
             // Reduce Motion takes the same path as a return from the background: no paging
             // animation and no pulse (slice 012).
             guard animated, reduceMotion == false else {
-                pulledAlbum = nil
-                if let page {
-                    pageIndex = page
-                }
-                music.acknowledgeFinish()
+                pageIndex = page
+                Task { music.acknowledgeFinish() }
                 return
             }
             withAnimation {
-                pulledAlbum = nil
-                if let page {
-                    pageIndex = page
-                }
+                pageIndex = page
             }
             Task {
                 // The sheet dismissal and the pop are UIKit transitions SwiftUI offers no completion
                 // for; 0.6 s clears both, so the pulse lands on a sleeve the user can see.
                 try? await Task.sleep(for: .seconds(0.6))
-                withAnimation(.easeInOut(duration: 0.2)) {
+                // §9.1's "0.4 s border pulse" is 0.4 s *at* full accent, between two short ramps —
+                // not two ramps meeting at an instant (Triage 19).
+                withAnimation(.easeInOut(duration: 0.15)) {
                     pulsingAlbumID = albumID
-                } completion: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        pulsingAlbumID = nil
-                    } completion: {
-                        music.acknowledgeFinish()
-                    }
                 }
+                try? await Task.sleep(for: .seconds(0.15 + 0.4))
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    pulsingAlbumID = nil
+                }
+                try? await Task.sleep(for: .seconds(0.15))
+                music.acknowledgeFinish()
             }
         }
     }

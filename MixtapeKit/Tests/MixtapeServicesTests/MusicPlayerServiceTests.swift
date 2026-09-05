@@ -149,6 +149,52 @@ struct MusicPlayerServiceTests {
         #expect(controller.loadedURLs.isEmpty)
     }
 
+    // MARK: Finish ownership and the final track (slice 015)
+
+    @Test func `a finish is claimed once, only by its live album id, and a later finish can be claimed again`() async {
+        let service = makeService(controller: StubAudioPlayerController())
+        #expect(service.claimFinish(albumID: album.id) == false) // nothing has finished
+        await service.play(album: album, tracks: tracks, startingAt: tracks.count - 1)
+        await service.next() // finished
+        #expect(service.claimFinish(albumID: "some-other-album") == false)
+        #expect(service.claimFinish(albumID: album.id) == true)
+        #expect(service.claimFinish(albumID: album.id) == false) // the second wallet
+        service.acknowledgeFinish()
+        #expect(service.claimFinish(albumID: album.id) == false) // no live finish any more
+        await service.play(album: album, tracks: tracks, startingAt: tracks.count - 1)
+        await service.next()
+        #expect(service.claimFinish(albumID: album.id) == true) // a fresh finish, a fresh claim
+    }
+
+    @Test func `next has somewhere to go before the final track and nowhere on it`() async {
+        let service = makeService(controller: StubAudioPlayerController())
+        #expect(service.hasNextTrack == false)
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        #expect(service.hasNextTrack == true)
+        await service.next()
+        #expect(service.currentIndex == tracks.count - 1)
+        #expect(service.hasNextTrack == false)
+        await service.next() // ends the album rather than advancing (§1.1)
+        #expect(service.hasNextTrack == false)
+        #expect(service.queue == tracks)
+    }
+
+    @Test func `a seek to or past the end lands short of it by the margin`() async {
+        let controller = StubAudioPlayerController()
+        let service = makeService(controller: controller)
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        let runtime = tracks[0].runtime ?? .zero
+        service.seek(to: runtime) // the scrubber dragged to its maximum (Triage 7)
+        #expect(controller.seeks.last == runtime - MusicPlayerService.endSeekMargin)
+        #expect(service.position == runtime - MusicPlayerService.endSeekMargin)
+        service.seek(to: runtime + .seconds(30))
+        #expect(controller.seeks.last == runtime - MusicPlayerService.endSeekMargin)
+        service.seek(to: .seconds(12)) // an ordinary seek is untouched
+        #expect(controller.seeks.last == .seconds(12))
+        service.seek(to: .seconds(-5))
+        #expect(controller.seeks.last == .zero)
+    }
+
     // MARK: §6 cadences (slice 014)
 
     @Test func `now playing refreshes every five seconds and progress reports every ten`() async {

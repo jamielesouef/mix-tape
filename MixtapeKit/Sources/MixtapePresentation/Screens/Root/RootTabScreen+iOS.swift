@@ -12,6 +12,7 @@
     /// the tab bar in slice 009; nothing is reserved for it here beyond this comment.
     public struct RootTabScreen: View {
         @Environment(\.musicPlayerService) private var music
+        @State private var showNowPlaying = false
 
         public init() {}
 
@@ -44,7 +45,18 @@
             // carries its own fallback via MiniPlayer's .glassChrome(); painting an opaque rect
             // in here as well would sit a solid block inside an already-opaque container.
             .tabViewBottomAccessory(isEnabled: music.isActive) {
-                MiniPlayer()
+                MiniPlayer(showNowPlaying: $showNowPlaying)
+            }
+            // The sheet lives here, on the one view that outlives the music, so that its dismissal
+            // is this line and not the accessory being torn out from under it (slice 015, §9.1
+            // step 1). `isActive` turns false at the end of an album and on stop().
+            .sheet(isPresented: $showNowPlaying) {
+                NowPlayingScreen()
+            }
+            .onChange(of: music.isActive) { _, active in
+                if active == false {
+                    showNowPlaying = false
+                }
             }
         }
     }
