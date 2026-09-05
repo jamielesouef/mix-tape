@@ -9,7 +9,7 @@ depends_on:
 previous_slice: "009"
 next_slice: "011"
 parent_slice: none
-covers: ["§1.15", "§12.13a", "§12.13b", "§12.13c", "§12.13d", "§12.13e"]
+covers: ["§1.8", "§1.15", "§12.13a", "§12.13b", "§12.13c", "§12.13d", "§12.13e"]
 created: 2026-09-03
 ---
 

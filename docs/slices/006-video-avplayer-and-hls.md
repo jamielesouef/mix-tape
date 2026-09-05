@@ -10,7 +10,7 @@ depends_on:
 previous_slice: "005"
 next_slice: "007"
 parent_slice: none
-covers: ["§1.10", "§12.6", "§12.8"]
+covers: ["§1.10", "§1.13", "§12.6", "§12.8"]
 created: 2026-09-03
 ---
 

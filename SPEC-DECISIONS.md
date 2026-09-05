@@ -33,6 +33,13 @@ Consequence: build-order step 1 restructures the tree. `docs/architecture.md`
 `source/iOS` layout and, under the repo's precedence rules, would otherwise have
 outranked the engineering doc and sent the build the wrong way.
 
+**Note (2026-09-05, slice 017, from slice 013's drift row):** the decision stands, but
+the sentence "the compiler rejects the import outright" holds for `swift build`, not for
+`xcodebuild`. Under Xcode's SPM integration a target can `import` a sibling module it does
+not declare a dependency on — `MixtapePresentation` importing `MixtapeData` built clean on
+both platforms — so `check-layer-imports.sh`, run by a build phase on both app targets
+since 013, is the guard that actually holds. Not a reopening; a correction of fact.
+
 ## 2. tvOS deployment target — 26.0
 
 The project file sets `APPLETVOS_DEPLOYMENT_TARGET = 27.0` in some build

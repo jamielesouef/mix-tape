@@ -15,7 +15,8 @@ MixtapeKit/
 ├── Sources/      # MixtapeDomain, MixtapeUseCase, MixtapeServices,
 │                 # MixtapeInfrastructure, MixtapeData, MixtapePresentation
 └── Tests/        # MixtapeDomainTests, MixtapeUseCaseTests,
-                  # MixtapeServicesTests, MixtapeDataTests
+                  # MixtapeServicesTests, MixtapeDataTests,
+                  # MixtapePresentationTests (slice 013)
 uiTests/
 ├── iOS/          # iOS UI tests (XCUITest)
 └── tvOS/         # tvOS UI tests (XCUITest)

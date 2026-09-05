@@ -8,7 +8,7 @@ depends_on:
   - { id: "016", type: hard, note: "last of the round — this slice reconciles the documents against what shipped, so it must run after everything that changes what shipped" }
   - { id: "013", type: hard, note: "013, 014, 015 and 016 each amend coverage rows and close triage items; this slice checks the result is consistent rather than repeating those edits" }
 previous_slice: "016"
-next_slice: none
+next_slice: "018"
 parent_slice: none
 covers: []
 created: 2026-09-04
@@ -16,7 +16,7 @@ created: 2026-09-04
 
 # 017 — Spec document reconciliation
 
-← [previous](016-tvos-library-list.md) · [Master Checklist](MASTER-CHECKLIST.md) · none →
+← [previous](016-tvos-library-list.md) · [Master Checklist](MASTER-CHECKLIST.md) · [next](018-audio-end-of-track-failure.md) →
 
 > **Status, owner and blockers live in the master checklist, not here.** Dependencies live in this page's front matter and nowhere else. Each fact has one home; if you find yourself writing it twice, one of the two copies is going to be wrong in a fortnight.
 
@@ -101,39 +101,41 @@ and lint run.
 
 ## 4. Pre-Flight Validation
 
-- [ ] **016** — opened, and every slice ahead of it in this round is `Done`. Running this
+- [x] **016** — opened, and every slice ahead of it in this round is `Done`. Running this
       before the round finishes means reconciling documents that are still moving.
-- [ ] **013** — opened. Confirm which coverage rows 013's S003 outcome changed: if the spike
+- [x] **013** — opened. Confirm which coverage rows 013's S003 outcome changed: if the spike
       came back unfavourable, §12.15 now names 013 alongside 012 and this slice must not
       "correct" that back.
-- [ ] Re-read `SPEC-DECISIONS.md` end to end and confirm the seven corrections in Section 2 are
+- [x] Re-read `SPEC-DECISIONS.md` end to end and confirm the seven corrections in Section 2 are
       still the complete list — decisions 49+ may have been added during the round, and each
       one is a candidate for the same drift.
-- [ ] Confirm no slice in the round widened its own `covers:` without the coverage table
+- [x] Confirm no slice in the round widened its own `covers:` without the coverage table
       following. The mismatch this slice fixes was created exactly that way.
 
-**Drift found:** `none` — or what changed, plus a row in the checklist's Drift Log.
+**Drift found:** two items. (a) 016 is `In review`, not `Done`: its code, tests and gate are complete but its live tvOS criteria could not be driven on this machine (checklist Active Blockers). This slice reconciles against that state and says so rather than waiting on a human at the Simulator. (b) 015 produced a new code finding — the FLAC end-of-track failure behind Triage 7 — which needs an owner that is not `Done`; see the decision log. `SPEC-DECISIONS.md` still ends at decision 48; no decision 49+ was added during the round. The S003 outcome left §12.15's coverage row on 012 alone. No slice widened `covers:` without the table following — the two mismatches fixed here (§1.8 → 010, §1.13 → 006) pre-date the round.
 
 ## 5. Acceptance Criteria
 
-- [ ] **AC17a** — Each of the seven statements in Section 2 now matches the code, and each
+- [x] **AC17a** — Each of the seven statements in Section 2 now matches the code, and each
       carries the decision number that changed it.
-- [ ] **AC17b** — Grepping `docs/engineering-doc.md` for `maxStreamingBitrate`, `api_key=`,
+- [x] **AC17b** — Grepping `docs/engineering-doc.md` for `maxStreamingBitrate`, `api_key=`,
       `/Items/Resume`, `AVPlayerLayer`, `PlayedPercentage`, `QuickConnect/Initiate` and
       `Recently Added` returns either nothing or a line that names the superseding decision.
-- [ ] **AC17c** — Every `next_slice` has a matching `previous_slice` on its target, both
+- [x] **AC17c** — Every `next_slice` has a matching `previous_slice` on its target, both
       directions, across 001–017.
-- [ ] **AC17d** — Delivery order in the checklist matches the linked-list order.
-- [ ] **AC17e** — Every `depends_on` id exists and there is no cycle.
-- [ ] **AC17f** — Every requirement in the engineering doc's scope list and in
+- [x] **AC17d** — Delivery order in the checklist matches the linked-list order.
+- [x] **AC17e** — Every `depends_on` id exists and there is no cycle.
+- [x] **AC17f** — Every requirement in the engineering doc's scope list and in
       `SPEC-DECISIONS.md` appears in some slice's `covers:` or has a fork row saying why not.
       §12.11 stays the one deliberate exception (0 Series, decision 14).
-- [ ] **AC17g** — No slice's `covers:` claims a requirement its acceptance criteria cannot
+- [x] **AC17g** — No slice's `covers:` claims a requirement its acceptance criteria cannot
       demonstrate, and no slice's `covers:` disagrees with the coverage table.
-- [ ] **AC17h** — Every fork has a decision row naming what was rejected.
-- [ ] **AC17i** — Every triage item is closed or has an owning slice that is not `Done`.
-- [ ] The full gate passes — this slice touches documents, but a docs-only slice that skips
+- [x] **AC17h** — Every fork has a decision row naming what was rejected.
+- [x] **AC17i** — Every triage item is closed or has an owning slice that is not `Done`.
+- [x] The full gate passes — this slice touches documents, but a docs-only slice that skips
       the gate is how a stray edit to a fenced code block ships.
+
+**Evidence, 2026-09-05.** *AC17a/AC17b* — `grep -nE "maxStreamingBitrate|api_key=|/Items/Resume|AVPlayerLayer|PlayedPercentage|QuickConnect/Initiate|Recently Added" docs/engineering-doc.md` returns six lines, every one of which names the superseding decision (5, 6, 8, 13, 18, 42/43); `api_key=` and `/Items/Resume` survive only inside those explanations. *AC17c–AC17e* — a script over the front matter of 001–018: every `next_slice` has the matching `previous_slice` and vice versa; every `depends_on` id exists (S001–S003 included); no cycle; the checklist's slice table is in linked-list order. *AC17f/AC17g* — the same script compared the coverage table's slice column with every slice's `covers:` across 37 requirement rows: three mismatches, all fixed by widening `covers:` (§1.8 → 010, §1.13 → 006, §12.5 → 008 for its re-verification); §12.11 is the one row with no owner, as decision 14 says. *AC17h* — F1–F5 each carry a decision and a rejected alternative. *AC17i* — every triage row is closed or names an owner that is not `Done`: 7 v2 → 018 (created here), 17's tab-bar half and 20 → 016 (`In review`), 8 was closed by 012 and its row now says so. *The gate* passed after the edits: 184/0/0 on both schemes, layer, glass and swiftformat clean. **Reconciled against 016 as `In review`, not `Done`** (pre-flight drift): its live tvOS criteria are in Active Blockers and this document says so rather than waiting. **Not changed:** `AUDIT-FINDINGS.md`, `PREFLIGHT.md`, any code, any settled decision — decision 1's note corrects one sentence of fact and reopens nothing.
 
 ## 6. Decision Log
 
@@ -142,6 +144,9 @@ and lint run.
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
 | 2026-09-04 | The engineering doc is corrected in place, with each correction naming its superseding decision, rather than left stale under `CLAUDE.md`'s precedence rule | (a) Leaving it and relying on precedence — `SPEC-DECISIONS.md` outranks it anyway; (b) marking the whole file historical and promoting `SPEC-DECISIONS.md` to sole spec | Precedence only protects a reader who suspects a contradiction. An agent reading §8 to build a stream URL has no trigger to check, and the `maxStreamingBitrate=320000` line is live wrong advice that would break AC13f. Promoting the decisions file was rejected because it is a chronological log, not a specification — it reads as a sequence of amendments and would be far worse as the thing you consult first. |
+| 2026-09-05 | Triage 7 v2 — the FLAC tail failure 015 found behind the "stall" — gets an owning slice, `018-audio-end-of-track-failure.md`, created here as a stub and appended to the linked list after 017. | (a) Leaving Triage 7 v2 as a deferral with no slice; (b) fixing it in this slice | AC17i requires every open triage item to have an owning slice that is not `Done`, and Section 3 forbids code changes here. A stub slice is the one honest object that satisfies both. 017's own Definition of Done said "`next_slice` is `none`"; that was a planning assumption made before the round produced a finding, and it is amended in the same commit. |
+| 2026-09-05 | `SPEC-DECISIONS.md` decision 1 gains a dated note correcting one sentence of fact — Xcode's SPM integration does not reject an undeclared sibling import — without reopening the decision. | Leaving decision 1 as written; amending only the engineering doc | The decisions file outranks every other document, so a wrong statement of fact there is the one that wins arguments. The note names 013's drift row as its source and changes no decision. |
+| 2026-09-05 | Beyond the seven statements, two more places said four test targets: engineering doc §3's tree and `docs/architecture.md`'s. Both gain `MixtapePresentationTests`. §13's build order is renumbered — two steps were both "11" — and gains a step 13 for the hardening round, with XCUITest noted as deferred by decision 4. | Correcting only the seven listed statements | The Objective is that an auditor reading the doc against the tree raises no false defects; a missing test target and a duplicated step number are exactly such defects, found by the README's checklist run this slice requires. |
 
 ## 7. Sub-Slices
 
@@ -172,10 +177,10 @@ Commit this file alongside the edits, with the slice id in the subject (`017: �
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Every `covers:` requirement satisfied, or forked with a decision row
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current, and the round's slices all `Done`
-- [ ] `next_slice` is `none` and no slice points at 017 except 016
-- [ ] Any code fault found during reconciliation is recorded as a new slice, not fixed here
+- [x] Acceptance criteria met
+- [x] Every `covers:` requirement satisfied, or forked with a decision row
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current — the round's slices are `Done` except 016, which is `In review` with its blocker recorded (see the drift note in Section 4)
+- [x] `next_slice` points at 018 (amended 2026-09-05 — see the decision log) and no slice points at 017 except 016
+- [x] Any code fault found during reconciliation is recorded as a new slice, not fixed here — 018
