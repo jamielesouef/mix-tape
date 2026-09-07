@@ -1,5 +1,7 @@
 # Mix Tape Swift MV Architecture
 
+> **Superseded.** This page predates the engineering doc and is kept for history. `SPEC-DECISIONS.md` outranks it, then `docs/engineering-doc.md` (§3 for the layout, §11 for testing, Appendix B for the gate commands). Its platform, XCUITest and build-command statements are stale where they differ; read the engineering doc first and this page only for the MV template's original wording (slice 019).
+
 Mix Tape's architecture follows the Swift MV template from the trimr project.
 
 ## Project structure

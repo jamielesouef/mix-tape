@@ -33,13 +33,22 @@ public nonisolated struct KeychainStore: Sendable {
         }
     }
 
+    /// Update in place, add only when nothing is there (slice 019): a delete-then-add would lose
+    /// the stored credential if the add failed.
     public func set(_ data: Data, account: String) throws {
-        try delete(account: account)
+        let attributes: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+        ]
+        let updated = SecItemUpdate(baseQuery(account: account) as CFDictionary, attributes as CFDictionary)
+        if updated == errSecSuccess {
+            return
+        }
+        guard updated == errSecItemNotFound else { throw Failure(status: updated) }
         var query = baseQuery(account: account)
-        query[kSecValueData as String] = data
-        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else { throw Failure(status: status) }
+        query.merge(attributes) { _, new in new }
+        let added = SecItemAdd(query as CFDictionary, nil)
+        guard added == errSecSuccess else { throw Failure(status: added) }
     }
 
     public func delete(account: String) throws {

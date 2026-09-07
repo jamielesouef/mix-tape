@@ -8,7 +8,7 @@ depends_on:
   - { id: "015", type: hard, note: "v1 of the ladder and the measurement this slice starts from: on 'King Of Terrors' (FLAC) a seek to runtime − 1 s makes AVPlayerItem fail with FigFilePlayer err=-12864 — status .failed, no onEnded — while the ALAC albums end cleanly" }
   - { id: "013", type: hard, note: "MixtapeServicesTests and MixtapePresentationTests, and the gate that reads docs/slices/test-count.txt" }
 previous_slice: "017"
-next_slice: none
+next_slice: "019"
 parent_slice: none
 covers: []
 created: 2026-09-05
@@ -16,7 +16,7 @@ created: 2026-09-05
 
 # 018 — Audio end-of-track failure (Triage 7 v2)
 
-← [previous](017-spec-document-reconciliation.md) · [Master Checklist](MASTER-CHECKLIST.md) · none →
+← [previous](017-spec-document-reconciliation.md) · [Master Checklist](MASTER-CHECKLIST.md) · [next](019-codex-review-bounded-fixes.md) →
 
 > **Status, owner and blockers live in the master checklist, not here.** Dependencies live in this page's front matter and nowhere else. Each fact has one home; if you find yourself writing it twice, one of the two copies is going to be wrong in a fortnight.
 

@@ -5,6 +5,8 @@ Sonnet 5 on the fan-out, ultracode used as a per-prompt keyword only.
 
 Inputs: engineering docs + API spec. No existing code.
 
+Owner: Jamie Le Souëf. Model names, effort levels, tool behaviour and any pricing here were verified as of 2026-09-07 and age quickly; re-check them before reusing this runbook (slice 019).
+
 ---
 
 ## Model and effort doctrine
@@ -129,6 +131,29 @@ Write a lean `CLAUDE.md`: Swift/SwiftUI conventions, target platform, gate
 criteria. Keep it short — it rides on every request and contributes to
 classifier flags.
 
+### 0.6 Prompt placement
+
+Three blocks drive an unattended run, and each lives in a different place. Putting all three in one user message is the defect that stalled an earlier run — the model was told to finish the whole task, given no task, and asked to write a `<summary>` at the same time.
+
+| Block | Where | Why |
+|---|---|---|
+| Autonomy + Delivering work + Scope + Edits + Progress (the `# Delegation` block optional) | `CLAUDE.md`, once | These are system-prompt additions. Re-sending them as a user turn rewrites the prefix and restarts the prompt cache. |
+| The task | The per-task message, and nothing else | A message that is only "Continue from where you left off" gives the autonomy block nothing to bind to. |
+| Compaction instruction (`Summarize the transcript inside <summary></summary> tags…`) | A separate call the harness makes when it compacts | Inside a task prompt it is a competing deliverable. Never paste it into a task. |
+
+Optional tail for the per-task message, to cut round trips in bash-and-editor loops:
+
+```
+First privately list what you need next; then request every item that doesn't depend on
+another's result in this one response.
+```
+
+Drop it if the run is not showing one-tool-call-per-turn.
+
+Do not add a `# Subagents` block that says "don't wait for each subagent", "delegate management to a lead agent", or "one reviewer per task". The first is a harness property (the `Agent` tool blocks), the second adds a hop because the session already is the lead, the third roughly doubles token spend on trivial subtasks. The `# Delegation` block in `CLAUDE.md` is the replacement.
+
+Do not inject and remove per-turn reminders, and do not rewrite the system prompt mid-session. Both restart the prompt cache and, on newer accounts, invalidate thinking blocks (HTTP 400).
+
 ---
 
 ## Phase 1 — Spec audit (last human checkpoint)
@@ -202,8 +227,13 @@ claude -p --model fable --effort high \
   --permission-mode acceptEdits \
   "Build <target> to satisfy the slice set in <path>. Work slices in dependency
    order. Each slice must pass its gate criteria before the next starts.
-   Commit per slice."
+   Commit per slice.
+
+   First privately list what you need next; then request every item that doesn't
+   depend on another's result in this one response."
 ```
+
+The message is the task and only the task. The autonomy and delivering-work blocks come from `CLAUDE.md` (0.6).
 
 Set a goal to keep the session anchored across the long run:
 
@@ -251,6 +281,10 @@ one ranked, deduplicated summary.
 | Fan-out cost far above estimate | Subagent model didn't route | grep `"model"` in `~/.claude/projects/<proj>/<session>/subagents/agent-<id>.jsonl`; check for `model:` frontmatter overriding the env var |
 | Run sits waiting forever | Permission prompt with nobody at the terminal | Add the tool to allow rules before starting |
 | Unexpected workflows during execution | `/effort ultracode` left on as a session setting | `/effort high`; use the keyword per-prompt instead |
+| Session refuses to ask what the task is, and does nothing | Message was "Continue from where you left off" with no task, under the autonomy block | Restate the concrete task and where the work lives (0.6) |
+| Turn ends with a `<summary>` block instead of work | Compaction instruction pasted into the task prompt | Remove it; compaction is a separate harness call (0.6) |
+| Prompt cache restarts every turn | Autonomy block re-sent as a user message, or per-turn reminders injected and removed | Move the block to `CLAUDE.md`; keep history append-only |
+| Long deliverable drafted in thinking, then written again; `max_tokens` hit | `xhigh` or `max` effort | Stay on `high` unless a measured gain says otherwise |
 
 ---
 
@@ -258,6 +292,8 @@ one ranked, deduplicated summary.
 
 - Effort ladder on Fable 5.1 / Fable 5 / Opus 5 / Sonnet 5:
   `low`, `medium`, `high`, `xhigh`, `max`. Default `high`.
+- `high` is the recommended default. `xhigh`/`max` can draft a long deliverable in thinking and then write it again — slower, and a `max_tokens` risk. Move up only where a gain has been measured.
+- Anti-narration lines ("hold all findings for the final response") silence the model mid-task. Remove them from any harness or `CLAUDE.md` prompt before adding a progress-update instruction, or the two fight.
 - `ultracode` is not a sixth effort level — it sends `xhigh` plus automatic
   workflow orchestration. Session-scoped; not accepted by `effortLevel` or
   `CLAUDE_CODE_EFFORT_LEVEL`.
@@ -268,4 +304,4 @@ one ranked, deduplicated summary.
 - Sessions with ultracode on suppress the `Large workflow` warning — another
   reason to keep it off as a session setting.
 
-Docs: `code.claude.com/docs/en/workflows`, `code.claude.com/docs/en/model-config`
+Docs: `code.claude.com/docs/en/workflows`, `code.claude.com/docs/en/model-config`, `platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1`

@@ -99,6 +99,14 @@ struct JellyfinHTTPClientTests {
         #expect(header == #"MediaBrowser Client="mixtape", Device="Test iPhone", DeviceId="device-1", Version="1.0""#)
     }
 
+    @Test func `device name quotes and backslashes are escaped in the header`() async throws {
+        stub.respond(status: 200, body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8))
+        let quoted = JellyfinHTTPClient(session: stub.session, deviceName: #"Jamie's "iPhone" \ test"#)
+        let _: PascalCaseFixture = try await quoted.get("/System/Info", auth: signedIn)
+        let header = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
+        #expect(header == #"MediaBrowser Client="mixtape", Device="Jamie's \"iPhone\" \\ test", DeviceId="device-1", Version="1.0", Token="tok""#)
+    }
+
     // MARK: Request assembly and decoding
 
     @Test func `pascal case decodes through explicit coding keys`() async throws {

@@ -47,6 +47,9 @@ public final class MusicPlayerService {
     /// a view renders.
     @ObservationIgnored private var claimedFinishID: String?
     @ObservationIgnored private var playSessionID = UUID().uuidString
+    /// The current track's artwork, kept so the 5 s refresh does not drop it from the lock screen
+    /// (slice 019).
+    @ObservationIgnored private var artwork: UIImage?
     private let controller: any AudioPlayerControlling
     private let buildAudioStreamURL: BuildAudioStreamURLUseCase
     private let reportStart: ReportPlaybackStartUseCase
@@ -184,6 +187,7 @@ public final class MusicPlayerService {
         currentIndex = index
         position = .zero
         playSessionID = UUID().uuidString
+        artwork = nil
         status = .preparing
         let track = queue[index]
         let stream = buildAudioStreamURL(track: track, session: session)
@@ -282,11 +286,10 @@ public final class MusicPlayerService {
     }
 
     private func refreshNowPlaying() {
-        controller.updateNowPlaying(nowPlayingInfo(artwork: nil))
+        controller.updateNowPlaying(nowPlayingInfo(artwork: artwork))
     }
 
     private func refreshNowPlayingAsync() async {
-        var artwork: UIImage?
         if let track = current, let artworkProvider {
             artwork = await artworkProvider(track)
         }

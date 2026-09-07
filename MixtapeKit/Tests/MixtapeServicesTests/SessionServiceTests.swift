@@ -69,6 +69,19 @@ struct SessionServiceTests {
         #expect(failing.error == .notAJellyfinServer)
     }
 
+    @Test func `clear server returns to server entry with nothing carried over`() async {
+        let service = makeService(repository: MockAuthRepository(serverIdentityResult: { _ in throw MixtapeError.notAJellyfinServer }))
+        await service.validateServer(urlText: "example.com")
+        #expect(service.error == .notAJellyfinServer)
+        let validated = makeService()
+        await validated.validateServer(urlText: "localhost:8096")
+        #expect(validated.serverIdentity == server)
+        validated.clearServer()
+        #expect(validated.serverIdentity == nil)
+        #expect(validated.error == nil)
+        #expect(validated.quickConnect == .idle)
+    }
+
     @Test func `sign in transitions to signed in`() async {
         let store = MockSessionStore()
         let service = makeService(store: store, serverIdentity: server)

@@ -147,7 +147,8 @@
 
         nonisolated func handleMessage(_ message: String, logLevel: VLCLogLevel, context _: VLCLogContext?) {
             guard logLevel.rawValue <= VLCLogLevel.warning.rawValue else { return }
-            AppLogger.playback.error("VLC: \(message)")
+            // Never the raw message: it can carry the stream MRL, `ApiKey` included (slice 019).
+            AppLogger.playback.error("VLC \(logLevel.rawValue): \(redactingURLs(message))")
         }
     }
 #endif

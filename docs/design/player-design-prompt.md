@@ -1,3 +1,5 @@
+> **Precedence (slice 019):** this is a Claude Design prompt, kept as design-language history. Where it disagrees with `docs/engineering-doc.md` §9 or `SPEC-DECISIONS.md` — card borders, the plastic sleeve sheen, how a cover expands into the player — those documents win and this one is not to be built from. See `docs/codex-review.md`, "Documentation findings".
+
 # Claude Design prompt — mixtape library + player
 
 Design language foundation. Paste the block below into Claude Design.

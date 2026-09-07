@@ -13,6 +13,8 @@
     struct VLCPlayerView: View {
         @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
         @State var model: VLCTransportModel
+        /// The fraction under the finger while dragging; one `scrub` fires on release (slice 019).
+        @State private var scrubbing: Double?
         let videoView: UIView
         let controller: VLCPlayerController
 
@@ -32,10 +34,12 @@
                         }
                         .accessibilityLabel(model.isPlaying ? "Pause" : "Play")
                         .accessibilityIdentifier(VLCPlayerIdentifiers.playPauseButton)
-                        Slider(
-                            value: Binding(get: { model.positionFraction }, set: { controller.scrub(to: $0) }),
-                            in: 0 ... 1,
-                        )
+                        Slider(value: Binding(get: { scrubbing ?? model.positionFraction }, set: { scrubbing = $0 }), in: 0 ... 1) { editing in
+                            if editing == false, let target = scrubbing {
+                                controller.scrub(to: target)
+                                scrubbing = nil
+                            }
+                        }
                         .accessibilityLabel("Playback position")
                         .accessibilityIdentifier(VLCPlayerIdentifiers.scrubber)
                     }
@@ -49,8 +53,8 @@
 
         /// Liquid Glass with the required Reduce Transparency fallback (engineering doc §9).
         private var transportBackground: AnyShapeStyle {
-            // glass-fallback: the ternary is the fallback — opaque black at 0.8 when reduced.
-            reduceTransparency ? AnyShapeStyle(.black.opacity(0.8)) : AnyShapeStyle(.ultraThinMaterial)
+            // glass-fallback: the ternary is the fallback — opaque black when reduced (slice 019).
+            reduceTransparency ? AnyShapeStyle(.black) : AnyShapeStyle(.ultraThinMaterial)
         }
     }
 #endif

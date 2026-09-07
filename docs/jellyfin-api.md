@@ -33,8 +33,7 @@ each direction.
 
 ## Refreshing this file
 
-The compose file in the main repo runs image `mixtape-jellyfin:local`. When that
-image is rebuilt or the server upgraded, re-pull the spec and re-check:
+The compose file in the main repo runs image `mixtape-jellyfin:local`, built from Jellyfin 10.11.11; this repo's `docker-compose.yml` pins `jellyfin/jellyfin:10.11.11` so a fresh environment gets the version the spec and fixtures were captured from (slice 019). When either image is rebuilt or the server upgraded, re-pull the spec and re-check:
 
 ```bash
 curl -s http://localhost:8096/api-docs/openapi.json -o docs/jellyfin-openapi.json

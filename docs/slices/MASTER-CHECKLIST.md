@@ -15,6 +15,8 @@ its highest-numbered row, is binding on every row below.** (This line used to na
 range, "1–47", and went stale the day decision 48 landed. Slice 017 replaced the number with
 this reference — a range written by hand is a fact with two homes.)
 
+**Codex round, opened 2026-09-07.** An independent read-only review (`../codex-review.md`) of the built code and documents found five high-severity and nine medium findings. Slices 019–023 remediate them; the disposition table appended to that document maps every finding to a slice, a decision or a reason for no change.
+
 **Post-V1 hardening round, opened 2026-09-04.** Slices 001–012 delivered the V1 set. An
 independent reconciliation of the built code against engineering doc §1/§6/§9/§12 found six
 defects, three gate holes and seven stale statements in the engineering doc, and opened
@@ -44,6 +46,11 @@ Ordered by delivery sequence — the same order as the linked list.
 | 016 | tvOS library list and focus completeness | P1 | M | adw-run | Done | [016](016-tvos-library-list.md) |
 | 017 | Spec document reconciliation | P2 | S | adw-run | Done | [017](017-spec-document-reconciliation.md) |
 | 018 | Audio end-of-track failure (Triage 7 v2) | P2 | M | adw-run | Done | [018](018-audio-end-of-track-failure.md) |
+| 019 | Codex review — bounded fixes | P1 | M | adw-run | Done | [019](019-codex-review-bounded-fixes.md) |
+| 020 | Session-owned teardown and cache invalidation | P0 | M | — | Not started | [020](020-session-owned-teardown.md) |
+| 021 | Playback operation generations and off-path reporting | P0 | L | — | Not started | [021](021-playback-operation-generations.md) |
+| 022 | Direct-stream URL for direct-stream-only sources | P1 | M | — | Not started | [022](022-direct-stream-url.md) |
+| 023 | Audio session and service hardening | P2 | L | — | Not started | [023](023-audio-session-and-service-hardening.md) |
 
 Status: `Not started` · `In progress` · `Blocked` · `In review` · `Done`
 
@@ -184,7 +191,8 @@ Questions raised mid-build. Each becomes a spike, a decision, or an explicit def
 | 21 | `MPNowPlayingInfoCenter` is not refreshed every 5 s as §6 requires — only on track change, pause, resume and seek (`MusicPlayerService.swift:165`). The 10 s task at `:211-226` is the report loop and never touches now-playing. AC12 passes anyway because the lock screen extrapolates from `MPNowPlayingInfoPropertyPlaybackRate`. | 2026-09-04 reconciliation | **Owned by 014** (AC14e). Spec compliance, not a visible defect; it rides with 014 because it is the same §6 clause and the same loop. **Closed 2026-09-04:** the loop ticks every 5 s, refreshing now-playing each tick and reporting every second tick; `ManualClock` test in `MixtapeServicesTests`. |
 | 22 | `NowPlayingScreen`'s scrubber called `music.seek(to:)` on every `Slider` value change, so one drag sent a progress report per pixel of travel — twelve in 200 ms in the simulator log — against §6's "never more often". | 015 acceptance run | **Closed 2026-09-04 by 015:** the slider holds the drag locally and seeks once on release. The tvOS `ProgressView` scrubber is read-only and unaffected. |
 | 23 | The tvOS Now Playing cover (`LibraryTabScreen`'s `.fullScreenCover` → `NowPlayingScreen`) renders see-through: in 016's AC16e run the album title and Play button of `AlbumDetailScreen` beneath show through the track title and transport row (screenshot in the run). `NowPlayingScreen` sets no background of its own on tvOS, and the cover's default presentation background does not cover the pushed screen. Legibility defect, not a behaviour one — the controls focus and act correctly. | 016 acceptance run, second pass | **Open — needs an owner.** Raised after 017 closed, so AC17i's "every open row names an owner" no longer holds until one is assigned: either a small tvOS polish slice or 018 if its scope is widened to Now Playing. Not assigned here because 016's Section 3 excludes `NowPlayingScreen` changes and 018 is an audio slice. |
-| 24 | The decision-23 audio HLS fallback (`/Audio/{id}/universal` with a `container=` list that excludes the track's container → `transcodingContainer=ts`, `transcodingProtocol=hls`, `audioCodec=aac`) has never been exercised — every track in the library is a native container — and when 018 exercised it on the host, `AVPlayer` loaded the master playlist and then failed `main.m3u8` with `CoreMediaErrorDomain -16845 "HTTP 400"`, while `jf-probe.swift` gets 200 for the same `main.m3u8` path and the master copies `ApiKey` into the child URL. Unverified on iOS; the server log was silent. | 018 pre-flight | **Open — owned by 019** (codex-review remediation), which adds a non-native fixture and reproduces on the iOS simulator before deciding whether the defect is the URL, the player or the server. Not 018's: FLAC stays direct and never reaches this path. |
+| 24 | The decision-23 audio HLS fallback (`/Audio/{id}/universal` with a `container=` list that excludes the track's container → `transcodingContainer=ts`, `transcodingProtocol=hls`, `audioCodec=aac`) has never been exercised — every track in the library is a native container — and when 018 exercised it on the host, `AVPlayer` loaded the master playlist and then failed `main.m3u8` with `CoreMediaErrorDomain -16845 "HTTP 400"`, while `jf-probe.swift` gets 200 for the same `main.m3u8` path and the master copies `ApiKey` into the child URL. Unverified on iOS; the server log was silent. | 018 pre-flight | **Closed 2026-09-07 by 019 (cause), fix owned by 023.** Reproduced on the iOS simulator with an ogg/opus fixture: the server's master playlist joins `TranscodeReasons` with `", "` and leaves the spaces unencoded; AVPlayer sends the URI as written and Kestrel returns `400 Bad Request` before Jellyfin logs (raw-socket GET with spaces → 400, with `%20` → 200). 019 §6 has the row; 023 requests `main.m3u8` directly with the client's own query. |
+| 25 | `VideoPlaybackServiceTests` "progress fires once per interval while playing" failed once on the tvOS scheme during 019's gate (three `eventually { reports.entries.count == n }` expectations timed out) and passed on an immediate re-run of the same suite and in the next full gate — with no change to `VideoPlaybackService` between runs. The test drives a `ManualClock` and waits with `eventually`, so it depends on scheduler timing, which is the class of race codex High #2 describes in the service itself. | 019 gate | **Owned by 021**, which makes the service's transitions deterministic and rewrites this test to await the report rather than poll for it. Not weakened or skipped here: the gate that recorded the pass is the re-run, logged in `.gate-log`. |
 
 ## Ordering Notes
 
@@ -203,6 +211,16 @@ Why the delivery sequence is what it is, where it isn't obvious from `depends_on
 - **The tvOS scheme must build at every slice from 005 onward.** Shared presentation means any iOS-only view lands in an `#if os(iOS)` file with a tvOS counterpart named for what it is; 011 replaces the minimal counterparts with real tvOS chrome.
 - **The Services → Infrastructure edge (decision 36) lands in 001**, so 006 and 009 inherit it and neither waits on a manifest change of its own.
 - **The credentials file (decision 45) and `scripts/jf-probe.swift` (decision 47) land in 001**, because `curl` is globally denied on this machine and 004 is the first slice that needs to sign in. Every server-observable criterion from 004 onward reads the server through the probe.
+
+### The codex round, 019–023
+
+Opened 2026-09-07 from `docs/codex-review.md`, an independent read-only review of the built code and documents. Its disposition table — every finding mapped to a slice, a decision, or a recorded reason for no change — is appended to that document; the slices below are the code half.
+
+- **019 first** because every fix in it is one or two files and none changes a seam the later slices build on; the token-in-log finding (codex High #3) is the one item in the round that is a disclosure risk today, and it should not wait behind architecture work.
+- **020 before 021** because teardown decides who is allowed to stop a player and clear a cache; 021's generations must respect that owner rather than add a second one, so the owner is written first.
+- **021 before 022 and 023** because 023's refresh-invalidation reuses 021's generation, not a scheme of its own, and 022 is a pure use-case change with no ordering need of its own — it goes after the two service slices so the two `MusicPlayerService` / `VideoPlaybackService` reworks land before anything touches `ResolveVideoPlaybackUseCase`'s callers.
+- **023 last** because it is P2 and the widest: audio-session lifecycle, `ImageService` and the library services' pagination and coalescing. Each of its parts depends on the owners 020 and 021 define.
+- **The round claims no requirement.** Like 013 and 017 it is foundation and defect work, gated on builds, tests and the scripts, plus each slice's own demonstration.
 
 ### The hardening round, 013–017
 

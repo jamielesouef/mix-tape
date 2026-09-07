@@ -112,11 +112,15 @@ public final class AudioPlayerController: AudioPlayerControlling {
 
     private func configureSessionIfNeeded() {
         guard didConfigureSession == false else { return }
-        didConfigureSession = true
-        #if os(iOS) || os(tvOS)
-            try? AVAudioSession.sharedInstance().setCategory(.playback)
-            try? AVAudioSession.sharedInstance().setActive(true)
-        #endif
+        // Marked done only once both calls succeed, so one transient failure does not end every
+        // later attempt (slice 019).
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true)
+            didConfigureSession = true
+        } catch {
+            AppLogger.playback.error("audio session configuration failed: \(error.localizedDescription)")
+        }
     }
 
     private func configureRemoteCommands() {

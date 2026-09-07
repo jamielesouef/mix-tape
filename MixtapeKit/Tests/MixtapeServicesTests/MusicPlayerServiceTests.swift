@@ -9,6 +9,7 @@ import MixtapeDomain
 @testable import MixtapeServices
 import MixtapeUseCase
 import Testing
+import UIKit
 
 @Suite(.tags(.service))
 @MainActor
@@ -16,7 +17,7 @@ struct MusicPlayerServiceTests {
     private let album = MockLibraryRepository.sampleAlbums[0]
     private let tracks = MockLibraryRepository.sampleTracks // two tracks
 
-    private func makeService(reports: ReportLog = ReportLog(), controller: StubAudioPlayerController, clock: any Clock<Duration> = ContinuousClock()) -> MusicPlayerService {
+    private func makeService(reports: ReportLog = ReportLog(), controller: StubAudioPlayerController, clock: any Clock<Duration> = ContinuousClock(), artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil) -> MusicPlayerService {
         let repository = MockPlaybackRepository(
             reportStartResult: { r, _ in reports.append("start \(r.itemID)") },
             reportProgressResult: { r, _ in reports.append("progress \(r.itemID) paused=\(r.isPaused)") },
@@ -30,6 +31,7 @@ struct MusicPlayerServiceTests {
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
             sessionService: MockSessionService.signedIn(),
             clock: clock,
+            artworkProvider: artworkProvider,
         )
     }
 
@@ -199,11 +201,14 @@ struct MusicPlayerServiceTests {
         let reports = ReportLog()
         let controller = StubAudioPlayerController()
         let clock = ManualClock()
-        let service = makeService(reports: reports, controller: controller, clock: clock)
+        let cover = UIImage()
+        let service = makeService(reports: reports, controller: controller, clock: clock, artworkProvider: { _ in cover })
         await service.play(album: album, tracks: tracks, startingAt: 0)
         let refreshesAtStart = controller.nowPlayingHistory.count
+        #expect(controller.nowPlayingHistory.last?.artwork === cover)
         await clock.tick() // 5 s
         #expect(await eventually { controller.nowPlayingHistory.count == refreshesAtStart + 1 })
+        #expect(controller.nowPlayingHistory.last?.artwork === cover) // retained across the refresh (slice 019)
         #expect(await eventually { clock.sleeperCount == 1 }) // back asleep without a report
         #expect(reports.entries == ["start \(tracks[0].id)"])
         await clock.tick() // 10 s
@@ -211,6 +216,7 @@ struct MusicPlayerServiceTests {
         #expect(controller.nowPlayingHistory.count == refreshesAtStart + 2)
         #expect(reports.entries == ["start \(tracks[0].id)", "progress \(tracks[0].id) paused=false"])
         #expect(controller.nowPlayingHistory.last?.isPlaying == true)
+        #expect(controller.nowPlayingHistory.last?.artwork === cover)
         await service.stop()
     }
 

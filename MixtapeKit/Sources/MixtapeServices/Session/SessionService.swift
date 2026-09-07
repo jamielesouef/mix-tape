@@ -127,6 +127,14 @@ public final class SessionService {
         quickConnect = .idle
     }
 
+    /// Back to server entry before any sign-in (slice 019): `SignInFlow` shows `ServerEntryScreen`
+    /// whenever `serverIdentity` is nil.
+    public func clearServer() {
+        cancelQuickConnect()
+        serverIdentity = nil
+        error = nil
+    }
+
     public func signOut() {
         pollTask?.cancel()
         pollTask = nil

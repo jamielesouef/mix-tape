@@ -40,6 +40,9 @@ public struct SignInScreen: View {
                 .accessibilityIdentifier(SignInIdentifiers.signInButton)
             Button("Use Quick Connect", action: onUseQuickConnect)
                 .accessibilityIdentifier(SignInIdentifiers.quickConnectButton)
+            Button("Change server") { sessionService.clearServer() }
+                .disabled(sessionService.isBusy)
+                .accessibilityIdentifier(SignInIdentifiers.changeServerButton)
             if sessionService.isBusy {
                 ProgressView()
             }

@@ -47,7 +47,9 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
     /// `Authorization: MediaBrowser Client="mixtape", Device="…", DeviceId="…", Version="…", Token="…"`.
     /// The `Token` component is omitted, not sent empty, when `auth.token` is `nil`.
     func authorizationHeader(for auth: AuthContext) -> String {
-        var header = "MediaBrowser Client=\"mixtape\", Device=\"\(deviceName)\", DeviceId=\"\(auth.deviceID)\", Version=\"\(auth.appVersion)\""
+        // The device name is user-controlled text inside a quoted value: escape `\` and `"` (slice 019).
+        let device = deviceName.replacing("\\", with: "\\\\").replacing("\"", with: "\\\"")
+        var header = "MediaBrowser Client=\"mixtape\", Device=\"\(device)\", DeviceId=\"\(auth.deviceID)\", Version=\"\(auth.appVersion)\""
         if let token = auth.token {
             header += ", Token=\"\(token)\""
         }

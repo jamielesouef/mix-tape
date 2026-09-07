@@ -95,6 +95,8 @@ before it ships.
 behaviour is the system's, so the answer is taken as holding for the 26.1 target; if a 26.1
 runtime ever appears on a CI host, re-run the two-screenshot check there before relying on it.
 
+**Reproducibility note (slice 019).** `S003-evidence/diff.py` crops with full-resolution coordinates, but the retained `*-screen.png` files are downscaled to 460×1000 and the `*-accessory-strip.png` files are crops of a different size, so running the script over the retained files yields empty or zero regions for part of its analysis and does not reproduce the numbers above. The numbers were computed on the full-resolution captures at the time, which were not kept; to re-measure, recapture with `xcrun simctl io <udid> screenshot` and run the script on those files.
+
 ## 7. Consequences
 
 - [x] Decision recorded in the decision log of: `013`

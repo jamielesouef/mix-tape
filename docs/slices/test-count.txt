@@ -10,6 +10,6 @@
 # tests out of `#if os(...)` bodies and test platform-shared helpers instead.
 MixtapeDomainTests 20
 MixtapeUseCaseTests 41
-MixtapeServicesTests 61
-MixtapeDataTests 42
+MixtapeServicesTests 62
+MixtapeDataTests 44
 MixtapePresentationTests 20
