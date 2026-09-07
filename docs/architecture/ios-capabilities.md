@@ -1,6 +1,6 @@
 # mixtape — iOS capabilities
 
-What the iOS app does. Each entry names the screen the user sees and the service that holds the state behind it. See `ios-architecture.md` for how the layers fit together, and `jellyfin-openapi.json` for the API contract.
+What the iOS app does. Each entry names the screen the user sees and the service that holds the state behind it. See `ios-architecture.md` for how the layers fit together, and `../jellyfin-openapi.json` for the API contract.
 
 ## Connect and sign in
 

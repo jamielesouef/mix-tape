@@ -2,7 +2,7 @@
 
 mixtape is a Jellyfin client for iOS. It connects to one self-hosted Jellyfin server, browses that server's movie, TV and music libraries, plays video and audio, and reports playback progress back to the server.
 
-This document describes the architecture as built. `jellyfin-openapi.json` beside this file is the API contract it is built against — the OpenAPI 3.0.1 specification served by the Jellyfin 10.11.11 instance the project targets, pulled from that server's own `/api-docs/openapi.json`.
+This document describes the architecture as built. `../jellyfin-openapi.json` is the API contract it is built against — the OpenAPI 3.0.1 specification served by the Jellyfin 10.11.11 instance the project targets, pulled from that server's own `/api-docs/openapi.json`.
 
 ## Platform and toolchain
 
@@ -194,7 +194,7 @@ Every view file has a `#Preview` for its loaded, empty and failure states, drive
 
 ## The Jellyfin API surface
 
-These are the endpoints the app calls. Everything else in `jellyfin-openapi.json` is contract the app does not touch.
+These are the endpoints the app calls. Everything else in `../jellyfin-openapi.json` is contract the app does not touch.
 
 | Endpoint | Method | Used for |
 |---|---|---|
