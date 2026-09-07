@@ -49,19 +49,21 @@ P2 because the natural end of every track is unaffected and the gesture is a del
 
 ## 4. Pre-Flight Validation
 
-- [ ] **015** — opened. Confirm `endSeekMargin` is still 1 s behind `seek(to:)` and that the evidence paragraph's FLAC finding still reads as recorded.
-- [ ] **013** — opened. `docs/slices/test-count.txt` is the count the gate reads; this slice changes it deliberately if it changes a test.
-- [ ] Dev server: "King Of Terrors" still present as FLAC, and only once — 016 removed its "Music 2" copy on 2026-09-05 (`/Library/VirtualFolders` and `/UserViews` list Movies and Music only); confirm that still holds so the duplicate is not the one measured.
-- [ ] Architecture standards doc re-read.
+- [x] **015** — opened. `endSeekMargin` was still 1 s behind `seek(to:)` (`MusicPlayerService.swift:26,148`) and the evidence paragraph's FLAC finding read as recorded.
+- [x] **013** — opened. `docs/slices/test-count.txt` is the count the gate reads; this slice renames one test in `MixtapeServicesTests` and adds none, so the manifest is unchanged.
+- [x] Dev server: "King Of Terrors" present once, six FLAC tracks under album `414bfd285d27e8f649d7025bcaf3b793`; the wallet lists it once (`wallet.sleeve.414bfd…`).
+- [x] Architecture standards doc re-read.
 
-**Drift found:** `none` — or what changed, plus a row in the checklist's Drift Log.
+**Drift found:** one item, outside this slice's seam. While testing the alternatives, the decision-23 HLS fallback (`container=` without the track's container → `transcodingContainer=ts`, `transcodingProtocol=hls`, `audioCodec=aac`) was exercised for the first time — no track in the library has ever needed it. On the host, `AVPlayer` loads the master playlist, then fails on `main.m3u8` with `CoreMediaErrorDomain -16845 "HTTP 400"`, while `jf-probe.swift` gets 200 for the same `main.m3u8` path. The master playlist copies `ApiKey` into the child URL, so it is not the missing token. Unverified on iOS and not this slice's defect; recorded as Triage 24 in the checklist.
 
 ## 5. Acceptance Criteria
 
-- [ ] **AC18a** — On a FLAC track, dragging the scrubber to its end ends the track and the album finishes; `music.status` never reaches `.failed`.
-- [ ] **AC18b** — The same on an ALAC track, unchanged from 015.
-- [ ] **AC18c** — `endSeekMargin` is gone, or a decision row says why it stays and what bounds it.
-- [ ] `xcodebuild build` and `test` pass for both schemes; layer, glass and swiftformat clean.
+- [x] **AC18a** — On a FLAC track, dragging the scrubber to its end ends the track and the album finishes; `music.status` never reaches `.failed`.
+- [x] **AC18b** — The same on an ALAC track, unchanged from 015.
+- [x] **AC18c** — `endSeekMargin` is gone, or a decision row says why it stays and what bounds it.
+- [x] `xcodebuild build` and `test` pass for both schemes; layer, glass and swiftformat clean.
+
+**Evidence, 2026-09-07.** *Root cause, on the host (macOS 26.6.2, `swift` script driving `AVPlayer`, `scratchpad/flac-repro.swift`):* the failure reproduces against the local `.flac` file exactly as against `/Audio/{id}/universal` and `/Audio/{id}/stream?static=true` — the server's responses are correct (`206`, `Accept-Ranges: bytes`, `Content-Type: audio/flac`, `Content-Length` present), so it is not a server finding. After a seek to runtime − 1 s the item's clock runs past its duration and `didPlayToEndTime` never arrives (60 s window: clock at 285 s of a 227 s track); the natural end of the same file, unseeked, fires on time. The overshoot grows with the file: an 8 s clip ends on time, a 20 s clip 2.8 s late, a 40 s clip 10.4 s late, a 90 s clip not within 14 s. Not the `SEEKTABLE` (removing it changes nothing; adding one to the 8 s clip changes nothing), not the embedded `PICTURE`, not the encoder (a `flac` re-encode fails the same way), not the seek tolerance (`toleranceBefore: .zero, toleranceAfter: .zero` fails the same way). ALAC of the same audio ends on time from the same gesture. `AVFoundation` is estimating the FLAC seek target by bitrate and then trusting its estimate: the audio it decodes is earlier than the time it reports, so the reported clock reaches the duration before the decoder reaches the file's end. Opting the asset into precise timing — `AVURLAsset(url:, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])` — makes the same seek end the track on time, on the local file and on the `universal` URL. Two alternatives were measured and rejected in the decision log below. *Acceptance, iPhone 17 Pro simulator (iOS 26.5) against `localhost:8096`, driven with `idb ui tap`/`swipe` and read through `jf-probe.swift /Sessions` filtered to the app's own device (drift log 2026-09-03):* AC18a — "King Of Terrors" (FLAC, direct: no `TranscodingInfo`), Now Playing open, the scrubber's thumb dragged to the slider's end: track 1 → track 2 within 2 s (`/Sessions` `NowPlayingItem` "Fearless", `PositionTicks` 20000000, `IsPaused` false), again track 2 → track 3, then on track 6 the album finished — Now Playing dismissed, the wallet on screen, `/Sessions` with no `NowPlayingItem` and still none 11 s later. `nowPlaying.playPauseButton` read "Pause" throughout; no failure state was shown and the report loop stopped. AC18b — "Sundowning" (ALAC, `Container` `mov,mp4,m4a,…`, direct), the same drag: track 1 → "The Offering" within 3 s. AC18c — `endSeekMargin` deleted, `seek(to:)` is `max(.zero, requested)` and nothing else. The tvOS natural-end observation in §2 did not reproduce on the host (the 227 s FLAC ended on time unseeked); the fix lives in the shared `AudioPlayerController`, so it applies to tvOS unchanged, and any recurrence there is a new triage row, not this one.
 
 ## 6. Decision Log
 
@@ -69,6 +71,7 @@ P2 because the natural end of every track is unaffected and the gesture is a del
 
 | Date | Decision | Alternatives rejected | Why |
 |---|---|---|---|
+| 2026-09-07 | The fix is client-side and lives where the `AVPlayerItem` is made: `AudioPlayerController.load(url:)` builds the item from an `AVURLAsset` with `AVURLAssetPreferPreciseDurationAndTimingKey: true`. `MusicPlayerService.seek(to:)` loses `endSeekMargin` and the clamp, and changes nothing else. `BuildAudioStreamURLUseCase`, the `universal` container list and `isNativeAudioContainer` are untouched, so FLAC stays DirectPlay and §12.13f / decision 43 stand. | (a) A server finding with the clamp kept — ruled out by the local-file reproduction. (b) Drop `flac` from the `container=` list so the server transcodes it: measured, and the HLS/AAC route is lossy, flips AC13f to `Transcode`, and on the host fails with HTTP 400 on `main.m3u8` (Triage 24) — a second defect traded for the first. (c) Server remux to ALAC over plain HTTP (`transcodingContainer=mp4`, `transcodingProtocol=http`, `audioCodec=alac`): the server answers `200 video/mp4` with `Accept-Ranges: none` and no length, and `AVPlayer` fails it with `-12939` before playing — not seekable, so it cannot fix a seek. (d) Fire `onEnded` from the controller when position ≥ duration: masks the symptom, cuts the audio the estimate skipped, and does nothing for the `-12864` failure 015 saw on iOS. | One option ends the track on time, keeps the audio lossless, keeps every decision, and is one line where the item is built — the seam every FLAC seek already passes through. |
 
 ## 7. Sub-Slices
 
@@ -95,9 +98,9 @@ Commit this file alongside the code, with the slice id in the subject (`018: …
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Triage 7 closed in the master checklist, v2 included
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Triage 7 closed in the master checklist, v2 included
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current

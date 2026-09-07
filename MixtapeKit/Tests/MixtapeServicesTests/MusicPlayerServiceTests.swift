@@ -179,16 +179,14 @@ struct MusicPlayerServiceTests {
         #expect(service.queue == tracks)
     }
 
-    @Test func `a seek to or past the end lands short of it by the margin`() async {
+    @Test func `a seek to the end reaches the controller unclamped`() async {
         let controller = StubAudioPlayerController()
         let service = makeService(controller: controller)
         await service.play(album: album, tracks: tracks, startingAt: 0)
         let runtime = tracks[0].runtime ?? .zero
-        service.seek(to: runtime) // the scrubber dragged to its maximum (Triage 7)
-        #expect(controller.seeks.last == runtime - MusicPlayerService.endSeekMargin)
-        #expect(service.position == runtime - MusicPlayerService.endSeekMargin)
-        service.seek(to: runtime + .seconds(30))
-        #expect(controller.seeks.last == runtime - MusicPlayerService.endSeekMargin)
+        service.seek(to: runtime) // the scrubber dragged to its maximum (Triage 7 v2, slice 018)
+        #expect(controller.seeks.last == runtime)
+        #expect(service.position == runtime)
         service.seek(to: .seconds(12)) // an ordinary seek is untouched
         #expect(controller.seeks.last == .seconds(12))
         service.seek(to: .seconds(-5))

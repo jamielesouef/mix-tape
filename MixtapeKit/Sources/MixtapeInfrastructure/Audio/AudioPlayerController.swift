@@ -36,7 +36,11 @@ public final class AudioPlayerController: AudioPlayerControlling {
     public func load(url: URL) {
         configureSessionIfNeeded()
         removeItemObservers()
-        let item = AVPlayerItem(url: url)
+        // Precise timing is opted in (slice 018, Triage 7 v2): AVFoundation otherwise estimates a FLAC
+        // seek target by bitrate and its clock drifts from the audio it decodes — a seek near the end
+        // of a long FLAC never reaches `didPlayToEndTime` on macOS and fails the item on iOS.
+        let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
+        let item = AVPlayerItem(asset: asset)
         player.replaceCurrentItem(with: item)
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { [weak self] time in
             MainActor.assumeIsolated {

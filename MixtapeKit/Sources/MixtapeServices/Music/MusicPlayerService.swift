@@ -20,10 +20,6 @@ public final class MusicPlayerService {
     public static let progressInterval: Duration = .seconds(10)
     /// §6: `MPNowPlayingInfoCenter` is refreshed every 5 s while a track plays (slice 014).
     public static let nowPlayingInterval: Duration = .seconds(5)
-    /// Triage 7, rung v1 (slice 015): a seek never lands closer to the end of a track than this. Seeking
-    /// to the exact end stalls `AudioPlayerController` and `onEnded` never fires; v2 root-causes that
-    /// stall and deletes this margin, changing nothing else.
-    public static let endSeekMargin: Duration = .seconds(1)
 
     /// Always exactly one album (§1.1).
     public private(set) var album: MediaItem?
@@ -140,13 +136,11 @@ public final class MusicPlayerService {
         await start(index: currentIndex - 1)
     }
 
-    /// Clamped short of the track's end by `endSeekMargin` (Triage 7 v1) — the one seam every seek
-    /// passes through: the in-app scrubber, the lock screen's `changePlaybackPosition`, `previous()`.
+    /// The one seam every seek passes through: the in-app scrubber, the lock screen's
+    /// `changePlaybackPosition`, `previous()`. Unclamped at the end since slice 018 — Triage 7 was an
+    /// `AVPlayer` FLAC timing defect, fixed where the item is made, not a seek race.
     public func seek(to requested: Duration) {
-        var target = max(.zero, requested)
-        if let runtime = current?.runtime {
-            target = min(target, max(.zero, runtime - Self.endSeekMargin))
-        }
+        let target = max(.zero, requested)
         controller.seek(to: target)
         position = target
         reportOnce(isPaused: status == .paused)
