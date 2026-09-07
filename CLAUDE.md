@@ -74,6 +74,12 @@ collaborator, never hidden inside one. Infrastructure is stateless or
 actor-isolated. Object graph built by hand at the app root with `@Entry` — no DI
 container, no service locator, no `.shared`.
 
+## Claude rules
+
+Please remove all mannered prose.
+
+Use lists and bullet points when asked to, or when the content is multifaceted enough that they help with clarity. If the person explicitly requests minimal formatting, always format your responses without bullet points, headers, lists, or bold emphasis, as requested. In conversational, personal, or emotional exchanges, keep to plain prose.
+
 ## Swift rules
 
 - One type per file, filename matches. One view per file — no
