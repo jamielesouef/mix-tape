@@ -50,7 +50,7 @@ Ordered by delivery sequence — the same order as the linked list.
 | 020 | Session-owned teardown and cache invalidation | P0 | M | adw-run | Done | [020](020-session-owned-teardown.md) |
 | 021 | Playback operation generations and off-path reporting | P0 | L | adw-run | Done | [021](021-playback-operation-generations.md) |
 | 022 | Direct-stream URL for direct-stream-only sources | P1 | M | adw-run | Done | [022](022-direct-stream-url.md) |
-| 023 | Audio session and service hardening | P2 | L | — | Not started | [023](023-audio-session-and-service-hardening.md) |
+| 023 | Audio session and service hardening | P2 | L | adw-run | In progress | [023](023-audio-session-and-service-hardening.md) |
 
 Status: `Not started` · `In progress` · `Blocked` · `In review` · `Done`
 

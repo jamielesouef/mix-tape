@@ -21,6 +21,7 @@ public final class ImageService {
     private let sessionService: SessionService
     private let urlSession: URLSession
     @ObservationIgnored private let cache = NSCache<NSURL, UIImage>()
+    @ObservationIgnored private var inFlightRequests: [URL: Task<UIImage?, Never>] = [:]
 
     public init(builder: any ImageURLBuilderProtocol, sessionService: SessionService, urlSession: URLSession = .shared) {
         self.builder = builder
@@ -57,14 +58,40 @@ public final class ImageService {
         if let cached = cache.object(forKey: url as NSURL) {
             return cached
         }
-        guard let (data, _) = try? await urlSession.data(from: url), let image = await Self.decode(data) else { return nil }
-        cache.setObject(image, forKey: url as NSURL, cost: data.count)
+        if let inFlight = inFlightRequests[url] {
+            return await inFlight.value
+        }
+        let task = Task { [weak self] in
+            await self?.fetch(url)
+        }
+        inFlightRequests[url] = task
+        defer { inFlightRequests[url] = nil }
+        return await task.value
+    }
+
+    private func fetch(_ url: URL) async -> UIImage? {
+        guard let (data, response) = try? await urlSession.data(from: url),
+              let http = response as? HTTPURLResponse,
+              (200 ... 299).contains(http.statusCode),
+              let image = await Self.decode(data)
+        else { return nil }
+        cache.setObject(image, forKey: url as NSURL, cost: Self.cost(of: image))
         return image
+    }
+
+    /// Cost from the *decoded* pixel dimensions, not the compressed network byte count — a small
+    /// JPEG can decode to a large bitmap, and `NSCache`'s eviction only makes sense against the
+    /// memory the image actually occupies.
+    static func cost(of image: UIImage) -> Int {
+        guard let cgImage = image.cgImage else {
+            return Int(image.size.width * image.scale * image.size.height * image.scale) * 4
+        }
+        return cgImage.width * cgImage.height * 4
     }
 
     @concurrent
     private nonisolated static func decode(_ data: Data) async -> UIImage? {
-        UIImage(data: data)
+        UIImage(data: data)?.preparingForDisplay()
     }
 
     private var session: UserSession? {

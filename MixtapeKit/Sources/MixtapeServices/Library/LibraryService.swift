@@ -20,9 +20,18 @@ public final class LibraryService {
     public private(set) var pages: [String: LoadState<Page<MediaItem>>] = [:]
     public private(set) var details: [String: LoadState<MediaItem>] = [:]
     public private(set) var tracks: [String: LoadState<[MediaItem]>] = [:]
+    /// A `loadMore` failure that leaves `pages[id]`'s already-accumulated `.loaded` page intact
+    /// (§6 decision log) — additive so the view can show an inline "load more failed" signal
+    /// instead of blanking a partly-loaded library.
+    public private(set) var pageLoadError: [String: MixtapeError] = [:]
 
     private var inFlight: Set<String> = []
     private var exhausted: Set<String> = []
+    private var tracksInFlight: Set<String> = []
+    /// Bumped by `refresh()`; every in-flight load's post-await write checks it, supplementing
+    /// 020's session-identity guard — closes the same-session race a plain pull-to-refresh has
+    /// with an in-progress page load, which session equality alone cannot see (023 §6).
+    private var currentGeneration = OperationGeneration()
 
     private let fetchLibraries: FetchLibrariesUseCase
     private let fetchLibraryItems: FetchLibraryItemsUseCase
@@ -43,6 +52,7 @@ public final class LibraryService {
         pages: [String: LoadState<Page<MediaItem>>] = [:],
         details: [String: LoadState<MediaItem>] = [:],
         tracks: [String: LoadState<[MediaItem]>] = [:],
+        pageLoadError: [String: MixtapeError] = [:],
     ) {
         self.fetchLibraries = fetchLibraries
         self.fetchLibraryItems = fetchLibraryItems
@@ -55,6 +65,7 @@ public final class LibraryService {
         self.pages = pages
         self.details = details
         self.tracks = tracks
+        self.pageLoadError = pageLoadError
     }
 
     public var loadedLibraries: [Library] {
@@ -72,27 +83,28 @@ public final class LibraryService {
     public func loadHome() async {
         guard let session else { return }
         let epoch = session
+        let generation = currentGeneration
         libraries = .loading
         continueWatching = .loading
         do {
             let loaded = try await fetchLibraries(session: session)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 libraries = .loaded(loaded)
             }
         } catch {
             let mapped = handle(error)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 libraries = .failed(mapped)
             }
         }
         do {
             let loaded = try await fetchContinueWatching(session: session)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 continueWatching = .loaded(loaded)
             }
         } catch {
             let mapped = handle(error)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 continueWatching = .failed(mapped)
             }
         }
@@ -102,6 +114,7 @@ public final class LibraryService {
     public func loadLibrary(id: String) async {
         guard let session else { return }
         let epoch = session
+        let generation = currentGeneration
         if case .loaded = pages[id] {
             return
         }
@@ -109,18 +122,18 @@ public final class LibraryService {
         if libraries.isLoaded == false {
             do {
                 let loaded = try await fetchLibraries(session: session)
-                if self.session == epoch {
+                if self.session == epoch, currentGeneration == generation {
                     libraries = .loaded(loaded)
                 }
             } catch {
                 let mapped = handle(error)
-                if self.session == epoch {
+                if self.session == epoch, currentGeneration == generation {
                     libraries = .failed(mapped)
                 }
             }
         }
         guard let library = library(id: id) else {
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 pages[id] = .failed(.transport("Library not found"))
             }
             return
@@ -133,8 +146,9 @@ public final class LibraryService {
             let page = try await fetchLibraryItems(libraryID: id, kind: Self.itemKind(library.kind), page: PageRequest(startIndex: 0, limit: Self.pageSize), session: session)
             // Re-checked after the await: 020's session-identity guard closes the reentrancy hazard
             // where handle(error) below fires SessionService's endSession() fan-out mid-flight and
-            // this write would otherwise repopulate the cache that fan-out just cleared.
-            if self.session == epoch {
+            // this write would otherwise repopulate the cache that fan-out just cleared; the
+            // generation check closes the same-session refresh() race (023 §6).
+            if self.session == epoch, currentGeneration == generation {
                 pages[id] = .loaded(page)
                 if page.items.count < Self.pageSize || page.items.count >= page.totalCount {
                     exhausted.insert(id)
@@ -142,7 +156,7 @@ public final class LibraryService {
             }
         } catch {
             let mapped = handle(error)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 pages[id] = .failed(mapped)
             }
         }
@@ -152,6 +166,7 @@ public final class LibraryService {
     public func loadMore(libraryID id: String) async {
         guard let session, let library = library(id: id) else { return }
         let epoch = session
+        let generation = currentGeneration
         guard inFlight.contains(id) == false, exhausted.contains(id) == false else { return }
         guard case let .loaded(current) = pages[id] else { return }
         inFlight.insert(id)
@@ -159,17 +174,20 @@ public final class LibraryService {
         do {
             let request = PageRequest(startIndex: current.items.count, limit: Self.pageSize)
             let next = try await fetchLibraryItems(libraryID: id, kind: Self.itemKind(library.kind), page: request, session: session)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 let merged = current.items + next.items
                 pages[id] = .loaded(Page(items: merged, totalCount: next.totalCount, startIndex: current.startIndex))
+                pageLoadError[id] = nil
                 if next.items.count < Self.pageSize || merged.count >= next.totalCount {
                     exhausted.insert(id)
                 }
             }
         } catch {
+            // §6 decision log: a later-page failure leaves the accumulated `.loaded` page alone —
+            // the failure surfaces additively through `pageLoadError`, not by overwriting `pages[id]`.
             let mapped = handle(error)
-            if self.session == epoch {
-                pages[id] = .failed(mapped)
+            if self.session == epoch, currentGeneration == generation {
+                pageLoadError[id] = mapped
             }
         }
     }
@@ -177,45 +195,57 @@ public final class LibraryService {
     public func loadDetail(id: String) async {
         guard let session else { return }
         let epoch = session
+        let generation = currentGeneration
         details[id] = .loading
         do {
             let loaded = try await fetchItemDetail(id: id, session: session)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 details[id] = .loaded(loaded)
             }
         } catch {
             let mapped = handle(error)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 details[id] = .failed(mapped)
             }
         }
     }
 
+    /// Coalesced via `tracksInFlight`, keyed by albumID and separate from `inFlight` (which guards
+    /// `loadLibrary`/`loadMore`) — two views asking for the same album's tracks within the same
+    /// load fire one network request (023 §6).
     public func loadTracks(albumID: String) async {
         guard let session else { return }
         let epoch = session
+        let generation = currentGeneration
         if case .loaded = tracks[albumID] {
             return
         }
+        guard tracksInFlight.contains(albumID) == false else { return }
+        tracksInFlight.insert(albumID)
+        defer { tracksInFlight.remove(albumID) }
         tracks[albumID] = .loading
         do {
             let loaded = try await fetchAlbumTracks(albumID: albumID, session: session)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 tracks[albumID] = .loaded(loaded)
             }
         } catch {
             let mapped = handle(error)
-            if self.session == epoch {
+            if self.session == epoch, currentGeneration == generation {
                 tracks[albumID] = .failed(mapped)
             }
         }
     }
 
-    /// Drops every cache and reloads Home. Library pages reload on their next appearance.
+    /// Drops every cache and reloads Home. Bumps the generation first so any load already in
+    /// flight sees a stale generation on its post-await write and skips it (023 §6, additive to
+    /// 020's session-identity guard). Library pages reload on their next appearance.
     public func refresh() async {
+        currentGeneration = OperationGeneration()
         pages = [:]
         details = [:]
         tracks = [:]
+        pageLoadError = [:]
         exhausted = []
         await loadHome()
     }
@@ -230,6 +260,7 @@ public final class LibraryService {
         pages = [:]
         details = [:]
         tracks = [:]
+        pageLoadError = [:]
     }
 
     private var session: UserSession? {

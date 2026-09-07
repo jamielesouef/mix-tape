@@ -30,7 +30,7 @@ struct JellyfinAudioStreamTests {
     }
 
     @Test func `the universal url carries the container list, ApiKey and no bitrate cap`() throws {
-        let stream = repository().audioStream(track: track(id: "t1", container: "flac"), session: session)
+        let stream = repository().audioStream(track: track(id: "t1", container: "flac"), session: session, playSessionID: "psid-1")
         let components = try #require(URLComponents(url: stream.url, resolvingAgainstBaseURL: false))
         let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
         #expect(components.path == "/Audio/t1/universal")
@@ -47,6 +47,30 @@ struct JellyfinAudioStreamTests {
     }
 
     @Test func `an exotic container reports transcode`() {
-        #expect(repository().audioStream(track: track(id: "t2", container: "opus"), session: session).playMethod == .transcode)
+        #expect(repository().audioStream(track: track(id: "t2", container: "opus"), session: session, playSessionID: "psid-2").playMethod == .transcode)
+    }
+
+    /// AC23g's URL-shape half (Triage 24, `SPEC-DECISIONS.md` 51): the non-native-container
+    /// fallback requests `main.m3u8` directly, not `universal`, with `segmentContainer` (the field
+    /// `GetVariantHlsAudioPlaylist` actually declares) rather than `transcodingContainer`, and
+    /// carries the caller's `playSessionID` through as `playSessionId` so the server's own
+    /// transcode-session correlation on stop matches what `MusicPlayerService` already reports.
+    @Test func `the non-native fallback requests main m3u8 directly with the caller's play session id`() throws {
+        let stream = repository().audioStream(track: track(id: "t3", container: "opus"), session: session, playSessionID: "psid-3")
+        let components = try #require(URLComponents(url: stream.url, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        #expect(components.path == "/Audio/t3/main.m3u8")
+        #expect(query["mediaSourceId"] == "t3")
+        #expect(query["playSessionId"] == "psid-3")
+        #expect(query["deviceId"] == "device-1")
+        #expect(query["audioCodec"] == "aac")
+        #expect(query["segmentContainer"] == "ts")
+        #expect(query["ApiKey"] == "tok-1")
+        #expect(query["transcodingContainer"] == nil)
+        // SPEC-DECISIONS 51: GetVariantHlsAudioPlaylist declares none of these three.
+        #expect(query["userId"] == nil)
+        #expect(query["container"] == nil)
+        #expect(query["transcodingProtocol"] == nil)
+        #expect(stream.playMethod == .transcode)
     }
 }

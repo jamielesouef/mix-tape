@@ -1282,3 +1282,31 @@ should not carry a branch for a source shape the target library does not hold.
 **Re-open if** a later server version, or a remote source, returns
 `SupportsDirectStream: true` with `SupportsDirectPlay: false`: slice 022's
 document records the URL shape to build and the fixture-driven test to add.
+
+## 51. Decision 23's HLS fallback for a non-native audio container amended: `main.m3u8`, not `universal`
+
+Decision 23's HLS fallback for a non-native audio container requests
+`/Audio/{itemId}/main.m3u8` directly rather than `/Audio/{itemId}/universal`,
+because the `universal` endpoint's master playlist joins `TranscodeReasons`
+with unencoded spaces that Kestrel rejects with 400 before Jellyfin logs
+anything (Triage 24, closed by 019's cause row and 023's fix); `main.m3u8` is
+the child variant playlist the master would otherwise have pointed at,
+requested with the client's own query (including `playSessionID`, threaded
+through for the first time), so its own segment URIs inherit a space-free
+query the way 019's reproduction showed for a raw `%20`-encoded request.
+
+The native-container branch is unaffected — it still requests `/Audio/{itemId}/universal`
+exactly as decision 23 and decision 43 left it. The fallback's query carries
+`mediaSourceId` (not sent by `universal`), `playSessionId` (sourced from the
+same value `MusicPlayerService` already generates and reports in its
+`PlaybackReport`, so the URL and the report correlate on the server's side),
+`deviceId`, `audioCodec=aac`, `segmentContainer=ts` (not `transcodingContainer`,
+which `GetVariantHlsAudioPlaylist` does not declare), and `ApiKey`. `userId`,
+`container` and `transcodingProtocol` are dropped for this branch — the pinned
+spec's `GetVariantHlsAudioPlaylist` operation does not declare any of the three.
+
+**Rejected.** Rewriting the master playlist in flight (the resource-loader
+approach Triage 6 already rejected) and reporting the finding upstream and
+waiting (019's rejected alternative (c), still not a client fix) — both
+measured and rejected in 019; this row restates the fix, it does not re-open
+the comparison.

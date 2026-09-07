@@ -331,6 +331,54 @@ struct MusicPlayerServiceTests {
         await service.stop()
     }
 
+    // MARK: Slice 023 — audio-session and service hardening
+
+    @Test func `AC23h a player that stops advancing position is reported as a stalled failure`() async {
+        let controller = StubAudioPlayerController()
+        let clock = ManualClock()
+        let service = makeService(controller: controller, clock: clock)
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        controller.onPositionChange?(.seconds(5)) // arms the watchdog: position has advanced past zero
+        // One tick to arm, then `stallTickThreshold` more with no further advancement.
+        for _ in 0 ... MusicPlayerService.stallTickThreshold {
+            await clock.tick()
+        }
+        #expect(await eventually {
+            if case .failed = service.status {
+                true
+            } else {
+                false
+            }
+        })
+    }
+
+    @Test func `AC23h the watchdog stays armed-off during initial buffering before position ever advances`() async {
+        let controller = StubAudioPlayerController()
+        let clock = ManualClock()
+        let service = makeService(controller: controller, clock: clock)
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        // Never call onPositionChange: position stays zero throughout, as it would during buffering.
+        for _ in 0 ... MusicPlayerService.stallTickThreshold {
+            await clock.tick()
+        }
+        #expect(await eventually { clock.sleeperCount == 1 }) // still ticking, never armed
+        #expect(service.status == .playing)
+    }
+
+    @Test func `AC23i a next pressed before the natural-end task runs lands on N plus one, not N plus two`() async {
+        let reports = ReportLog()
+        let controller = StubAudioPlayerController()
+        let threeTracks = [Self.track("n0", index: 0), Self.track("n1", index: 1), Self.track("n2", index: 2)]
+        let service = makeService(reports: reports, controller: controller)
+        await service.play(album: album, tracks: threeTracks, startingAt: 0)
+        controller.finishTrack() // fires onEnded for n0; its Task is queued but has not run yet
+        await service.next() // races ahead of that Task, landing on n1 before it gets a turn
+        await settle() // let the stale onEnded Task finally run
+        #expect(service.currentIndex == 1) // n1, not n2 — the stale task saw a superseded generation
+        await reports.waitForCount(3)
+        #expect(reports.entries == ["start n0", "stopped n0", "start n1"])
+    }
+
     private func settle() async {
         for _ in 0 ..< 30 {
             await Task.yield()

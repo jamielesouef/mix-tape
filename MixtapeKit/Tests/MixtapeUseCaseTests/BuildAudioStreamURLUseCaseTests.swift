@@ -22,12 +22,12 @@ struct BuildAudioStreamURLUseCaseTests {
     }
 
     @Test func `a flac track direct-plays and the mock builder is used`() {
-        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(track: track(container: "flac"), session: session)
+        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(track: track(container: "flac"), session: session, playSessionID: "psid-1")
         #expect(stream.playMethod == .directPlay)
     }
 
     @Test func `an exotic container transcodes`() {
-        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(track: track(container: "opus"), session: session)
+        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(track: track(container: "opus"), session: session, playSessionID: "psid-2")
         #expect(stream.playMethod == .transcode)
     }
 }

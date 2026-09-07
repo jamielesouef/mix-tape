@@ -252,6 +252,60 @@ struct LibraryServiceTests {
         #expect(sessionService.state == .signedOut)
     }
 
+    // MARK: Slice 023 — pagination failure, refresh invalidation, track coalescing
+
+    @Test func `loadMore failure leaves the loaded page intact and surfaces via pageLoadError`() async {
+        let attempts = Counter()
+        let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
+            if attempts.next() == 0 {
+                return Page(items: (0 ..< 60).map { Self.movie("m\($0)") }, totalCount: 120, startIndex: page.startIndex)
+            }
+            throw MixtapeError.serverUnreachable
+        })
+        let service = makeService(repository: repository)
+        await service.loadLibrary(id: movies.id)
+        await service.loadMore(libraryID: movies.id)
+        guard case let .loaded(page) = service.pages[movies.id] else { Issue.record("not loaded"); return }
+        #expect(page.items.count == 60)
+        #expect(service.pageLoadError[movies.id] == .serverUnreachable)
+    }
+
+    @Test func `refresh while loadLibrary is in flight does not let the stale response repopulate the cleared cache`() async {
+        let gate = Gate()
+        gate.close()
+        let started = Recorder()
+        let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
+            started.append("started")
+            await gate.wait()
+            return Page(items: [Self.movie("m0")], totalCount: 1, startIndex: page.startIndex)
+        })
+        let service = makeService(repository: repository)
+        let load = Task { await service.loadLibrary(id: movies.id) }
+        #expect(await eventually { started.urls == ["started"] }) // proves the fetch is genuinely in flight
+        await service.refresh() // bumps the generation and clears pages before the stale write can land
+        gate.open()
+        await load.value
+        #expect(service.pages[movies.id] == nil)
+    }
+
+    @Test func `concurrent loadTracks requests for the same album fire one network call`() async {
+        let recorder = Recorder()
+        let gate = Gate()
+        gate.close()
+        let repository = MockLibraryRepository(tracksResult: { id, _ in
+            recorder.append(id)
+            await gate.wait()
+            return MockLibraryRepository.sampleTracks
+        })
+        let service = makeService(repository: repository)
+        let first = Task { await service.loadTracks(albumID: "album-1") }
+        await Task.yield()
+        await service.loadTracks(albumID: "album-1") // returns at once: the first is still in flight
+        gate.open()
+        await first.value
+        #expect(recorder.urls == ["album-1"])
+    }
+
     private nonisolated static func movie(_ id: String) -> MediaItem {
         MediaItem(
             id: id, name: id, kind: .movie, overview: nil, productionYear: nil, runtime: nil, indexNumber: nil, parentIndexNumber: nil,

@@ -5,6 +5,7 @@
 //
 
 #if os(iOS) || os(tvOS)
+    import AVFoundation
     import Foundation
     import MixtapeDomain
     import Observation
@@ -35,6 +36,7 @@
         private let model = VLCTransportModel()
         private var startPosition: Duration = .zero
         private var didSeekToStart = false
+        private var didConfigureSession = false
 
         override public init() {
             // A nonisolated logger, installed on the library this player uses, or VLC's logging
@@ -48,9 +50,26 @@
         }
 
         public func load(url: URL, startAt: Duration, headers _: [String: String]) {
+            configureSessionIfNeeded()
             startPosition = startAt
             didSeekToStart = false
             player.media = VLCMedia(url: url) // ApiKey rides in the URL; no VLCMedia options
+        }
+
+        /// libVLC's own Core Audio output touches `AVAudioSession` internally (the project's release
+        /// notes record fixes to that handling), so this establishes `.playback` explicitly rather
+        /// than trusting VLCKit to leave the session in the state a media app needs (slice 023).
+        /// Idempotent and never deactivates, matching `AVPlayerController`'s policy exactly.
+        private func configureSessionIfNeeded() {
+            guard didConfigureSession == false else { return }
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback)
+                try AVAudioSession.sharedInstance().setActive(true)
+                didConfigureSession = true
+                AppLogger.playback.info("VLC video audio session configured: category .playback, active")
+            } catch {
+                AppLogger.playback.error("VLC video audio session configuration failed: \(error.localizedDescription)")
+            }
         }
 
         public func play() {

@@ -15,7 +15,7 @@ nonisolated struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
         throw MixtapeError.serverUnreachable
     }
 
-    func audioStream(track: MediaItem, session: UserSession) -> AudioStream {
+    func audioStream(track: MediaItem, session: UserSession, playSessionID _: String) -> AudioStream {
         AudioStream(url: session.serverURL.appending(path: "Audio/\(track.id)/unavailable"), playMethod: .directPlay)
     }
 

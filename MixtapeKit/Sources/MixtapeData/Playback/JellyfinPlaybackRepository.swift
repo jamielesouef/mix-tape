@@ -33,9 +33,14 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
     }
 
     /// `/Audio/{itemId}/universal` with the native-container list and no bitrate cap (decision 43),
-    /// authenticated with `ApiKey` in the query (decision 42). A non-decodable container means the
-    /// server transcodes to HLS; that fires the fallback log at `.info` (decision 23).
-    public func audioStream(track: MediaItem, session: UserSession) -> AudioStream {
+    /// authenticated with `ApiKey` in the query (decision 42). A non-decodable container falls back
+    /// to `main.m3u8` directly (Triage 24; `SPEC-DECISIONS.md` 51) rather than `universal`, whose
+    /// master playlist joins `TranscodeReasons` with unencoded spaces Kestrel rejects with 400.
+    public func audioStream(track: MediaItem, session: UserSession, playSessionID: String) -> AudioStream {
+        guard isNativeAudioContainer(track.container) else {
+            AppLogger.playback.info("audio HLS fallback fired for track \(track.id) (container \(track.container ?? "?"))")
+            return AudioStream(url: hlsFallbackURL(track: track, session: session, playSessionID: playSessionID), playMethod: .transcode)
+        }
         var components = URLComponents(url: session.serverURL.appending(path: "/Audio/\(track.id)/universal"), resolvingAgainstBaseURL: false)
         components?.queryItems = [
             URLQueryItem(name: "userId", value: session.userID),
@@ -47,11 +52,23 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
             URLQueryItem(name: "ApiKey", value: session.accessToken),
         ]
         let url = components?.url ?? session.serverURL
-        let native = isNativeAudioContainer(track.container)
-        if native == false {
-            AppLogger.playback.info("audio HLS fallback fired for track \(track.id) (container \(track.container ?? "?"))")
-        }
-        return AudioStream(url: url, playMethod: native ? .directPlay : .transcode)
+        return AudioStream(url: url, playMethod: .directPlay)
+    }
+
+    /// `GetVariantHlsAudioPlaylist` requested directly with the client's own query, so its own
+    /// segment URIs inherit a space-free query the way `universal`'s master playlist did not
+    /// (Triage 24). `segmentContainer`, not `transcodingContainer`, is what this operation declares.
+    private func hlsFallbackURL(track: MediaItem, session: UserSession, playSessionID: String) -> URL {
+        var components = URLComponents(url: session.serverURL.appending(path: "/Audio/\(track.id)/main.m3u8"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [
+            URLQueryItem(name: "mediaSourceId", value: track.id),
+            URLQueryItem(name: "playSessionId", value: playSessionID),
+            URLQueryItem(name: "deviceId", value: session.deviceID),
+            URLQueryItem(name: "audioCodec", value: "aac"),
+            URLQueryItem(name: "segmentContainer", value: "ts"),
+            URLQueryItem(name: "ApiKey", value: session.accessToken),
+        ]
+        return components?.url ?? session.serverURL
     }
 
     /// All three reports share one body (§8; decision 32). Each is logged on `network` and

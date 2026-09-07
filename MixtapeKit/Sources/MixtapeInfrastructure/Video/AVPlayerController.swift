@@ -27,11 +27,13 @@ public final class AVPlayerController: VideoPlayerControlling {
     private var rateObservation: NSKeyValueObservation?
     /// The `startAt` seek in `load` jumps the time too; that jump is not a user seek.
     private var isSeekingToStart = false
+    private var didConfigureSession = false
 
     public init() {}
 
     /// `headers` is ignored: the URL carries `ApiKey` (decision 42) and the private header key is never used.
     public func load(url: URL, startAt: Duration, headers _: [String: String]) {
+        configureSessionIfNeeded()
         teardown()
         let item = AVPlayerItem(url: url)
         player.replaceCurrentItem(with: item)
@@ -115,6 +117,22 @@ public final class AVPlayerController: VideoPlayerControlling {
 
     public func makeView() -> AnyView {
         AnyView(VideoPlayer(player: player))
+    }
+
+    /// Establishes `.playback` independent of whether `AudioPlayerController` has ever run (slice
+    /// 023 decision log), so a video played before any music ignores the Ring/Silent switch. Never
+    /// deactivates — the audio session is shared process-wide, and deactivating it on teardown would
+    /// silence a concurrently playing album.
+    private func configureSessionIfNeeded() {
+        guard didConfigureSession == false else { return }
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true)
+            didConfigureSession = true
+            AppLogger.playback.info("video audio session configured: category .playback, active")
+        } catch {
+            AppLogger.playback.error("video audio session configuration failed: \(error.localizedDescription)")
+        }
     }
 
     private static func time(_ duration: Duration) -> CMTime {

@@ -4,10 +4,12 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
+import Foundation
 import MixtapeDomain
 @testable import MixtapeServices
 import MixtapeUseCase
 import Testing
+import UIKit
 
 @Suite(.tags(.service))
 @MainActor
@@ -31,5 +33,46 @@ struct ImageServiceTests {
     @Test func `no session means no url`() {
         let signedOut = MockImageService.make(sessionService: MockSessionService.signedOut())
         #expect(signedOut.imageURL(for: MockLibraryRepository.sampleMovies[0], kind: .primary, maxHeight: 300) == nil)
+    }
+
+    // MARK: Slice 023 — ImageService hardening (AC23c)
+
+    @Test func `AC23c two concurrent requests for the same url are coalesced into one network call`() async throws {
+        let url = try #require(URL(string: "https://\(UUID()).stub/img.png"))
+        let log = ReportLog()
+        let gate = Gate()
+        gate.close()
+        let imageData = Self.fixturePNGData()
+        StubImageURLProtocol.register(url) {
+            log.append("fetch")
+            await gate.wait()
+            return (200, imageData)
+        }
+        let networked = ImageService(builder: MockImageURLBuilder(), sessionService: MockSessionService.signedIn(), urlSession: StubImageURLProtocol.session)
+        async let first = networked.image(at: url)
+        async let second = networked.image(at: url)
+        await log.waitForCount(1) // both calls arrived before either fetch is allowed to finish
+        gate.open()
+        let (a, b) = await (first, second)
+        #expect(a != nil)
+        #expect(a === b) // the second caller awaited the first's in-flight task, not a fetch of its own
+        #expect(log.entries.count == 1)
+    }
+
+    @Test func `AC23c a non-2xx response yields nil instead of decoding the body`() async throws {
+        let url = try #require(URL(string: "https://\(UUID()).stub/missing.png"))
+        let imageData = Self.fixturePNGData() // valid image bytes: proves the nil comes from the status check, not a decode failure
+        StubImageURLProtocol.register(url) { (404, imageData) }
+        let networked = ImageService(builder: MockImageURLBuilder(), sessionService: MockSessionService.signedIn(), urlSession: StubImageURLProtocol.session)
+        let image = await networked.image(at: url)
+        #expect(image == nil)
+    }
+
+    private static func fixturePNGData() -> Data {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
+        return renderer.pngData { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
+        }
     }
 }

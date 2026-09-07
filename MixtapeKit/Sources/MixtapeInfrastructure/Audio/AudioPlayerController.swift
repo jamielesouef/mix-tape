@@ -27,14 +27,21 @@ public final class AudioPlayerController: AudioPlayerControlling {
     private var timeObserver: Any?
     private var endObserver: (any NSObjectProtocol)?
     private var statusObservation: NSKeyValueObservation?
+    private var interruptionObserver: (any NSObjectProtocol)?
+    private var routeChangeObserver: (any NSObjectProtocol)?
+    private var mediaResetObserver: (any NSObjectProtocol)?
     private var didConfigureSession = false
+    /// So a media-services reset (below) can reload what was playing; never read for anything else.
+    private var lastLoadedURL: URL?
 
     public init() {
         configureRemoteCommands()
+        configureSessionObservers()
     }
 
     public func load(url: URL) {
         configureSessionIfNeeded()
+        lastLoadedURL = url
         removeItemObservers()
         // Precise timing is opted in (slice 018, Triage 7 v2): AVFoundation otherwise estimates a FLAC
         // seek target by bitrate and its clock drifts from the audio it decodes — a seek near the end
@@ -118,9 +125,68 @@ public final class AudioPlayerController: AudioPlayerControlling {
             try AVAudioSession.sharedInstance().setCategory(.playback)
             try AVAudioSession.sharedInstance().setActive(true)
             didConfigureSession = true
+            AppLogger.playback.info("audio session configured: category .playback, active")
         } catch {
             AppLogger.playback.error("audio session configuration failed: \(error.localizedDescription)")
         }
+    }
+
+    /// Interruptions (phone call, another app's audio), route changes (headphones unplugged) and a
+    /// media-services reset all route through the existing pause/resume seam — `onRemotePause`/
+    /// `onRemotePlay` — rather than a new callback pair (slice 023 decision log): the service reacts
+    /// to a player that stopped for a reason outside the app exactly as it does to a remote command.
+    private func configureSessionObservers() {
+        let center = NotificationCenter.default
+        // `Notification` isn't `Sendable`, so each closure reads its `userInfo` here — outside the
+        // isolated block below — and only the extracted, `Sendable` raw values cross into it.
+        interruptionObserver = center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
+            guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt else { return }
+            let optionsValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            MainActor.assumeIsolated { // the system posts this notification on the main thread
+                self?.handleInterruption(typeValue: typeValue, optionsValue: optionsValue)
+            }
+        }
+        routeChangeObserver = center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] notification in
+            guard let reasonValue = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt else { return }
+            MainActor.assumeIsolated { // posted on a secondary thread; `queue: .main` marshals it here
+                self?.handleRouteChange(reasonValue: reasonValue)
+            }
+        }
+        mediaResetObserver = center.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { // the system posts this notification on the main thread
+                self?.handleMediaServicesReset()
+            }
+        }
+        AppLogger.playback.info("audio session interruption/route-change/reset observers registered")
+    }
+
+    private func handleInterruption(typeValue: UInt, optionsValue: UInt) {
+        guard let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+        let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+        switch audioInterruptionAction(type: type, options: options) {
+        case .pause: onRemotePause?()
+        case .resume: onRemotePlay?()
+        case .none: break
+        }
+    }
+
+    /// Headphones/speaker unplugged mid-playback pauses, matching system convention for media apps.
+    private func handleRouteChange(reasonValue: UInt) {
+        guard let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue), reason == .oldDeviceUnavailable else { return }
+        onRemotePause?()
+    }
+
+    /// Apple's guidance for this notification: reinitialize audio objects and the session
+    /// configuration, but never restart playback except on user action — so this reloads whatever
+    /// was loaded, and never calls `play()`.
+    private func handleMediaServicesReset() {
+        didConfigureSession = false
+        AppLogger.playback.error("media services reset; reconfiguring audio session")
+        guard let lastLoadedURL else {
+            configureSessionIfNeeded()
+            return
+        }
+        load(url: lastLoadedURL)
     }
 
     private func configureRemoteCommands() {

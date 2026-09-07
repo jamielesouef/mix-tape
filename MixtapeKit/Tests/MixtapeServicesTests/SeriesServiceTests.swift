@@ -40,6 +40,62 @@ struct SeriesServiceTests {
         #expect(recorder.urls == ["series-1/season-1", "series-1/season-1"])
     }
 
+    // MARK: Slice 023 — refresh invalidation, season/episode coalescing
+
+    @Test func `refresh while loadSeasons is in flight does not let the stale response repopulate the cleared cache`() async {
+        let gate = Gate()
+        gate.close()
+        let started = Recorder()
+        let repository = MockLibraryRepository(seasonsResult: { id, _ in
+            started.append(id)
+            await gate.wait()
+            return MockLibraryRepository.sampleSeasons
+        })
+        let service = MockSeriesService.make(repository: repository)
+        let load = Task { await service.loadSeasons(seriesID: "series-1") }
+        #expect(await eventually { started.urls == ["series-1"] }) // proves the fetch is genuinely in flight
+        service.refresh() // bumps the generation and clears seasons before the stale write can land
+        gate.open()
+        await load.value
+        #expect(service.seasons["series-1"] == nil)
+    }
+
+    @Test func `concurrent loadSeasons requests for the same series fire one network call`() async {
+        let recorder = Recorder()
+        let gate = Gate()
+        gate.close()
+        let repository = MockLibraryRepository(seasonsResult: { id, _ in
+            recorder.append(id)
+            await gate.wait()
+            return MockLibraryRepository.sampleSeasons
+        })
+        let service = MockSeriesService.make(repository: repository)
+        let first = Task { await service.loadSeasons(seriesID: "series-1") }
+        await Task.yield()
+        await service.loadSeasons(seriesID: "series-1") // returns at once: the first is still in flight
+        gate.open()
+        await first.value
+        #expect(recorder.urls == ["series-1"])
+    }
+
+    @Test func `concurrent loadEpisodes requests for the same season fire one network call`() async {
+        let recorder = Recorder()
+        let gate = Gate()
+        gate.close()
+        let repository = MockLibraryRepository(episodesResult: { series, season, _ in
+            recorder.append("\(series)/\(season)")
+            await gate.wait()
+            return MockLibraryRepository.sampleEpisodes
+        })
+        let service = MockSeriesService.make(repository: repository)
+        let first = Task { await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1") }
+        await Task.yield()
+        await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1") // returns at once: in flight
+        gate.open()
+        await first.value
+        #expect(recorder.urls == ["series-1/season-1"])
+    }
+
     @Test func `failure lands in failed and expiry signs out`() async {
         let sessionService = MockSessionService.signedIn()
         let repository = MockLibraryRepository(
