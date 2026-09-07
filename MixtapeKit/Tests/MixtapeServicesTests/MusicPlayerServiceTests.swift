@@ -195,6 +195,41 @@ struct MusicPlayerServiceTests {
         #expect(controller.seeks.last == .zero)
     }
 
+    // MARK: Slice 020 — session-owned teardown
+
+    @Test func `sign-out mid album stops the player synchronously before the stopped report lands`() async {
+        let gate = Gate()
+        gate.close()
+        let reports = ReportLog()
+        let repository = MockPlaybackRepository(reportStoppedResult: { report, _ in
+            await gate.wait()
+            reports.append("stopped \(report.itemID)")
+        })
+        let controller = StubAudioPlayerController()
+        let sessionService = MockSessionService.signedIn()
+        let service = MusicPlayerService(
+            controller: controller,
+            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: repository),
+            reportStart: ReportPlaybackStartUseCase(repository: repository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: repository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
+            sessionService: sessionService,
+        )
+        sessionService.onSessionEnded = { session in service.endSession(session) }
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        #expect(service.status == .playing)
+        sessionService.signOut()
+        // Synchronous, right after signOut() returns: the controller has already stopped and the
+        // service is idle, while the stopped report is still held behind the gate.
+        #expect(service.status == .idle)
+        #expect(service.album == nil)
+        #expect(service.queue.isEmpty)
+        #expect(controller.stopCount == 1)
+        #expect(reports.entries.isEmpty)
+        gate.open()
+        #expect(await eventually { reports.entries == ["stopped \(tracks[0].id)"] })
+    }
+
     // MARK: §6 cadences (slice 014)
 
     @Test func `now playing refreshes every five seconds and progress reports every ten`() async {

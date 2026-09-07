@@ -132,8 +132,12 @@ struct LibraryServiceTests {
     @Test func `session expiry is handed to the session service`() async {
         let sessionService = MockSessionService.signedIn()
         let service = makeService(repository: MockLibraryRepository(librariesResult: { _ in throw MixtapeError.sessionExpired }), sessionService: sessionService)
+        // Slice 020: wired the way `AppContainer` wires it, so the epoch guard's skipped `.failed`
+        // write (decision log row 4) is observed as the `endSession()` reset it lands on, not as
+        // whatever `.failed(.sessionExpired)` used to look like pre-020.
+        sessionService.onSessionEnded = { _ in service.endSession() }
         await service.loadHome()
-        #expect(service.libraries == .failed(.sessionExpired))
+        #expect(service.libraries == .idle)
         #expect(sessionService.state == .signedOut)
         #expect(sessionService.error == .sessionExpired)
     }
@@ -176,6 +180,76 @@ struct LibraryServiceTests {
         #expect(service.tracks["album-1"] == .loaded(MockLibraryRepository.sampleTracks))
         #expect(service.details["movie-2"] == .loaded(MockLibraryRepository.sampleMovies[1]))
         #expect(recorder.urls == ["tracks album-1", "detail movie-2"])
+    }
+
+    // MARK: Slice 020 — session-owned teardown
+
+    @Test func `sign-out clears the cross-user cache and the next sign-in fetches fresh data`() async {
+        let server = MockAuthRepository.sampleServer
+        let userA = MockAuthRepository.sampleSession
+        let userB = UserSession(serverURL: server.baseURL, userID: "user-2", userName: "riley", accessToken: "token-2", deviceID: "device-2")
+        let authRepository = MockAuthRepository(authenticateResult: { userName, _, _ in userName == "riley" ? userB : userA })
+        let store = MockSessionStore()
+        let sessionService = SessionService(
+            validateServer: ValidateServerUseCase(repository: authRepository),
+            signInWithPassword: SignInWithPasswordUseCase(repository: authRepository, store: store),
+            startQuickConnect: StartQuickConnectUseCase(repository: authRepository),
+            pollQuickConnect: PollQuickConnectUseCase(repository: authRepository, store: store),
+            restoreSession: RestoreSessionUseCase(store: store),
+            signOut: SignOutUseCase(store: store),
+            serverIdentity: server,
+        )
+        let calls = Recorder()
+        let repository = MockLibraryRepository(librariesResult: { session in
+            calls.append(session.userID)
+            return MockLibraryRepository.sampleLibraries
+        })
+        let service = makeService(repository: repository, sessionService: sessionService)
+        sessionService.onSessionEnded = { _ in service.endSession() }
+
+        await sessionService.signIn(userName: "jamie", password: "pw")
+        await service.loadLibrary(id: movies.id) // AC20a
+        #expect(service.pages[movies.id]?.isLoaded == true)
+
+        sessionService.signOut()
+        #expect(service.pages.isEmpty)
+        #expect(service.libraries == .idle)
+
+        await sessionService.validateServer(urlText: "localhost:8096") // signOut() cleared serverIdentity
+        await sessionService.signIn(userName: "riley", password: "pw") // AC20b
+        await service.loadHome()
+        #expect(calls.urls.filter { $0 == userB.userID }.count == 1)
+        #expect(service.libraries.isLoaded) // the epoch guard let B's write land, not "already loaded"
+    }
+
+    @Test func `an externally triggered session end mid fetch never writes a stale page`() async {
+        let gate = Gate()
+        gate.close()
+        let started = Recorder()
+        let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
+            started.append("started")
+            await gate.wait()
+            return Page(items: [Self.movie("m0")], totalCount: 1, startIndex: page.startIndex)
+        })
+        let sessionService = MockSessionService.signedIn()
+        let service = makeService(repository: repository, sessionService: sessionService)
+        sessionService.onSessionEnded = { _ in service.endSession() }
+        let load = Task { await service.loadLibrary(id: movies.id) }
+        #expect(await eventually { started.urls == ["started"] }) // proves the fetch is genuinely in flight
+        sessionService.signOut() // external to this fetch: not its own catch block
+        gate.open()
+        await load.value
+        #expect(service.pages[movies.id] == nil)
+    }
+
+    @Test func `a session-expiry thrown from the fetch itself never repopulates the cleared cache`() async {
+        let sessionService = MockSessionService.signedIn()
+        let repository = MockLibraryRepository(itemsResult: { _, _, _, _ in throw MixtapeError.sessionExpired })
+        let service = makeService(repository: repository, sessionService: sessionService)
+        sessionService.onSessionEnded = { _ in service.endSession() }
+        await service.loadLibrary(id: movies.id)
+        #expect(service.pages[movies.id] == nil)
+        #expect(sessionService.state == .signedOut)
     }
 
     private nonisolated static func movie(_ id: String) -> MediaItem {

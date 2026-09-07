@@ -87,6 +87,20 @@ struct AppContainer {
             sessionService: sessionService,
             artworkProvider: { track in await imageServiceRef.image(for: track, kind: .primary, maxHeight: 600) },
         )
+
+        // Slice 020: the only place all six services are visible wires the teardown fan-out —
+        // SessionService holds no reference to any of them, only this closure. ImageService is
+        // deliberately excluded (decision log: its cache keys carry no auth and no user id).
+        let libraryServiceRef = libraryService
+        let seriesServiceRef = seriesService
+        let musicPlayerServiceRef = musicPlayerService
+        let videoPlaybackServiceRef = videoPlaybackService
+        sessionService.onSessionEnded = { session in
+            libraryServiceRef.endSession()
+            seriesServiceRef.endSession()
+            musicPlayerServiceRef.endSession(session)
+            videoPlaybackServiceRef.endSession(session)
+        }
     }
 
     /// The shipped profile is always `permissive`. In DEBUG builds the `-mixtape-force-transcode`

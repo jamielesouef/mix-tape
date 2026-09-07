@@ -47,7 +47,7 @@ Ordered by delivery sequence — the same order as the linked list.
 | 017 | Spec document reconciliation | P2 | S | adw-run | Done | [017](017-spec-document-reconciliation.md) |
 | 018 | Audio end-of-track failure (Triage 7 v2) | P2 | M | adw-run | Done | [018](018-audio-end-of-track-failure.md) |
 | 019 | Codex review — bounded fixes | P1 | M | adw-run | Done | [019](019-codex-review-bounded-fixes.md) |
-| 020 | Session-owned teardown and cache invalidation | P0 | M | — | Not started | [020](020-session-owned-teardown.md) |
+| 020 | Session-owned teardown and cache invalidation | P0 | M | adw-run | Done | [020](020-session-owned-teardown.md) |
 | 021 | Playback operation generations and off-path reporting | P0 | L | — | Not started | [021](021-playback-operation-generations.md) |
 | 022 | Direct-stream URL for direct-stream-only sources | P1 | M | — | Not started | [022](022-direct-stream-url.md) |
 | 023 | Audio session and service hardening | P2 | L | — | Not started | [023](023-audio-session-and-service-hardening.md) |

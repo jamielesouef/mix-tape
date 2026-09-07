@@ -179,6 +179,29 @@ public final class MusicPlayerService {
         claimedFinishID = nil
     }
 
+    /// Slice 020: `SessionService`'s fan-out calls this synchronously when session `endedSession`
+    /// ends — sign-out or expiry. `controller.stop()` and the `.idle` transition happen before this
+    /// returns; whatever was playing gets a best-effort stopped report fired on `endedSession` (not
+    /// `self.session`, already nil by the time the report use case runs) rather than blocking the
+    /// caller on the network (decision log).
+    public func endSession(_ endedSession: UserSession) {
+        progressTask?.cancel()
+        progressTask = nil
+        let pendingReport = current.map {
+            report(for: $0, position: position, isPaused: false, stream: buildAudioStreamURL(track: $0, session: endedSession))
+        }
+        controller.stop()
+        status = .idle
+        album = nil
+        queue = []
+        currentIndex = nil
+        position = .zero
+        finishedAlbumID = nil
+        claimedFinishID = nil
+        guard let pendingReport else { return }
+        Task { [reportStopped] in await reportStopped(pendingReport, session: endedSession) }
+    }
+
     // MARK: - Private
 
     private func start(index: Int) async {

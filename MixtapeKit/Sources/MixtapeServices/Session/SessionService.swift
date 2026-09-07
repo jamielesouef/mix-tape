@@ -37,6 +37,10 @@ public final class SessionService {
     static let pollTimeout: Duration = .seconds(5 * 60)
 
     @ObservationIgnored var pollTask: Task<Void, Never>?
+    /// Slice 020: `AppContainer` wires this once, after constructing every session-scoped service,
+    /// to their `endSession()` fan-out. Not a service locator — `SessionService` never holds a
+    /// reference to any of them, only this one closure the composition root hands it (decision log).
+    @ObservationIgnored public var onSessionEnded: ((UserSession) -> Void)?
 
     public init(
         validateServer: ValidateServerUseCase,
@@ -138,6 +142,7 @@ public final class SessionService {
     public func signOut() {
         pollTask?.cancel()
         pollTask = nil
+        let endedSession = signedInSession
         do {
             try signOutUseCase()
             error = nil
@@ -147,6 +152,9 @@ public final class SessionService {
         state = .signedOut
         serverIdentity = nil
         quickConnect = .idle
+        if let endedSession {
+            onSessionEnded?(endedSession)
+        }
     }
 
     /// Clears the stored session and returns to `.signedOut`, keeping the server so the user
@@ -154,10 +162,14 @@ public final class SessionService {
     public func handleSessionExpiry() {
         pollTask?.cancel()
         pollTask = nil
+        let endedSession = signedInSession
         try? signOutUseCase() // the session is already invalid; a Keychain failure changes nothing about that
         state = .signedOut
         quickConnect = .idle
         error = .sessionExpired
+        if let endedSession {
+            onSessionEnded?(endedSession)
+        }
     }
 
     private func poll(secret: String, server: ServerIdentity) async {
@@ -186,6 +198,13 @@ public final class SessionService {
         }
         guard Task.isCancelled == false else { return }
         quickConnect = .failed(.quickConnectExpired)
+    }
+
+    private var signedInSession: UserSession? {
+        if case let .signedIn(session) = state {
+            return session
+        }
+        return nil
     }
 
     private func handle(_ error: any Error) {

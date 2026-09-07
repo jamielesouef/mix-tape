@@ -118,6 +118,21 @@ struct VideoPlaybackServiceTests {
         #expect(unreachable.status == .failed(.serverUnreachable))
     }
 
+    // MARK: Slice 020 — session-owned teardown
+
+    @Test func `session expiry stops video synchronously and tears down the controller`() async {
+        let sessionService = MockSessionService.signedIn()
+        let service = makeService(sessionService: sessionService) { _ in controller }
+        sessionService.onSessionEnded = { session in service.endSession(session) }
+        await service.play(item: movie, startAt: .zero)
+        #expect(service.status == .playing)
+        sessionService.handleSessionExpiry()
+        #expect(service.status == .idle)
+        #expect(service.item == nil)
+        #expect(service.plan == nil)
+        #expect(controller.calls.last == "teardown")
+    }
+
     @Test func `end of playback stops`() async {
         let service = makeService { _ in controller }
         await service.play(item: movie, startAt: .zero)

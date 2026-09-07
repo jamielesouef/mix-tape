@@ -46,22 +46,24 @@ Codex High #1: `SessionService` clears its own credentials but nothing else, so 
 
 ## 4. Pre-Flight Validation
 
-- [ ] **019** — open it; confirm the evidence paragraph's observation (mini player survives sign-out and two sign-ins) still reproduces before this slice's fix, so the acceptance run has a documented "before" to contrast with "after".
-- [ ] Confirm `UserSession` (`MixtapeDomain/UserSession.swift`) is `Equatable` — the sign-out guard below compares a captured session against `SessionService`'s current one by value, not identity.
-- [ ] Confirm `AppContainer` (`Apps/Shared/AppContainer.swift`) is still the only place all six services are visible — the fan-out this slice adds is wired there, not inside `SessionService`.
-- [ ] Architecture standards doc re-read; nothing changed underneath this slice.
+- [x] **019** — open it; confirm the evidence paragraph's observation (mini player survives sign-out and two sign-ins) still reproduces before this slice's fix, so the acceptance run has a documented "before" to contrast with "after".
+- [x] Confirm `UserSession` (`MixtapeDomain/UserSession.swift`) is `Equatable` — the sign-out guard below compares a captured session against `SessionService`'s current one by value, not identity.
+- [x] Confirm `AppContainer` (`Apps/Shared/AppContainer.swift`) is still the only place all six services are visible — the fan-out this slice adds is wired there, not inside `SessionService`.
+- [x] Architecture standards doc re-read; nothing changed underneath this slice.
 
 **Drift found:** none.
 
 ## 5. Acceptance Criteria
 
-- [ ] **AC20a** — `MixtapeServicesTests`: sign in as user A (`SessionService.state = .signedIn(A)`), call `LibraryService.loadLibrary(id:)`, assert `pages[id]` is `.loaded`. Call `SessionService.signOut()`. Assert `libraryService.pages` is empty and `libraryService.libraries == .idle` (not `.failed`).
-- [ ] **AC20b** — same test, continued: sign in as user B, assert `LibraryService.loadHome()` fetches fresh data (the stub repository's call count for user B is 1, not 0) — the idle state actually triggers a refetch rather than being mistaken for "already loaded".
-- [ ] **AC20c** — `MixtapeServicesTests`: with `MusicPlayerService` mid-album (`status == .playing`), call `SessionService.signOut()`. Assert synchronously after the call: `status == .idle`, `album == nil`, `queue.isEmpty`. Assert the stub audio controller's `stop()` was called before any reporting stub method returns (ordering, not just eventual state).
-- [ ] **AC20d** — same shape for `VideoPlaybackService`: mid-playback, `SessionService.handleSessionExpiry()` is called (the `.sessionExpired` path, not just explicit sign-out); assert `status == .idle` and the stub video controller's `teardown()` was called.
-- [ ] **AC20e** — `MixtapeServicesTests`: reproduces the re-entrancy hazard directly, two ways. (i) The general case — `LibraryService.loadLibrary(id:)` is in flight against a stub repository held open on a `Gate`; while it is in flight, `SessionService.handleSessionExpiry()` fires *externally*; the gate is then opened and the stub's (now-stale) response arrives. Assert `pages[id]` stays absent (or `.idle`), never `.failed` with the stale error and never `.loaded` with the stale page. (ii) The narrower, own-catch-block case bullet 3 names — the stub repository's `fetchLibraryItems` itself `throw`s `.sessionExpired` (no external `Gate`, no separate trigger), so `handle(error)` is invoked synchronously from inside `loadLibrary`'s own `catch` clause and fires the fan-out from there. Assert `pages[id]` never receives the stale `.failed` write in this exact control flow — a fix that only passes case (i) does not necessarily pass case (ii).
-- [ ] **AC20f** — iOS simulator, `localhost:8096`: play an album, confirm `/Sessions` shows the app's session with `NowPlayingItem` via `jf-probe.swift`, sign out, and within 2 s `/Sessions` shows no `NowPlayingItem` for the app's device and the mini player is gone from every tab. Sign in as a second test account (or the same account twice) and confirm Home loads fresh rather than showing a stale spinner state.
-- [ ] `xcodebuild build` and `test` pass for both schemes; layer, glass and swiftformat clean.
+- [x] **AC20a** — `MixtapeServicesTests`: sign in as user A (`SessionService.state = .signedIn(A)`), call `LibraryService.loadLibrary(id:)`, assert `pages[id]` is `.loaded`. Call `SessionService.signOut()`. Assert `libraryService.pages` is empty and `libraryService.libraries == .idle` (not `.failed`).
+- [x] **AC20b** — same test, continued: sign in as user B, assert `LibraryService.loadHome()` fetches fresh data (the stub repository's call count for user B is 1, not 0) — the idle state actually triggers a refetch rather than being mistaken for "already loaded".
+- [x] **AC20c** — `MixtapeServicesTests`: with `MusicPlayerService` mid-album (`status == .playing`), call `SessionService.signOut()`. Assert synchronously after the call: `status == .idle`, `album == nil`, `queue.isEmpty`. Assert the stub audio controller's `stop()` was called before any reporting stub method returns (ordering, not just eventual state).
+- [x] **AC20d** — same shape for `VideoPlaybackService`: mid-playback, `SessionService.handleSessionExpiry()` is called (the `.sessionExpired` path, not just explicit sign-out); assert `status == .idle` and the stub video controller's `teardown()` was called.
+- [x] **AC20e** — `MixtapeServicesTests`: reproduces the re-entrancy hazard directly, two ways. (i) The general case — `LibraryService.loadLibrary(id:)` is in flight against a stub repository held open on a `Gate`; while it is in flight, `SessionService.handleSessionExpiry()` fires *externally*; the gate is then opened and the stub's (now-stale) response arrives. Assert `pages[id]` stays absent (or `.idle`), never `.failed` with the stale error and never `.loaded` with the stale page. (ii) The narrower, own-catch-block case bullet 3 names — the stub repository's `fetchLibraryItems` itself `throw`s `.sessionExpired` (no external `Gate`, no separate trigger), so `handle(error)` is invoked synchronously from inside `loadLibrary`'s own `catch` clause and fires the fan-out from there. Assert `pages[id]` never receives the stale `.failed` write in this exact control flow — a fix that only passes case (i) does not necessarily pass case (ii).
+- [x] **AC20f** — iOS simulator, `localhost:8096`: play an album, confirm `/Sessions` shows the app's session with `NowPlayingItem` via `jf-probe.swift`, sign out, and within 2 s `/Sessions` shows no `NowPlayingItem` for the app's device and the mini player is gone from every tab. Sign in as a second test account (or the same account twice) and confirm Home loads fresh rather than showing a stale spinner state.
+- [x] `xcodebuild build` and `test` pass for both schemes; layer, glass and swiftformat clean.
+
+**Evidence, 2026-09-07, iPhone 17 Pro simulator (iOS 26.5) against `localhost:8096`, read through `scripts/jf-probe.swift /Sessions` and `idb ui describe-all`.** Gate: `.gate-log` 14:01:59, 192/0/0 on both schemes (five new `MixtapeServicesTests`, AC20a–e). Pre-flight: `UserSession` is `Equatable` (`MixtapeDomain/UserSession.swift:9`); `AppContainer` is still the only holder of all six services; the 019 observation reproduced before the fix. *AC20f* — "King Of Terrors" playing, `/Sessions` showing `NowPlayingItem` "In the Name of the Father" at 6 s; `settings.signOutButton`; the next screen was `serverEntry.urlField` with no `miniPlayer.*` element, and `/Sessions` read within 2 s showed the app's device with no `NowPlayingItem`. Signing in again landed on Home and the Libraries tab listed Movies and Music from a fresh fetch. Choices recorded by the implementer: the fan-out is a closure `SessionService.onSessionEnded` set once by `AppContainer` (sign-out is called from `SettingsScreen`, so a return value would never reach the root); only `signOut()` and `handleSessionExpiry()` fire it, because no code path replaces a live session without signing out first. Input for 021, not fixed here: `VideoPlaybackService.play()`'s `catch` still writes `.failed(.sessionExpired)` after `handle(error)` has already ended the session — the generation guard 021 adds to that `catch` closes it. Input for 023: with `onSessionEnded` unwired (tests, previews) an expiry leaves a cache at `.loading`; production always wires it.
 
 ## 6. Decision Log
 
@@ -99,10 +101,10 @@ Commit this file alongside the code, with the slice id in the subject (`020: …
 
 ## 10. Definition of Done
 
-- [ ] Acceptance criteria met
-- [ ] Tests passing, in a target that exists
-- [ ] Decision log written as you went, not reconstructed
-- [ ] Pre-flight completed and drift resolved
-- [ ] Master checklist row current
-- [ ] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
-- [ ] Both link directions checked: this page's `next_slice` and that page's `previous_slice`
+- [x] Acceptance criteria met
+- [x] Tests passing, in a target that exists
+- [x] Decision log written as you went, not reconstructed
+- [x] Pre-flight completed and drift resolved
+- [x] Master checklist row current
+- [x] `next_slice`'s `depends_on` reflects what actually shipped, not what was planned
+- [x] Both link directions checked: this page's `next_slice` and that page's `previous_slice`

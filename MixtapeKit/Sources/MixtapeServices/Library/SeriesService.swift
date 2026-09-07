@@ -35,31 +35,52 @@ public final class SeriesService {
 
     public func loadSeasons(seriesID: String) async {
         guard let session else { return }
+        let epoch = session
         if case .loaded = seasons[seriesID] {
             return
         }
         seasons[seriesID] = .loading
         do {
-            seasons[seriesID] = try await .loaded(fetchSeasons(seriesID: seriesID, session: session))
+            let loaded = try await fetchSeasons(seriesID: seriesID, session: session)
+            if self.session == epoch {
+                seasons[seriesID] = .loaded(loaded)
+            }
         } catch {
-            seasons[seriesID] = .failed(handle(error))
+            let mapped = handle(error)
+            if self.session == epoch {
+                seasons[seriesID] = .failed(mapped)
+            }
         }
     }
 
     public func loadEpisodes(seriesID: String, seasonID: String) async {
         guard let session else { return }
+        let epoch = session
         if case .loaded = episodes[seasonID] {
             return
         }
         episodes[seasonID] = .loading
         do {
-            episodes[seasonID] = try await .loaded(fetchEpisodes(seriesID: seriesID, seasonID: seasonID, session: session))
+            let loaded = try await fetchEpisodes(seriesID: seriesID, seasonID: seasonID, session: session)
+            if self.session == epoch {
+                episodes[seasonID] = .loaded(loaded)
+            }
         } catch {
-            episodes[seasonID] = .failed(handle(error))
+            let mapped = handle(error)
+            if self.session == epoch {
+                episodes[seasonID] = .failed(mapped)
+            }
         }
     }
 
     public func refresh() {
+        seasons = [:]
+        episodes = [:]
+    }
+
+    /// Slice 020: `SessionService`'s fan-out calls this when a session ends — sign-out or expiry.
+    /// Every cache returns to empty, never `.failed` — same rationale as `LibraryService.endSession()`.
+    public func endSession() {
         seasons = [:]
         episodes = [:]
     }

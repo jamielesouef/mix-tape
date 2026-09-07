@@ -47,10 +47,13 @@ struct SeriesServiceTests {
             episodesResult: { _, _, _ in throw MixtapeError.sessionExpired },
         )
         let service = MockSeriesService.make(repository: repository, sessionService: sessionService)
+        // Slice 020: wired the way `AppContainer` wires it, so expiry's `.failed` write (unreachable
+        // by the epoch guard per decision log row 4) is observed as the `endSession()` reset instead.
+        sessionService.onSessionEnded = { _ in service.endSession() }
         await service.loadSeasons(seriesID: "series-1")
         #expect(service.seasons["series-1"] == .failed(.serverUnreachable))
         await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1")
-        #expect(service.episodes["season-1"] == .failed(.sessionExpired))
+        #expect(service.episodes["season-1"] == nil) // endSession() cleared it; the stale write never lands
         #expect(sessionService.state == .signedOut)
     }
 }

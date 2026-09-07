@@ -172,6 +172,27 @@ public final class VideoPlaybackService {
         }
     }
 
+    /// Slice 020: `SessionService`'s fan-out calls this synchronously when session `endedSession`
+    /// ends — sign-out or expiry. `controller.teardown()` and the `.idle` transition happen before
+    /// this returns; a best-effort stopped report for whatever was playing fires on `endedSession`
+    /// (not `self.session`, already nil by the time the report use case runs) rather than blocking
+    /// the caller on the network — same shape as `MusicPlayerService.endSession(_:)` (decision log).
+    /// No `libraryService?.refresh()` here: unlike `stop()`, this is not a "finished watching" event.
+    public func endSession(_ endedSession: UserSession) {
+        progressTask?.cancel()
+        progressTask = nil
+        let pendingReport = plan.map { report(plan: $0, position: stopReportPosition(), isPaused: false) }
+        controller?.teardown()
+        controller = nil
+        status = .idle
+        plan = nil
+        item = nil
+        position = .zero
+        duration = nil
+        guard let pendingReport else { return }
+        Task { [reportStopped] in await reportStopped(pendingReport, session: endedSession) }
+    }
+
     /// `true` when the last-known position reaches the watched threshold for the current runtime.
     var reachesWatchedThreshold: Bool {
         guard let duration else { return false }
