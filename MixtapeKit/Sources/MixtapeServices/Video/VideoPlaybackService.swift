@@ -26,6 +26,14 @@ public final class VideoPlaybackService {
 
     @ObservationIgnored private var controller: (any VideoPlayerControlling)?
     @ObservationIgnored private var progressTask: Task<Void, Never>?
+    /// Slice 021: which playback operation is current. Minted at the top of `play()` and inside
+    /// `tearDown`, so a stale `resolveVideo` completion or controller callback from an operation
+    /// that has since moved on can never touch a newer or stopped state (decision log).
+    @ObservationIgnored private var currentGeneration = OperationGeneration()
+    /// Slice 021: off-path reports for this player are chained through this one reference so a
+    /// rapid double-skip cannot deliver a later item's start to the server before an earlier
+    /// item's stop (decision log).
+    @ObservationIgnored private var reportTask: Task<Void, Never>?
     private let resolveVideo: ResolveVideoPlaybackUseCase
     private let reportStart: ReportPlaybackStartUseCase
     private let reportProgress: ReportPlaybackProgressUseCase
@@ -77,9 +85,13 @@ public final class VideoPlaybackService {
     }
 
     /// Resolves, reports the start, loads and plays. `startAt` is `.zero` for Play and the
-    /// item's server position for Resume.
+    /// item's server position for Resume. Slice 021: every closure this installs, and the
+    /// resolution failure path, are guarded by the generation minted here — a stale completion
+    /// from an operation this call has since replaced can no longer touch state.
     public func play(item: MediaItem, startAt: Duration) async {
         guard let session else { return }
+        let generation = OperationGeneration()
+        currentGeneration = generation
         controller?.teardown()
         controller = nil
         progressTask?.cancel()
@@ -90,7 +102,7 @@ public final class VideoPlaybackService {
         duration = item.runtime
         do {
             let plan = try await resolveVideo(itemID: item.id, startAt: startAt, session: session)
-            guard status == .preparing, self.item?.id == item.id else { return } // stopped while resolving
+            guard status == .preparing, generation == currentGeneration else { return } // stopped or replaced while resolving
             self.plan = plan
             duration = plan.totalDuration ?? item.runtime
             guard let controller = makeController(plan.method) else {
@@ -98,18 +110,32 @@ public final class VideoPlaybackService {
                 return
             }
             self.controller = controller
-            controller.onPositionChange = { [weak self] position in self?.position = position }
-            controller.onTransportEvent = { [weak self] event in self?.handleTransport(event) }
-            controller.onEnded = { [weak self] in
-                Task { await self?.stop() }
+            controller.onPositionChange = { [weak self] position in
+                guard let self, generation == currentGeneration else { return }
+                self.position = position
             }
-            controller.onFailure = { [weak self] error in self?.status = .failed(error) }
+            controller.onTransportEvent = { [weak self] event in
+                guard let self, generation == currentGeneration else { return }
+                handleTransport(event)
+            }
+            controller.onEnded = { [weak self] in
+                guard let self, generation == currentGeneration else { return }
+                Task { await self.stop() }
+            }
+            controller.onFailure = { [weak self] error in
+                guard let self, generation == currentGeneration else { return }
+                status = .failed(error)
+            }
             controller.load(url: plan.streamURL, startAt: startAt, headers: [:])
             controller.play()
             status = .playing
-            await reportStart(report(plan: plan, position: startAt, isPaused: false), session: session)
-            startProgressReporting()
+            let startReport = report(plan: plan, position: startAt, isPaused: false)
+            enqueueReport { [reportStart] in await reportStart(startReport, session: session) }
+            await reportTask?.value
+            guard generation == currentGeneration else { return } // stopped while the start report was in flight
+            startProgressReporting(generation: generation)
         } catch {
+            guard generation == currentGeneration else { return }
             status = .failed(handle(error))
         }
     }
@@ -151,13 +177,43 @@ public final class VideoPlaybackService {
     }
 
     /// Tears the player down, sends the stopped report, refreshes Home, and returns to `.idle`.
-    /// A position at or past 90% of the runtime (decision 8) is reported as the full duration so
-    /// Jellyfin marks the item watched; below that it is reported verbatim as the resume point.
     public func stop() async {
+        let session = session
+        let hadPlan = plan != nil && session != nil
+        tearDown(reportingTo: session)
+        guard hadPlan else { return }
+        await reportTask?.value
+        await libraryService?.refresh()
+    }
+
+    /// Slice 020: `AppContainer`'s fan-out calls this synchronously when session `endedSession`
+    /// ends — sign-out or expiry. `controller.teardown()` and the `.idle` transition happen before
+    /// this returns; a best-effort stopped report for whatever was playing is enqueued off-path
+    /// (slice 021) against `endedSession` (not `self.session`, already nil by the time the report
+    /// use case runs) rather than blocking the caller on the network — same shape as
+    /// `MusicPlayerService.endSession(_:)` (decision log). No `libraryService?.refresh()` here:
+    /// unlike `stop()`, this is not a "finished watching" event.
+    public func endSession(_ endedSession: UserSession) {
+        tearDown(reportingTo: endedSession)
+    }
+
+    /// `true` when the last-known position reaches the watched threshold for the current runtime.
+    var reachesWatchedThreshold: Bool {
+        guard let duration else { return false }
+        return PlaybackState.reachesWatchedThreshold(position: position, duration: duration)
+    }
+
+    /// Tears playback down to `.idle`, mints a fresh generation so no stale resolution or
+    /// controller callback from the operation just ended can touch state again, and enqueues the
+    /// stopped report (if there is one) on the chain rather than awaiting it — shared by `stop()`
+    /// and `endSession()` (slice 021 decision log). A position at or past 90% of the runtime
+    /// (decision 8) is reported as the full duration so Jellyfin marks the item watched; below
+    /// that it is reported verbatim as the resume point.
+    private func tearDown(reportingTo session: UserSession?) {
         progressTask?.cancel()
         progressTask = nil
+        currentGeneration = OperationGeneration()
         let plan = plan
-        let session = session
         let stoppedPosition = stopReportPosition()
         controller?.teardown()
         controller = nil
@@ -166,37 +222,9 @@ public final class VideoPlaybackService {
         item = nil
         position = .zero
         duration = nil
-        if let plan, let session {
-            await reportStopped(report(plan: plan, position: stoppedPosition, isPaused: false), session: session)
-            await libraryService?.refresh()
-        }
-    }
-
-    /// Slice 020: `SessionService`'s fan-out calls this synchronously when session `endedSession`
-    /// ends — sign-out or expiry. `controller.teardown()` and the `.idle` transition happen before
-    /// this returns; a best-effort stopped report for whatever was playing fires on `endedSession`
-    /// (not `self.session`, already nil by the time the report use case runs) rather than blocking
-    /// the caller on the network — same shape as `MusicPlayerService.endSession(_:)` (decision log).
-    /// No `libraryService?.refresh()` here: unlike `stop()`, this is not a "finished watching" event.
-    public func endSession(_ endedSession: UserSession) {
-        progressTask?.cancel()
-        progressTask = nil
-        let pendingReport = plan.map { report(plan: $0, position: stopReportPosition(), isPaused: false) }
-        controller?.teardown()
-        controller = nil
-        status = .idle
-        plan = nil
-        item = nil
-        position = .zero
-        duration = nil
-        guard let pendingReport else { return }
-        Task { [reportStopped] in await reportStopped(pendingReport, session: endedSession) }
-    }
-
-    /// `true` when the last-known position reaches the watched threshold for the current runtime.
-    var reachesWatchedThreshold: Bool {
-        guard let duration else { return false }
-        return PlaybackState.reachesWatchedThreshold(position: position, duration: duration)
+        guard let plan, let session else { return }
+        let stoppedReport = report(plan: plan, position: stoppedPosition, isPaused: false)
+        enqueueReport { [reportStopped] in await reportStopped(stoppedReport, session: session) }
     }
 
     private func stopReportPosition() -> Duration {
@@ -206,7 +234,10 @@ public final class VideoPlaybackService {
         return position
     }
 
-    private func startProgressReporting() {
+    /// Slice 021: also checks the operation generation, not only `status`, before sending —
+    /// a progress task started for an operation that has since been replaced or stopped sends
+    /// nothing.
+    private func startProgressReporting(generation: OperationGeneration) {
         progressTask?.cancel()
         progressTask = Task { [weak self] in
             while true {
@@ -217,7 +248,7 @@ public final class VideoPlaybackService {
                     return // cancelled
                 }
                 guard let self, Task.isCancelled == false else { return }
-                guard status == .playing, let plan, let session else { continue }
+                guard status == .playing, generation == currentGeneration, let plan, let session else { continue }
                 await reportProgress(report(plan: plan, position: position, isPaused: false), session: session)
             }
         }
@@ -227,6 +258,16 @@ public final class VideoPlaybackService {
     private func reportOnce(isPaused: Bool) {
         guard let plan, let session else { return }
         Task { await reportProgress(report(plan: plan, position: position, isPaused: isPaused), session: session) }
+    }
+
+    /// Chains one more off-path report after whatever is already pending, so reports for this
+    /// player land at the server in the order their operations happened (slice 021 decision log).
+    private func enqueueReport(_ send: @escaping () async -> Void) {
+        let previous = reportTask
+        reportTask = Task {
+            await previous?.value
+            await send()
+        }
     }
 
     private func report(plan: PlaybackPlan, position: Duration, isPaused: Bool) -> PlaybackReport {

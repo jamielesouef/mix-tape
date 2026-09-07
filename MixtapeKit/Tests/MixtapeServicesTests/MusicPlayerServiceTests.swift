@@ -230,6 +230,82 @@ struct MusicPlayerServiceTests {
         #expect(await eventually { reports.entries == ["stopped \(tracks[0].id)"] })
     }
 
+    // MARK: Slice 021 — operation generations
+
+    @Test func `AC21c rapid play-next-next serialises the reports in call order and never reverts the displayed track`() async {
+        let gate = Gate()
+        gate.close()
+        let reports = ReportLog()
+        let controller = StubAudioPlayerController()
+        let threeTracks = [Self.track("t0", index: 0), Self.track("t1", index: 1), Self.track("t2", index: 2)]
+        let repository = MockPlaybackRepository(
+            reportStartResult: { r, _ in await gate.wait(); reports.append("start \(r.itemID)") },
+            reportStoppedResult: { r, _ in await gate.wait(); reports.append("stopped \(r.itemID)") },
+        )
+        let service = MusicPlayerService(
+            controller: controller,
+            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: repository),
+            reportStart: ReportPlaybackStartUseCase(repository: repository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: repository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
+            sessionService: MockSessionService.signedIn(),
+        )
+        await service.play(album: album, tracks: threeTracks, startingAt: 0)
+        await service.next()
+        await service.next()
+        // The local transition already sits on track 2, with every report for the trip still held
+        // behind the gate.
+        #expect(service.current?.id == "t2")
+        #expect(reports.entries.isEmpty)
+        gate.open()
+        await reports.waitForCount(5)
+        #expect(reports.entries == ["start t0", "stopped t0", "start t1", "stopped t1", "start t2"])
+        #expect(service.current?.id == "t2") // never reverts to an earlier track once a later report drains
+    }
+
+    @Test func `AC21d next completes the local transition before its stopped report lands`() async {
+        let gate = Gate()
+        gate.close()
+        let reports = ReportLog()
+        let controller = StubAudioPlayerController()
+        let repository = MockPlaybackRepository(reportStoppedResult: { r, _ in
+            await gate.wait()
+            reports.append("stopped \(r.itemID)")
+        })
+        let service = MusicPlayerService(
+            controller: controller,
+            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: repository),
+            reportStart: ReportPlaybackStartUseCase(repository: repository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: repository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
+            sessionService: MockSessionService.signedIn(),
+        )
+        await service.play(album: album, tracks: tracks, startingAt: 0)
+        await service.next()
+        #expect(service.currentIndex == 1)
+        #expect(service.status == .playing)
+        #expect(controller.loadedURLs.count == 2) // track 0 then track 1, both loaded already
+        #expect(reports.entries.isEmpty) // track 0's stopped report is still behind the gate
+        gate.open()
+        await reports.waitForCount(1)
+        #expect(reports.entries == ["stopped \(tracks[0].id)"])
+    }
+
+    @Test func `AC21e a replacement play sends the interrupted album's stopped report before the new album's start`() async {
+        let reports = ReportLog()
+        let controller = StubAudioPlayerController()
+        let service = makeService(reports: reports, controller: controller)
+        await service.play(album: album, tracks: tracks, startingAt: 0) // album Y
+        let otherAlbum = MockLibraryRepository.sampleAlbums[1]
+        await service.play(album: otherAlbum, tracks: [Self.track("x0", index: 0)], startingAt: 0) // album X
+        await reports.waitForCount(3)
+        #expect(reports.entries == [
+            "start \(tracks[0].id)",
+            "stopped \(tracks[0].id)",
+            "start x0",
+        ])
+    }
+
     // MARK: §6 cadences (slice 014)
 
     @Test func `now playing refreshes every five seconds and progress reports every ten`() async {
@@ -259,5 +335,16 @@ struct MusicPlayerServiceTests {
         for _ in 0 ..< 30 {
             await Task.yield()
         }
+    }
+
+    /// A standalone track for the slice 021 generation tests, which need more distinct tracks than
+    /// `MockLibraryRepository.sampleTracks` (two, both on `album-1`) provides.
+    private static func track(_ id: String, index: Int) -> MediaItem {
+        MediaItem(
+            id: id, name: id, kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200),
+            indexNumber: index, parentIndexNumber: 1, seriesName: nil, albumArtist: "Test Artist",
+            primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: nil, albumID: "album-x",
+            playback: PlaybackState(position: .zero, isWatched: false),
+        )
     }
 }

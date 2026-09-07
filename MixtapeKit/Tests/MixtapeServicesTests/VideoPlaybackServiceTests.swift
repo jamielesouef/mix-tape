@@ -11,6 +11,19 @@ import MixtapeInfrastructure
 import MixtapeUseCase
 import Testing
 
+/// Mints and records a distinct `StubVideoPlayerController` per `makeController` call, so a test
+/// can tell an operation's own controller apart from the one that replaced it.
+@MainActor
+private final class ControllerSpy {
+    private(set) var instances: [StubVideoPlayerController] = []
+
+    func make(for _: PlaybackMethod) -> any VideoPlayerControlling {
+        let controller = StubVideoPlayerController()
+        instances.append(controller)
+        return controller
+    }
+}
+
 @Suite(.tags(.service))
 @MainActor
 struct VideoPlaybackServiceTests {
@@ -165,6 +178,116 @@ struct VideoPlaybackServiceTests {
         #expect(recorder.urls == ["directPlay"])
     }
 
+    // MARK: Slice 021 — operation generations
+
+    @Test func `AC21a a stale resolution for a replaced item never overwrites the newer item`() async {
+        let gate = Gate()
+        gate.close()
+        let movieA = movie
+        let movieB = MockLibraryRepository.sampleMovies[1]
+        let controller = StubVideoPlayerController()
+        let repository = MockPlaybackRepository(resolveVideoResult: { itemID, _, _ in
+            if itemID == movieA.id {
+                await gate.wait()
+            }
+            return MockPlaybackRepository.sampleResolution
+        })
+        let service = makeService(repository: repository) { _ in controller }
+        let stale = Task { await service.play(item: movieA, startAt: .zero) }
+        await Task.yield()
+        await service.play(item: movieB, startAt: .zero)
+        #expect(service.item == movieB)
+        #expect(service.plan?.itemID == movieB.id)
+        #expect(service.status == .playing)
+        let callsAfterB = controller.calls
+        gate.open()
+        await stale.value
+        #expect(controller.calls == callsAfterB) // A's late resolution installed nothing
+        #expect(service.item == movieB)
+        #expect(service.plan?.itemID == movieB.id)
+        #expect(service.status == .playing)
+    }
+
+    /// Reviewer finding on AC21a/AC21b/AC21h: those three gate `resolveVideo`, so the stale
+    /// operation always returns at the resolution guard (`VideoPlaybackService.swift:105`) and
+    /// never reaches installing a controller — the four callback guards at lines 113-128 are
+    /// exercised by nothing. This mints a distinct stub per `play()` call so A's controller is
+    /// actually installed and live, then fires its callbacks directly after B has replaced it.
+    @Test func `AC21a a stale controller's already-installed callbacks after a newer play never touch the newer state`() async {
+        let spy = ControllerSpy()
+        let service = makeService { method in spy.make(for: method) }
+        await service.play(item: movie, startAt: .zero) // A installs its own controller and callbacks
+        let staleController = spy.instances[0]
+        let movieB = MockLibraryRepository.sampleMovies[1]
+        await service.play(item: movieB, startAt: .seconds(3)) // B replaces A's generation
+        #expect(spy.instances.count == 2)
+        #expect(service.item == movieB)
+        #expect(service.position == .seconds(3))
+        #expect(service.status == .playing)
+
+        staleController.onPositionChange?(.seconds(99))
+        staleController.onTransportEvent?(.paused)
+        staleController.onEnded?()
+        staleController.onFailure?(.transport("stale"))
+
+        #expect(service.item == movieB)
+        #expect(service.position == .seconds(3))
+        #expect(service.status == .playing)
+    }
+
+    @Test func `AC21b a stale resolution for the same item never overwrites the later play of it`() async {
+        let gate = Gate()
+        gate.close()
+        let calls = Counter()
+        let controller = StubVideoPlayerController()
+        let repository = MockPlaybackRepository(resolveVideoResult: { _, _, _ in
+            if calls.next() == 0 {
+                await gate.wait()
+            }
+            return MockPlaybackRepository.sampleResolution
+        })
+        let service = makeService(repository: repository) { _ in controller }
+        let stale = Task { await service.play(item: movie, startAt: .zero) }
+        await Task.yield()
+        await service.play(item: movie, startAt: .seconds(5))
+        #expect(service.status == .playing)
+        #expect(service.position == .seconds(5))
+        let callsAfterSecond = controller.calls
+        gate.open()
+        await stale.value
+        // The item-ID-only guard this replaces would have let the first (stale) play's completion
+        // pass `self.item?.id == item.id` and overwrite the second's plan/controller.
+        #expect(controller.calls == callsAfterSecond)
+        #expect(service.status == .playing)
+        #expect(service.position == .seconds(5))
+    }
+
+    @Test(arguments: [false, true])
+    func `AC21h a stale resolution after stop cannot resurrect playback, success or failure`(shouldThrow: Bool) async {
+        let gate = Gate()
+        gate.close()
+        let controller = StubVideoPlayerController()
+        let repository = MockPlaybackRepository(resolveVideoResult: { _, _, _ in
+            await gate.wait()
+            if shouldThrow {
+                throw MixtapeError.serverUnreachable
+            }
+            return MockPlaybackRepository.sampleResolution
+        })
+        let service = makeService(repository: repository) { _ in controller }
+        let held = Task { await service.play(item: movie, startAt: .zero) }
+        await Task.yield()
+        #expect(service.status == .preparing)
+        await service.stop()
+        #expect(service.status == .idle)
+        #expect(service.item == nil)
+        gate.open()
+        await held.value
+        #expect(service.status == .idle)
+        #expect(service.item == nil)
+        #expect(controller.calls.isEmpty) // no controller ever installed by the stale completion
+    }
+
     // MARK: Reporting cadence (slice 008)
 
     /// Awaits the detached report tasks a synchronous control method fires.
@@ -196,15 +319,18 @@ struct VideoPlaybackServiceTests {
         ])
     }
 
+    /// Triage 25 (slice 021 AC21f): awaits the report landing directly via `ReportLog.waitForCount`,
+    /// resumed by `append` itself, instead of polling with `eventually` — no timing window to lose.
     @Test func `progress fires once per interval while playing`() async {
         let reports = ReportLog()
         let clock = ManualClock()
         let service = makeService(repository: Self.loggingRepository(reports), clock: clock) { _ in controller }
         await service.play(item: movie, startAt: .zero)
+        #expect(reports.entries == ["start pos=0 paused=false"])
         await clock.tick() // 10 s
-        #expect(await eventually { reports.entries.count == 2 })
+        await reports.waitForCount(2)
         await clock.tick() // 20 s
-        #expect(await eventually { reports.entries.count == 3 })
+        await reports.waitForCount(3)
         await service.stop()
         #expect(reports.entries == [
             "start pos=0 paused=false",

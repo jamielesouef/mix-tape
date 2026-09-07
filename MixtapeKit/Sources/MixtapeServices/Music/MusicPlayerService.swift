@@ -43,6 +43,14 @@ public final class MusicPlayerService {
     }
 
     @ObservationIgnored private var progressTask: Task<Void, Never>?
+    /// Slice 021: which playback operation is current. Minted whenever a new operation starts
+    /// (`start(index:)`) or ends (`tearDown`), so a stale progress tick or artwork fetch from an
+    /// operation that has since moved on can never touch a newer one's state (decision log).
+    @ObservationIgnored private var currentGeneration = OperationGeneration()
+    /// Slice 021: off-path reports for this player are chained through this one reference so a
+    /// rapid double-skip cannot deliver a later track's start to the server before an earlier
+    /// track's stop (decision log).
+    @ObservationIgnored private var reportTask: Task<Void, Never>?
     /// The finish a wallet has claimed (slice 015). Not observed: claiming is bookkeeping, not state
     /// a view renders.
     @ObservationIgnored private var claimedFinishID: String?
@@ -95,9 +103,12 @@ public final class MusicPlayerService {
         status != .idle
     }
 
-    /// Replaces the queue with exactly this album's tracks and starts at `index` (§1.1).
+    /// Replaces the queue with exactly this album's tracks and starts at `index` (§1.1). Whatever
+    /// was current before the replacement gets its stopped report sent off-path (slice 021) —
+    /// a replacement play does not silently drop the track it interrupted.
     public func play(album: MediaItem, tracks: [MediaItem], startingAt index: Int) async {
         guard tracks.isEmpty == false, tracks.indices.contains(index) else { return }
+        enqueueStoppedReportForCurrent()
         self.album = album
         queue = tracks
         finishedAlbumID = nil
@@ -113,10 +124,12 @@ public final class MusicPlayerService {
         }
     }
 
-    /// Next track, or stop at the end — never advance past the last track (§1.1).
+    /// Next track, or stop at the end — never advance past the last track (§1.1). The local
+    /// transition happens first (slice 021); the stopped report for the track being left is
+    /// built now, before it is overwritten, and sent off that path.
     public func next() async {
         guard let currentIndex else { return }
-        await reportStoppedForCurrent()
+        enqueueStoppedReportForCurrent()
         if currentIndex + 1 < queue.count {
             await start(index: currentIndex + 1)
         } else {
@@ -135,7 +148,7 @@ public final class MusicPlayerService {
             seek(to: .zero)
             return
         }
-        await reportStoppedForCurrent()
+        enqueueStoppedReportForCurrent()
         await start(index: currentIndex - 1)
     }
 
@@ -150,18 +163,11 @@ public final class MusicPlayerService {
         refreshNowPlaying()
     }
 
+    /// Tears the player down and, once its stopped report has landed, refreshes nothing else —
+    /// unlike `stop()`'s video counterpart there is no Home list to refresh here.
     public func stop() async {
-        progressTask?.cancel()
-        progressTask = nil
-        await reportStoppedForCurrent()
-        controller.stop()
-        status = .idle
-        album = nil
-        queue = []
-        currentIndex = nil
-        position = .zero
-        finishedAlbumID = nil
-        claimedFinishID = nil
+        tearDown(reportingTo: session)
+        await reportTask?.value
     }
 
     /// The wallet that owns the return sequence for the current finish (slice 015). `true` exactly
@@ -179,16 +185,29 @@ public final class MusicPlayerService {
         claimedFinishID = nil
     }
 
-    /// Slice 020: `SessionService`'s fan-out calls this synchronously when session `endedSession`
+    /// Slice 020: `AppContainer`'s fan-out calls this synchronously when session `endedSession`
     /// ends — sign-out or expiry. `controller.stop()` and the `.idle` transition happen before this
-    /// returns; whatever was playing gets a best-effort stopped report fired on `endedSession` (not
-    /// `self.session`, already nil by the time the report use case runs) rather than blocking the
-    /// caller on the network (decision log).
+    /// returns; whatever was playing gets a best-effort stopped report enqueued off-path (slice
+    /// 021) against `endedSession` (not `self.session`, already nil by the time the report use case
+    /// runs) rather than blocking the caller on the network (decision log).
     public func endSession(_ endedSession: UserSession) {
+        tearDown(reportingTo: endedSession)
+    }
+
+    // MARK: - Private
+
+    /// Tears playback down to `.idle`, mints a fresh generation so no stale progress tick from the
+    /// operation just ended can touch state again, and enqueues the stopped report (if there is
+    /// one) on the chain rather than awaiting it — shared by `stop()` and `endSession()` (slice 021
+    /// decision log).
+    private func tearDown(reportingTo session: UserSession?) {
         progressTask?.cancel()
         progressTask = nil
-        let pendingReport = current.map {
-            report(for: $0, position: position, isPaused: false, stream: buildAudioStreamURL(track: $0, session: endedSession))
+        currentGeneration = OperationGeneration()
+        if let track = current, let session {
+            let stream = buildAudioStreamURL(track: track, session: session)
+            let stoppedReport = report(for: track, position: position, isPaused: false, stream: stream)
+            enqueueReport { [reportStopped] in await reportStopped(stoppedReport, session: session) }
         }
         controller.stop()
         status = .idle
@@ -198,15 +217,13 @@ public final class MusicPlayerService {
         position = .zero
         finishedAlbumID = nil
         claimedFinishID = nil
-        guard let pendingReport else { return }
-        Task { [reportStopped] in await reportStopped(pendingReport, session: endedSession) }
     }
-
-    // MARK: - Private
 
     private func start(index: Int) async {
         guard let session, queue.indices.contains(index) else { return }
         progressTask?.cancel()
+        let generation = OperationGeneration()
+        currentGeneration = generation
         currentIndex = index
         position = .zero
         playSessionID = UUID().uuidString
@@ -218,9 +235,10 @@ public final class MusicPlayerService {
         controller.play()
         controller.setNextTrackEnabled(index + 1 < queue.count)
         status = .playing
-        await refreshNowPlayingAsync()
-        await reportStart(report(for: track, position: .zero, isPaused: false, stream: stream), session: session)
-        startProgressReporting(track: track, stream: stream)
+        let startReport = report(for: track, position: .zero, isPaused: false, stream: stream)
+        enqueueReport { [reportStart] in await reportStart(startReport, session: session) }
+        startProgressReporting(track: track, stream: stream, generation: generation)
+        await refreshNowPlayingAsync(generation: generation)
     }
 
     private func pause() {
@@ -243,7 +261,7 @@ public final class MusicPlayerService {
     private func trackDidEnd() {
         Task { [weak self] in
             guard let self, let currentIndex else { return }
-            await reportStoppedForCurrent()
+            enqueueStoppedReportForCurrent()
             if currentIndex + 1 < queue.count {
                 await start(index: currentIndex + 1)
             } else {
@@ -253,10 +271,12 @@ public final class MusicPlayerService {
     }
 
     /// Stops playback, leaves `album`/`queue` in place so the wallet can return to the sleeve, and
-    /// sets `finishedAlbumID` exactly once (§1.1, §9.1).
+    /// sets `finishedAlbumID` exactly once (§1.1, §9.1). No report here — the caller already
+    /// enqueued the departing track's stopped report before deciding there was nowhere to advance.
     private func finish() {
         progressTask?.cancel()
         progressTask = nil
+        currentGeneration = OperationGeneration()
         controller.stop()
         status = .idle
         position = .zero
@@ -266,8 +286,9 @@ public final class MusicPlayerService {
     }
 
     /// One loop on the 5 s now-playing cadence; every second tick is the 10 s progress report, so
-    /// both §6 cadences share one task, one clock and one cancellation.
-    private func startProgressReporting(track: MediaItem, stream: AudioStream) {
+    /// both §6 cadences share one task, one clock and one cancellation. Slice 021: also checks the
+    /// operation generation, not only `status`/track identity, before touching anything.
+    private func startProgressReporting(track: MediaItem, stream: AudioStream, generation: OperationGeneration) {
         progressTask?.cancel()
         progressTask = Task { [weak self] in
             var elapsed: Duration = .zero
@@ -279,7 +300,7 @@ public final class MusicPlayerService {
                     return
                 }
                 guard let self, Task.isCancelled == false else { return }
-                guard status == .playing, current?.id == track.id, let session else { continue }
+                guard status == .playing, generation == currentGeneration, current?.id == track.id, let session else { continue }
                 refreshNowPlaying()
                 elapsed += Self.nowPlayingInterval
                 guard elapsed >= Self.progressInterval else { continue }
@@ -295,10 +316,25 @@ public final class MusicPlayerService {
         Task { await reportProgress(report(for: track, position: position, isPaused: isPaused, stream: stream), session: session) }
     }
 
-    private func reportStoppedForCurrent() async {
+    /// Builds the stopped report for whatever is current right now and enqueues it on the report
+    /// chain. Synchronous and called before the caller's own local transition, so it captures the
+    /// departing track's identity, position and session before `start(index:)` overwrites them
+    /// (slice 021 — replaces the old `await`ed `reportStoppedForCurrent()`).
+    private func enqueueStoppedReportForCurrent() {
         guard let track = current, let session else { return }
         let stream = buildAudioStreamURL(track: track, session: session)
-        await reportStopped(report(for: track, position: position, isPaused: false, stream: stream), session: session)
+        let stoppedReport = report(for: track, position: position, isPaused: false, stream: stream)
+        enqueueReport { [reportStopped] in await reportStopped(stoppedReport, session: session) }
+    }
+
+    /// Chains one more off-path report after whatever is already pending, so reports for this
+    /// player land at the server in the order their operations happened (slice 021 decision log).
+    private func enqueueReport(_ send: @escaping () async -> Void) {
+        let previous = reportTask
+        reportTask = Task {
+            await previous?.value
+            await send()
+        }
     }
 
     private func report(for track: MediaItem, position: Duration, isPaused: Bool, stream: AudioStream) -> PlaybackReport {
@@ -312,11 +348,17 @@ public final class MusicPlayerService {
         controller.updateNowPlaying(nowPlayingInfo(artwork: artwork))
     }
 
-    private func refreshNowPlayingAsync() async {
+    /// Slice 021: re-checks the generation after the artwork fetch — a stale fetch for a track
+    /// that has since been replaced can no longer overwrite the lock screen (codex's "stale
+    /// artwork request").
+    private func refreshNowPlayingAsync(generation: OperationGeneration) async {
         if let track = current, let artworkProvider {
-            artwork = await artworkProvider(track)
+            let fetched = await artworkProvider(track)
+            guard generation == currentGeneration else { return }
+            artwork = fetched
         }
-        controller.updateNowPlaying(nowPlayingInfo(artwork: artwork))
+        guard generation == currentGeneration else { return }
+        refreshNowPlaying()
     }
 
     private func nowPlayingInfo(artwork: UIImage?) -> NowPlayingInfo {
