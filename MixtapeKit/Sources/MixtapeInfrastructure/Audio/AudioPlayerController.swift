@@ -39,6 +39,14 @@ public final class AudioPlayerController: AudioPlayerControlling {
         configureSessionObservers()
     }
 
+    isolated deinit {
+        for observer in [interruptionObserver, routeChangeObserver, mediaResetObserver] {
+            if let observer {
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
+    }
+
     public func load(url: URL) {
         configureSessionIfNeeded()
         lastLoadedURL = url
@@ -176,7 +184,7 @@ public final class AudioPlayerController: AudioPlayerControlling {
         onRemotePause?()
     }
 
-    /// Apple's guidance for this notification: reinitialize audio objects and the session
+    /// Apple's guidance for this notification: reinitialise audio objects and the session
     /// configuration, but never restart playback except on user action — so this reloads whatever
     /// was loaded, and never calls `play()`.
     private func handleMediaServicesReset() {

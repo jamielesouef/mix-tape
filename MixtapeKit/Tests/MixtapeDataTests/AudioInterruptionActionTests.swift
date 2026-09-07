@@ -1,4 +1,4 @@
-//  AudioInterruptionPolicyTests.swift
+//  AudioInterruptionActionTests.swift
 //  MixtapeDataTests
 //
 //  Created by Jamie Le Souëf on 07/09/2026.
@@ -16,7 +16,7 @@ import Testing
 /// `Sendable` (it is production code, not touched here), and a parameterised test's argument
 /// array must cross into the testing library's own executor, which requires exactly that.
 @Suite(.tags(.repository))
-struct AudioInterruptionPolicyTests {
+struct AudioInterruptionActionTests {
     @Test func `an interruption begin always pauses`() {
         #expect(audioInterruptionAction(type: .began, options: []) == .pause)
     }

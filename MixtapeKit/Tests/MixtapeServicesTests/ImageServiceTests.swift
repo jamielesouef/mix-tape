@@ -68,6 +68,15 @@ struct ImageServiceTests {
         #expect(image == nil)
     }
 
+    @Test func `AC23c cache cost is the decoded pixel size, not the compressed byte count`() throws {
+        let imageData = Self.fixturePNGData()
+        let image = try #require(UIImage(data: imageData))
+        let cgImage = try #require(image.cgImage)
+        let cost = ImageService.cost(of: image)
+        #expect(cost == cgImage.width * cgImage.height * 4)
+        #expect(cost != imageData.count)
+    }
+
     private static func fixturePNGData() -> Data {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
         return renderer.pngData { context in

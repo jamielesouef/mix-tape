@@ -1,4 +1,4 @@
-//  AudioInterruptionPolicy.swift
+//  AudioInterruptionAction.swift
 //  MixtapeInfrastructure
 //
 //  Created by Jamie Le Souëf on 07/09/2026.
