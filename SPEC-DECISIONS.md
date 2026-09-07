@@ -1240,3 +1240,45 @@ TV — a fork of a third-party binary and its toolchain for one line. A debug
 launch argument in the app that jumps to a screen — test scaffolding in the
 product that still cannot press a button. Leaving tvOS criteria to a person —
 what every tvOS slice had been paying, recorded in the checklist's drift log.
+
+## 50. `supportsDirectStream` without `supportsDirectPlay` is unreachable on 10.11.11
+
+**Decision: `ResolveVideoPlaybackUseCase` keeps `/Videos/{itemId}/stream?static=true`
+for both `supportsDirectPlay` and `supportsDirectStream`. No direct-stream URL of
+the client's own is built.** Codex High #4 read the two flags as direct play
+versus "remux on the server", and asked for a remux URL on the second. Measured
+on the pinned server (slice 022, 2026-09-07), the second flag never arrives on
+its own, so there is no branch to give a different URL to.
+
+**What was measured.** `POST /Items/{F1}/PlaybackInfo` against F1 (mkv, h264,
+aac), five profile shapes across the slice's pre-flight and its spike:
+
+| Body | `SupportsDirectPlay` | `SupportsDirectStream` | `SupportsTranscoding` | `TranscodingUrl` |
+|---|---|---|---|---|
+| the app's own body, `permissive` profile | true | true | true | empty |
+| `permissive` profile, `EnableDirectPlay: false` | false | **false** | true | `master.m3u8` (HLS, h264/aac) |
+| container-only mismatch (`mp4` profile), HTTP transcoding profile | false | false | true | `stream.mp4?…TranscodeReasons=ContainerNotSupported` |
+| container-only mismatch, HLS transcoding profile | false | false | true | `master.m3u8` |
+| audio-codec-only mismatch (`mkv`/`h264`/`mp3` profile) | false | false | true | `stream.mkv?…AudioCodec=aac` |
+
+`DirectStreamUrl` was null in every response. On this server a local file
+source carries `SupportsDirectStream` only alongside `SupportsDirectPlay`; a
+container or codec the profile rejects comes back as `SupportsTranscoding` with
+a `TranscodingUrl` whose codecs are copied — that is the remux, and decision 7's
+carve-out already hands it to the player unchanged. The `.directStream` play
+method the use case reports is therefore only ever chosen with `static=true`
+for a source the server would also have direct-played, where `static=true` is
+the correct request.
+
+**Rejected.** Building `/Videos/{itemId}/stream` with `static` dropped and
+`container`/`videoCodec`/`audioCodec` set — a URL for a branch no response
+reaches, tested only against a hand-written fixture. Reclassifying an HTTP
+`TranscodingUrl` with copied codecs as `DirectStream` in the report — that is
+the `PlayMethod` inference codex separately warned against and decision 23's
+disposition left unchanged. Adding a remote or `.strm` item to the library to
+manufacture the case — decision 14 fixed the video test data, and a client
+should not carry a branch for a source shape the target library does not hold.
+
+**Re-open if** a later server version, or a remote source, returns
+`SupportsDirectStream: true` with `SupportsDirectPlay: false`: slice 022's
+document records the URL shape to build and the fixture-driven test to add.
