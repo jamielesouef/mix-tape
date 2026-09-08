@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		37DF3C9EC57CFA531043BCDD /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E75168AE26D45AAA6609D96 /* Foundation.framework */; };
 		4A71723935982B7E51279C49 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E75168AE26D45AAA6609D96 /* Foundation.framework */; };
-		BE7C4A1D03A8F02F937840A7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2C3140A472E3A0835DF80417 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,7 +44,6 @@
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		2C3140A472E3A0835DF80417 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = mixtape.entitlements; sourceTree = "<group>"; };
 		8E75168AE26D45AAA6609D96 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		CD253DCA4821B7C7D9FA50DD /* iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -59,9 +57,6 @@
 		D9916F5430490179005E88CA /* Exceptions for "source" folder in "iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				iOS/Assets.xcassets,
-				iOS/ContentView.swift,
-				iOS/mixtapeApp.swift,
 				tvOS/Assets.xcassets,
 				tvOS/ContentView.swift,
 				tvOS/mixtape_tvApp.swift,
@@ -77,21 +72,19 @@
 			);
 			target = D9916EF43048EEED005E88CA /* tvOS */;
 		};
-		D9916F6130490180005E88CA /* Exceptions for "tests" folder in "iOS" target */ = {
+		D9916F6330490180005E88CA /* Exceptions for "tests" folder in "iOSTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				iOS/mixtapeTests.swift,
-				tvOS/mixtape_tvTests.swift,
 			);
-			target = 000000000000000100000000 /* iOS */;
+			target = 95BF598086044D193DEFD1FE /* iOSTests */;
 		};
-		D9916F6230490190005E88CA /* Exceptions for "uiTess" folder in "iOS" target */ = {
+		D9916F6430490190005E88CA /* Exceptions for "uiTess" folder in "iOSUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				iOS/mixtapeUITests.swift,
-				tvOS/mixtape_tvUITests.swift,
 			);
-			target = 000000000000000100000000 /* iOS */;
+			target = 0B02110A39621D4101399232 /* iOSUITests */;
 		};
 		D9916F63304901A9005E88CA /* Exceptions for "tests" folder in "tvOSTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -110,11 +103,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		B6533ED08F33BB00F45834DC /* MixTapeUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MixTapeUITests;
-			sourceTree = "<group>";
-		};
 		D9916F433049011D005E88CA /* source */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -127,7 +115,7 @@
 		D9916F4430490161005E88CA /* tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D9916F6130490180005E88CA /* Exceptions for "tests" folder in "iOS" target */,
+				D9916F6330490180005E88CA /* Exceptions for "tests" folder in "iOSTests" target */,
 				D9916F63304901A9005E88CA /* Exceptions for "tests" folder in "tvOSTests" target */,
 			);
 			path = tests;
@@ -136,15 +124,10 @@
 		D9916F4530490169005E88CA /* uiTess */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D9916F6230490190005E88CA /* Exceptions for "uiTess" folder in "iOS" target */,
+				D9916F6430490190005E88CA /* Exceptions for "uiTess" folder in "iOSUITests" target */,
 				D9916F64304901AF005E88CA /* Exceptions for "uiTess" folder in "tvOSUITests" target */,
 			);
 			path = uiTess;
-			sourceTree = "<group>";
-		};
-		EBC3EF2C8E2F9B740B5056FF /* MixTapeTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MixTapeTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -204,10 +187,8 @@
 				D9916F4430490161005E88CA /* tests */,
 				D9916F433049011D005E88CA /* source */,
 				000000000000000000000020 /* Products */,
-				2C3140A472E3A0835DF80417 /* Assets.xcassets */,
 				698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */,
 				B394716148F03B9EE388BDF7 /* Frameworks */,
-				9CCC414228A2AF91998861E7 /* Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -230,15 +211,6 @@
 				8E75168AE26D45AAA6609D96 /* Foundation.framework */,
 			);
 			name = iOS;
-			sourceTree = "<group>";
-		};
-		9CCC414228A2AF91998861E7 /* Tests */ = {
-			isa = PBXGroup;
-			children = (
-				EBC3EF2C8E2F9B740B5056FF /* MixTapeTests */,
-				B6533ED08F33BB00F45834DC /* MixTapeUITests */,
-			);
-			path = Tests;
 			sourceTree = "<group>";
 		};
 		B394716148F03B9EE388BDF7 /* Frameworks */ = {
@@ -267,8 +239,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				D9916F433049011D005E88CA /* source */,
-				D9916F4430490161005E88CA /* tests */,
-				D9916F4530490169005E88CA /* uiTess */,
 			);
 			name = iOS;
 			packageProductDependencies = (
@@ -290,9 +260,6 @@
 			dependencies = (
 				B8DEC531C1799FBCEBA75237 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				B6533ED08F33BB00F45834DC /* MixTapeUITests */,
-			);
 			name = iOSUITests;
 			productName = MixTapeUITests;
 			productReference = E0D4B3CE15CDF059A53DABF8 /* iOSUITests.xctest */;
@@ -310,9 +277,6 @@
 			);
 			dependencies = (
 				165F517C50FF87EBC53A29DB /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				EBC3EF2C8E2F9B740B5056FF /* MixTapeTests */,
 			);
 			name = iOSTests;
 			productName = MixTapeTests;
@@ -442,7 +406,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BE7C4A1D03A8F02F937840A7 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
