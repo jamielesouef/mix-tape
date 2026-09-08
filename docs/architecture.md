@@ -1,6 +1,39 @@
-# Swift MV Architecture Template
+# Mix Tape Swift MV Architecture
 
-Generic template. Pulled from trimr project. Use for new iOS/Swift apps.
+> **Superseded.** This page predates the engineering doc and is kept for history. `SPEC-DECISIONS.md` outranks it, then `docs/engineering-doc.md` (§3 for the layout, §11 for testing, Appendix B for the gate commands). Its platform, XCUITest and build-command statements are stale where they differ; read the engineering doc first and this page only for the MV template's original wording (slice 019).
+
+Mix Tape's architecture follows the Swift MV template from the trimr project.
+
+## Project structure
+
+Superseded by engineering doc §3 — see `SPEC-DECISIONS.md`, decision 1. The layout is one local SPM package with six library targets, two thin app targets, and platform-split UI tests:
+
+```text
+Apps/
+├── MixtapeiOS/   # App target: App.swift, Assets, Info.plist. Nothing else
+└── MixtapeTV/    # App target: App.swift, Assets, Info.plist. Nothing else
+MixtapeKit/
+├── Package.swift
+├── Sources/      # MixtapeDomain, MixtapeUseCase, MixtapeServices,
+│                 # MixtapeInfrastructure, MixtapeData, MixtapePresentation
+└── Tests/        # MixtapeDomainTests, MixtapeUseCaseTests,
+                  # MixtapeServicesTests, MixtapeDataTests,
+                  # MixtapePresentationTests (slice 013)
+uiTests/
+├── iOS/          # iOS UI tests (XCUITest)
+└── tvOS/         # tvOS UI tests (XCUITest)
+scripts/
+├── check-layer-imports.sh   # layer edges, run by the gate and a build phase
+├── check-glass-fallback.sh  # Reduce Transparency fallback at every Material site
+├── gate.sh                  # the slice gate
+├── jf-probe.swift           # server-observable acceptance checks (decision 47)
+├── sim-type.sh              # credential entry on the iOS simulator (decision 46)
+└── tv-remote.sh, tvkey.m    # Siri Remote presses on the Apple TV simulator (decision 49)
+```
+
+The layers are SPM targets, not folders inside an app target — `Package.swift` declares the dependency edges and the compiler enforces them. Unit tests live in `MixtapeKit/Tests/` beside the targets they cover. UI tests stay platform-split at the repository root, since XCUITest bundles belong to app targets rather than to the package.
+
+The layer and feature organisation below applies inside each source target. `AppDomain`, `AppServices` and the other `App*` names in this document are the generic template's names for those layers; this project spells them `Mixtape*`.
 
 ## Core rule
 
@@ -40,6 +73,12 @@ Rules:
 - `AppInfrastructure`: stateless or actor-isolated. No plain class with mutable state and no actor.
 - Exception: SwiftData `ModelContainer`, `@Model` types, and store actors live in `AppData/Persistence/` — persistence and its repository stay together.
 - `AppPresentation`: no use case or repository type in a View's signature. If a view needs data shaped differently, that's the service's job.
+
+## Jellyfin API integration
+
+Use the checked-in [Jellyfin OpenAPI specification](jellyfin-openapi.json) as the API contract when implementing the iOS and tvOS clients. This copy is the spec served by the local server itself and describes Jellyfin **10.11.11** using OpenAPI **3.0.1**. See [API version and source notes](jellyfin-api.md) for provenance and for how to refresh it after a server upgrade.
+
+Keep the Jellyfin network client in `AppInfrastructure`, and repository implementations and API DTO-to-domain mapping in `AppData`. Expose domain types through the repository protocols in `AppUseCase` so services and views remain independent of Jellyfin's transport models.
 
 ## Feature subfolders (not one flat folder per layer)
 
@@ -102,6 +141,8 @@ struct AppRoot: App {
 
 ## Testing
 
+- Keep unit tests in `MixtapeKit/Tests/<Target>Tests/`, beside the target they cover.
+- Keep iOS UI tests in `uiTests/iOS/` and tvOS UI tests in `uiTests/tvOS/`.
 - Swift Testing only (`@Test`, `@Suite`) for unit tests.
 - Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 - Test behaviour, not the mock's plumbing.

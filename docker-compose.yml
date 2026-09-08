@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    image: jellyfin/jellyfin:10.11.11 # docs/jellyfin-openapi.json is this version's spec (slice 019)
     container_name: jellyfin
     ports:
       - "8096:8096/tcp"
