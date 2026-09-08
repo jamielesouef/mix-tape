@@ -1,6 +1,7 @@
 services:
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    build: .
+    image: mixtape-jellyfin:local
     container_name: jellyfin
     ports:
       - "8096:8096/tcp"
