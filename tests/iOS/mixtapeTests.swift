@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import mixtape
+@testable import iOS
 
 struct mixtapeTests {
 
