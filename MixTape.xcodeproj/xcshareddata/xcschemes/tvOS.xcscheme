@@ -31,14 +31,53 @@
       shouldAutocreateTestPlan = "YES">
       <Testables>
          <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
+            skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "D9916F003048EEEE005E88CA"
-               BuildableName = "tvOSTests.xctest"
-               BlueprintName = "tvOSTests"
-               ReferencedContainer = "container:MixTape.xcodeproj">
+               BlueprintIdentifier = "MixtapeDomainTests"
+               BuildableName = "MixtapeDomainTests"
+               BlueprintName = "MixtapeDomainTests"
+               ReferencedContainer = "container:MixtapeKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MixtapeUseCaseTests"
+               BuildableName = "MixtapeUseCaseTests"
+               BlueprintName = "MixtapeUseCaseTests"
+               ReferencedContainer = "container:MixtapeKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MixtapeServicesTests"
+               BuildableName = "MixtapeServicesTests"
+               BlueprintName = "MixtapeServicesTests"
+               ReferencedContainer = "container:MixtapeKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MixtapeDataTests"
+               BuildableName = "MixtapeDataTests"
+               BlueprintName = "MixtapeDataTests"
+               ReferencedContainer = "container:MixtapeKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MixtapePresentationTests"
+               BuildableName = "MixtapePresentationTests"
+               BlueprintName = "MixtapePresentationTests"
+               ReferencedContainer = "container:MixtapeKit">
             </BuildableReference>
          </TestableReference>
          <TestableReference

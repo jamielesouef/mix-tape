@@ -101,8 +101,15 @@ mixtape/
 │     ├─ MixtapeDomainTests/
 │     ├─ MixtapeUseCaseTests/
 │     ├─ MixtapeServicesTests/
-│     └─ MixtapeDataTests/
-└─ scripts/check-layer-imports.sh
+│     ├─ MixtapeDataTests/
+│     └─ MixtapePresentationTests/      # slice 013: pure presentation helpers, no view rendering
+└─ scripts/
+   ├─ check-layer-imports.sh            # layer edges the gate enforces (§13 step 1)
+   ├─ check-glass-fallback.sh           # every Material site reads Reduce Transparency (slice 012)
+   ├─ gate.sh                           # the slice gate, counted against docs/slices/test-count.txt (slice 013)
+   ├─ jf-probe.swift                    # server-observable acceptance checks (decision 47)
+   ├─ sim-type.sh                       # types a credential into the iOS simulator without echoing it (decision 46)
+   └─ tv-remote.sh + tvkey.m            # Siri Remote presses for the Apple TV simulator (decision 49)
 ```
 
 Dependency edges declared in `Package.swift` — nothing else is permitted to import across layers:
@@ -440,7 +447,7 @@ Stateless or actor-isolated. No plain class with mutable state.
 |---|---|
 | `JellyfinHTTPClient` | `struct`, `Sendable`. Wraps `URLSession`. Builds the auth header, encodes/decodes JSON, maps status codes to `MixtapeError`. |
 | `KeychainStore` | `struct`, `Sendable`. Generic `Data` get/set/delete for one service+account pair. |
-| `AVPlayerController` | `@MainActor final class`, conforms to `VideoPlayerControlling`. Owns an `AVPlayer` and a `AVPlayerLayer`-backed view. |
+| `AVPlayerController` | `@MainActor final class`, conforms to `VideoPlayerControlling`. Owns an `AVPlayer` and presents it through AVKit's `VideoPlayer` — not an `AVPlayerLayer` (superseded by `SPEC-DECISIONS.md` decision 18; corrected by slice 017). |
 | `VLCPlayerController` | `@MainActor final class`, conforms to `VideoPlayerControlling`. The **only** file that imports `VLCKit`. |
 | `AudioPlayerController` | `@MainActor final class`. `AVPlayer` for audio + `AVAudioSession` + now-playing wiring. |
 | `AppLogger` | `struct` over `os.Logger`, one subsystem, categories `network`, `playback`, `auth`. |
@@ -505,7 +512,7 @@ Base path: all paths below are relative to `serverURL`. Do **not** prefix `/emby
 | Validate server | `GET /System/Info/Public` → `{Id, ServerName, Version}`. Unauthenticated. |
 | Password sign-in | `POST /Users/AuthenticateByName` body `{"Username": …, "Pw": …}` → `{AccessToken, User: {Id, Name}}` |
 | Quick Connect available | `GET /QuickConnect/Enabled` → `true`/`false`. A `401` also means unavailable. |
-| Quick Connect start | `GET /QuickConnect/Initiate` → `{Secret, Code}` |
+| Quick Connect start | `POST /QuickConnect/Initiate` → `{Secret, Code}` (decision 5 — the spec declares `POST`; corrected by slice 017) |
 | Quick Connect poll | `GET /QuickConnect/Connect?secret=<secret>` → `{Authenticated: Bool, …}` |
 | Quick Connect finish | `POST /Users/AuthenticateWithQuickConnect` body `{"Secret": …}` → same shape as password sign-in |
 
@@ -523,11 +530,11 @@ Use the query-parameter form of every user-scoped endpoint. The `/Users/{userId}
 | Seasons | `GET /Shows/{seriesId}/Seasons?userId={uid}` |
 | Episodes | `GET /Shows/{seriesId}/Episodes?userId={uid}&seasonId={seasonId}&fields=Overview` |
 | Album tracks | `GET /Items?userId={uid}&parentId={albumId}&includeItemTypes=Audio&sortBy=ParentIndexNumber,IndexNumber,SortName` |
-| Continue watching | `GET /Items/Resume?userId={uid}&limit=12&mediaTypes=Video&fields=Overview` |
+| Continue watching | `GET /UserItems/Resume?userId={uid}&limit=12&mediaTypes=Video&fields=Overview` (decision 6 — `/Items/Resume` is swallowed by `/Items/{itemId}`; corrected by slice 017) |
 
 Paged responses are `{Items: [...], TotalRecordCount: Int, StartIndex: Int}` → `Page<MediaItem>`.
 
-`UserData` on each item gives `PlaybackPositionTicks`, `Played`, `PlayedPercentage` → `PlaybackState`.
+`UserData` on each item gives `PlaybackPositionTicks` and `Played` → `PlaybackState`. It does not give `PlayedPercentage` — the server never sends that field, and the 90 % rule is computed client-side from position and runtime (decision 8; corrected by slice 017).
 
 ### Images — `JellyfinImageURLBuilder`
 
@@ -567,10 +574,10 @@ pick the first MediaSource, else throw .noPlayableSource
 
 if source.supportsDirectPlay || source.supportsDirectStream {
     url = {base}/Videos/{itemId}/stream?static=true
-          &mediaSourceId={id}&playSessionId={psid}&api_key={token}
+          &mediaSourceId={id}&playSessionId={psid}&ApiKey={token}   // decision 42: `ApiKey`, not `api_key` (slice 017)
     method = isAVPlayerNative(source) ? .directAVPlayer : .directVLC
 } else if let path = source.transcodingUrl {
-    url = {base}{path}          // already contains api_key and playSessionId
+    url = {base}{path}          // already contains ApiKey and playSessionId (decision 7 carve-out)
     method = .transcodeHLS
 } else {
     throw .noPlayableSource
@@ -589,10 +596,12 @@ if source.supportsDirectPlay || source.supportsDirectStream {
 No `PlaybackInfo` round-trip for audio. Build the URL directly:
 
 ```
-{base}/Audio/{itemId}/universal?userId={uid}&deviceId={did}&api_key={token}
-  &maxStreamingBitrate=320000&container=flac,alac,m4a,mp3,aac,wav,aiff
+{base}/Audio/{itemId}/universal?userId={uid}&deviceId={did}&ApiKey={token}
+  &container=flac,alac,m4a,mp3,aac,wav,aiff
   &transcodingContainer=ts&transcodingProtocol=hls&audioCodec=aac
 ```
+
+The token travels as `ApiKey` in the query (decision 42) and there is **no** `maxStreamingBitrate`: the old `320000` forced every ALAC and FLAC track through the transcoder (decision 43, spike S002). Corrected by slice 017.
 
 The container list is everything Apple platforms decode natively, so a properly tagged library direct-streams every time. The HLS fallback is there for the exceptions; when it fires, log the item ID at `.info` on the `playback` category — on a music library a transcode is a diagnostic, not a normal path.
 
@@ -628,7 +637,7 @@ Every view file carries a `#Preview` covering loaded, empty, and failure states,
 | `SignInScreen` | Username, password, Sign In; "Use Quick Connect" when enabled |
 | `QuickConnectScreen` | Large code, "waiting for approval" spinner, Cancel |
 | `RootTabScreen` | Tabs: Home, Libraries, Music, Settings. Mini player docked above the tab bar when audio is playing |
-| `HomeScreen` | Continue Watching row, Recently Added per library |
+| `HomeScreen` | Continue Watching row only — Recently Added was dropped (decision 13; corrected by slice 017) |
 | `LibraryListScreen` | List of libraries |
 | `MovieLibraryGrid` | Poster grid, 2-up compact / 4-up regular, paged |
 | `SeriesLibraryGrid` | Poster grid |
@@ -749,7 +758,7 @@ Never test a repository against a real Jellyfin instance in CI.
 
 ## 12. Acceptance criteria
 
-1. Entering `192.168.1.10:8096` with no scheme resolves and connects.
+1. Entering `localhost:8096` with no scheme resolves and connects.
 2. Wrong password shows an inline error and does not clear the username field.
 3. Quick Connect on tvOS: code appears, approving in Jellyfin Web signs the app in within 10 s.
 4. Force-quit and relaunch lands directly on Home — no sign-in prompt.
@@ -789,7 +798,8 @@ Build in this sequence; each step compiles and its tests pass before the next st
 9. `AudioPlayerController` + `MusicPlayerService` + `AlbumDetailScreen` + `NowPlayingScreen` + remote/now-playing wiring, on a plain album grid. **Checkpoint: music plays, one album at a time.**
 10. Replace the grid with the wallet: `WalletScreen`, `WalletPage`, `AlbumSleeve`, the matched-geometry pull-out, the return-to-sleeve sequence. Motion tilt last, and only if step 10 came in cheap.
 11. tvOS presentation layer (no wallet).
-11. XCUITests, accessibility pass, Reduce Transparency pass.
+12. Accessibility pass and Reduce Transparency pass. XCUITest was in this step and is deferred out of the round by decision 4; the identifiers it needs are written here.
+13. Hardening round (slices 013–017): presentation test target and gate hardening, video pause/seek reporting, wallet finish ownership, tvOS library list, and this document's reconciliation.
 
 ---
 
@@ -945,3 +955,4 @@ Jellyfin's own OpenAPI spec is served by every instance at `{base}/api-docs/swag
 - [DeviceProfile reference](https://typescript-sdk.jellyfin.org/interfaces/generated-client.DeviceProfile.html)
 - [PlaybackInfoResponse reference](https://typescript-sdk.jellyfin.org/interfaces/generated-client.PlaybackInfoResponse.html)
 - [Jellyfin video playback walkthrough](https://gist.github.com/kylehowells/74f538c766a244a3666319860a937030)
+
