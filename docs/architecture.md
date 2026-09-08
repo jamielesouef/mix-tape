@@ -1,6 +1,24 @@
-# Swift MV Architecture Template
+# Mix Tape Swift MV Architecture
 
-Generic template. Pulled from trimr project. Use for new iOS/Swift apps.
+Mix Tape's architecture follows the Swift MV template from the trimr project.
+
+## Project structure
+
+Application source, unit tests, and UI tests are separated by platform:
+
+```text
+source/
+├── iOS/          # iOS application source and assets
+└── tvOS/         # tvOS application source and assets
+tests/
+├── iOS/          # iOS unit tests (Swift Testing)
+└── tvOS/         # tvOS unit tests (Swift Testing)
+uiTess/
+├── iOS/          # iOS UI tests (XCUITest)
+└── tvOS/         # tvOS UI tests (XCUITest)
+```
+
+The UI test directory is named `uiTess/` in this repository. Place new files in the appropriate platform directory. The layer and feature organization below applies within each platform's source directory; `AppDomain`, `AppServices`, and the other `App*` names describe the architectural layers, not top-level repository paths.
 
 ## Core rule
 
@@ -40,6 +58,12 @@ Rules:
 - `AppInfrastructure`: stateless or actor-isolated. No plain class with mutable state and no actor.
 - Exception: SwiftData `ModelContainer`, `@Model` types, and store actors live in `AppData/Persistence/` — persistence and its repository stay together.
 - `AppPresentation`: no use case or repository type in a View's signature. If a view needs data shaped differently, that's the service's job.
+
+## Jellyfin API integration
+
+Use the checked-in [Jellyfin OpenAPI specification](jellyfin-openapi.json) as the API contract when implementing the iOS and tvOS clients. This copy describes Jellyfin **12.0.0** using OpenAPI **3.0.4**. See [API version and source notes](jellyfin-api.md) for provenance and server-version compatibility.
+
+Keep the Jellyfin network client in `AppInfrastructure`, and repository implementations and API DTO-to-domain mapping in `AppData`. Expose domain types through the repository protocols in `AppUseCase` so services and views remain independent of Jellyfin's transport models.
 
 ## Feature subfolders (not one flat folder per layer)
 
@@ -102,6 +126,8 @@ struct AppRoot: App {
 
 ## Testing
 
+- Keep iOS unit tests in `tests/iOS/` and tvOS unit tests in `tests/tvOS/`.
+- Keep iOS UI tests in `uiTess/iOS/` and tvOS UI tests in `uiTess/tvOS/`.
 - Swift Testing only (`@Test`, `@Suite`) for unit tests.
 - Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 - Test behaviour, not the mock's plumbing.
