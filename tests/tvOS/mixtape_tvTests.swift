@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import mixtape_tv
+@testable import tvOS
 
 struct mixtape_tvTests {
 
