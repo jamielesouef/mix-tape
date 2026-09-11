@@ -3,6 +3,16 @@
 DerivedData/
 **/xcuserdata/
 
+# Xcode build output — logs and .xcbuilddata attachments, not source. One of
+# these attachment files reached a commit on 2026-09-09 anyway.
+build/
+
+# Local Jellyfin test fixtures (movies, albums) used to seed the dev server
+# for manual acceptance checks. Large binaries, some copyrighted; never
+# belong in the repo. A whole library's worth reached a commit on
+# 2026-09-09 anyway.
+media/
+
 # Editor state. The Swift extension regenerates launch.json on demand, and the
 # one it writes hardcodes a workspace name that is local to whoever opened it.
 .vscode/
@@ -13,5 +23,12 @@ DerivedData/
 # this entry exists so the same mistake cannot reach a commit.
 .jellyfin-dev.env
 
+# Same as above, different filename — this one reached a commit on
+# 2026-09-09 anyway. Untracked and ignored to stop it happening again.
+.env
+
 # Gate run log (slice 013): one line per ./scripts/gate.sh run. Local evidence, never committed.
 .gate-log
+
+# Ad-hoc screen captures from manual/agent-driven simulator walkthroughs. Local evidence, never committed.
+screens/
