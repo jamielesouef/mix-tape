@@ -20,7 +20,7 @@ iOS only — iPhone and iPad, portrait. No macOS, no tvOS. No back-deploy,
 no `#available`. The deployment target is **26.1**, not 26.0: the wallet's
 `tabViewBottomAccessory` is 26.1 API and `#available` is banned (decision 52).
 Swift 6 language mode.
-`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
+`SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
 No third-party dependencies — VLCKit was removed along with video playback.
 
 ## The toolchain here is ahead of the one this must stay compatible with

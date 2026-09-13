@@ -57,7 +57,7 @@ Per Appendix A "Platform baseline", plus:
 
 - **Targets**: iOS 26+. No macOS, no tvOS in V1.
 - **Xcode 26, Swift 6.2, Swift 6 language mode.**
-- `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO` at project level.
+- `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`, `SWIFT_APPROACHABLE_CONCURRENCY = NO` at project level.
 - **Dependencies**: none. No Alamofire, no Kingfisher, no SDWebImage.
 
 ### Capabilities and Info.plist
@@ -649,7 +649,7 @@ No ViewModel layer. `@MainActor @Observable` **services** hold state. Views read
 - iOS 26+, MacOS 26+, tvOS 26+ ONLY. No back-deploy. No `#available` checks.
 - Xcode 26, Swift 6.2, Swift 6 language mode.
 - Set at project level:
-  - `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`
+  - `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`
   - `SWIFT_APPROACHABLE_CONCURRENCY = NO`
 - Use `@concurrent` for real background work only (parsing, decoding, image work).
 - Swift Testing for unit tests. XCTest only for UI automation (XCUITest).

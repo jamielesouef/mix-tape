@@ -41,7 +41,7 @@ No ViewModel layer. `@MainActor @Observable` **services** hold state. Views read
 - iOS 26.1+ ONLY. No macOS, no tvOS. No back-deploy. No `#available` checks.
 - Xcode 26, Swift 6.2, Swift 6 language mode.
 - Set at project level:
-  - `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`
+  - `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`
   - `SWIFT_APPROACHABLE_CONCURRENCY = NO`
 - Use `@concurrent` for real background work only (parsing, decoding, image work).
 - Swift Testing for unit tests. XCTest only for UI automation (XCUITest).
