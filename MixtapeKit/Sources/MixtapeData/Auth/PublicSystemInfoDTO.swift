@@ -4,7 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// `GET /System/Info/Public`. Every field is nullable on the wire; the mapper enforces decision 31.
 nonisolated struct PublicSystemInfoDTO: Decodable {
     let id: String?
     let serverName: String?

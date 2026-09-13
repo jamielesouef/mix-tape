@@ -9,12 +9,10 @@
     import MixtapeDomain
     import MixtapeUseCase
 
-    /// Preview and placeholder factories: real `VideoPlaybackService` instances over the mock
-    /// repository and `MockVideoPlayerController`, started in the state the preview is about.
     public enum MockVideoPlaybackService {
         public static let samplePlan = PlaybackPlan(
             itemID: "movie-1", mediaSourceID: "source-1", playSessionID: "psid-1", method: .directAVPlayer, playMethod: .directPlay,
-            streamURL: URL(string: "mock://stream/movie-1")!, // constant
+            streamURL: URL(string: "mock://stream/movie-1")!,
             startPosition: .zero, totalDuration: .seconds(21),
         )
 

@@ -10,9 +10,6 @@ import MixtapeUseCase
 import Observation
 import UIKit
 
-/// Engineering doc §6: URL building plus an in-memory `NSCache` capped at 120 MB. Image requests
-/// carry no auth (decision 25), so this needs nothing from Infrastructure. Decoding is the one
-/// `@concurrent` hop in the browse path.
 @Observable
 public final class ImageService {
     public static let cacheLimitBytes = 120 * 1024 * 1024
@@ -30,7 +27,6 @@ public final class ImageService {
         cache.totalCostLimit = Self.cacheLimitBytes
     }
 
-    /// Tracks have no art of their own: `.primary` falls back to the album (decision 25).
     public func imageURL(for item: MediaItem, kind: ImageKind, maxHeight: Int) -> URL? {
         guard let session else { return nil }
         if kind == .primary, item.kind == .audio, item.primaryImageTag == nil, let albumID = item.albumID {
@@ -79,9 +75,6 @@ public final class ImageService {
         return image
     }
 
-    /// Cost from the *decoded* pixel dimensions, not the compressed network byte count — a small
-    /// JPEG can decode to a large bitmap, and `NSCache`'s eviction only makes sense against the
-    /// memory the image actually occupies.
     static func cost(of image: UIImage) -> Int {
         guard let cgImage = image.cgImage else {
             return Int(image.size.width * image.scale * image.size.height * image.scale) * 4

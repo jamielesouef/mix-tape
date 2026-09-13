@@ -4,7 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// `MediaSourceInfo` from a `PlaybackInfo` response.
 nonisolated struct MediaSourceInfoDTO: Decodable {
     let id: String?
     let container: String?

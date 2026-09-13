@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// `3. Title` and the duration. Tapping starts playback from slice 009.
 struct TrackRow: View {
     let track: MediaItem
 

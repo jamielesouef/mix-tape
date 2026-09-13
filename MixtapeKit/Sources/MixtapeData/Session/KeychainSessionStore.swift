@@ -9,9 +9,6 @@ import MixtapeDomain
 import MixtapeInfrastructure
 import MixtapeUseCase
 
-/// `SessionStoreProtocol` over `KeychainStore`. Also owns the stable `DeviceId` — generated
-/// once and kept for the lifetime of the install, because Jellyfin keys sessions and transcode
-/// jobs off it (engineering doc §7).
 public nonisolated struct KeychainSessionStore: SessionStoreProtocol {
     private static let sessionAccount = "session"
     private static let deviceIDAccount = "deviceId"
@@ -35,7 +32,6 @@ public nonisolated struct KeychainSessionStore: SessionStoreProtocol {
         try store.delete(account: Self.sessionAccount)
     }
 
-    /// The install's stable device identifier, created on first call.
     public func deviceID() throws -> String {
         if let data = try store.data(account: Self.deviceIDAccount), let existing = String(data: data, encoding: .utf8) {
             return existing

@@ -8,8 +8,6 @@
     import MixtapeDomain
     import MixtapeUseCase
 
-    /// The mock repository's sample data, re-exported so Presentation previews can reach it without
-    /// importing `MixtapeUseCase` (engineering doc §3).
     public enum MockMedia {
         public static let libraries = MockLibraryRepository.sampleLibraries
         public static let movies = MockLibraryRepository.sampleMovies

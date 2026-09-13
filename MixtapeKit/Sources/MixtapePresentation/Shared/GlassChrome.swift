@@ -6,8 +6,6 @@
 
 import SwiftUI
 
-/// Liquid Glass for chrome, with the Reduce Transparency fallback to an opaque surface
-/// (engineering doc §9 "Chrome"). Every glass surface in the app goes through this modifier.
 struct GlassChrome: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var cornerRadius: CGFloat = 16

@@ -9,8 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// tvOS shelf: the library title over a focus-driven 5-up grid of poster cards, paged by asking
-    /// for more as the last card appears. The tvOS counterpart of the iOS `PosterGrid`.
     struct PosterShelf: View {
         let title: String
         let items: [MediaItem]

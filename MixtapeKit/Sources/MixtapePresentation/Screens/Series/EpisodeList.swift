@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// The episodes of one season, from `SeriesService.episodes`.
 struct EpisodeList: View {
     @Environment(\.seriesService) private var seriesService
     let seriesID: String

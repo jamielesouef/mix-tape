@@ -8,7 +8,6 @@
     import Foundation
     import MixtapeDomain
 
-    /// Closure-driven test double. Defaults resolve every item to one AVPlayer-native source.
     public nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
         public var resolveVideoResult: @Sendable (String, Duration, UserSession) async throws -> VideoSourceResolution
         public var audioStreamResult: @Sendable (MediaItem, UserSession, String) -> AudioStream

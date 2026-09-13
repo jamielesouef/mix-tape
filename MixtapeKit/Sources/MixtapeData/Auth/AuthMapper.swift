@@ -8,7 +8,6 @@ import Foundation
 import MixtapeDomain
 
 nonisolated enum AuthMapper {
-    /// Decision 31: a null `Id`, `ServerName` or `Version` is not a Jellyfin server.
     static func serverIdentity(from dto: PublicSystemInfoDTO, baseURL: URL) throws -> ServerIdentity {
         guard let id = dto.id, let name = dto.serverName, let version = dto.version else {
             throw MixtapeError.notAJellyfinServer

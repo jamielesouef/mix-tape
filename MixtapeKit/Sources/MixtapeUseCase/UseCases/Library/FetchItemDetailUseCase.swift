@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// One item, with its current server-side playback state.
 public nonisolated struct FetchItemDetailUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 

@@ -7,7 +7,6 @@
 import Foundation
 import UIKit
 
-/// The now-playing metadata `AudioPlayerController` pushes to `MPNowPlayingInfoCenter`.
 public nonisolated struct NowPlayingInfo: Sendable {
     public let title: String
     public let artist: String

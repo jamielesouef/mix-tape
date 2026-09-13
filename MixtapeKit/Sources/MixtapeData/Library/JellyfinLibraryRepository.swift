@@ -9,8 +9,6 @@ import MixtapeDomain
 import MixtapeInfrastructure
 import MixtapeUseCase
 
-/// Engineering doc §8 "Library", corrected by decisions 6, 26, 27 and 30. Stateless; `userId`
-/// is sent on every call and the session token rides in the `Authorization` header.
 public nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
     private let client: JellyfinHTTPClient
     private let appVersion: String
@@ -48,7 +46,6 @@ public nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
         return LibraryMapper.page(from: dto, requested: page)
     }
 
-    /// `fields=` is accepted by the server although the spec under-declares it (decision 26).
     public func item(id: String, session: UserSession) async throws -> MediaItem {
         let dto: BaseItemDTO = try await client.get(
             "/Items/\(id)", query: [user(session), URLQueryItem(name: "fields", value: "Overview,MediaSources")], auth: context(session),
@@ -61,7 +58,6 @@ public nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
         return LibraryMapper.items(from: dto)
     }
 
-    /// Sorted explicitly (decision 27); AC11 needs the order, not just a legal sort key.
     public func episodes(seriesID: String, seasonID: String, session: UserSession) async throws -> [MediaItem] {
         let dto: ItemsResultDTO = try await client.get(
             "/Shows/\(seriesID)/Episodes",
@@ -90,7 +86,6 @@ public nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
         return LibraryMapper.items(from: dto)
     }
 
-    /// `/UserItems/Resume`, not `/Items/Resume` (decision 6).
     public func continueWatching(session: UserSession) async throws -> [MediaItem] {
         let dto: ItemsResultDTO = try await client.get(
             "/UserItems/Resume",

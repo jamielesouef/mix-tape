@@ -7,8 +7,6 @@
 import MixtapeDomain
 import MixtapeUseCase
 
-/// The release-build session store behind `SessionService.placeholder` (slice 013): holds nothing
-/// and remembers nothing, so the placeholder service can only ever be signed out.
 nonisolated struct PlaceholderSessionStore: SessionStoreProtocol {
     func load() throws -> UserSession? {
         nil

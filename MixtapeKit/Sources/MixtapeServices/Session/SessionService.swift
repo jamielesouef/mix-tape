@@ -8,8 +8,6 @@ import MixtapeDomain
 import MixtapeUseCase
 import Observation
 
-/// Engineering doc §6. The only writer of session state, and the single place `.sessionExpired`
-/// is handled.
 @Observable
 public final class SessionService {
     public enum State: Equatable, Sendable {
@@ -21,7 +19,6 @@ public final class SessionService {
     public private(set) var state: State
     public private(set) var serverIdentity: ServerIdentity?
     public private(set) var error: MixtapeError?
-    /// Decisions 24 and 28: never optional.
     public private(set) var quickConnect: QuickConnectUIState
     public private(set) var isBusy = false
 
@@ -37,9 +34,6 @@ public final class SessionService {
     static let pollTimeout: Duration = .seconds(5 * 60)
 
     @ObservationIgnored var pollTask: Task<Void, Never>?
-    /// Slice 020: `AppContainer` wires this once, after constructing every session-scoped service,
-    /// to their `endSession()` fan-out. Not a service locator — `SessionService` never holds a
-    /// reference to any of them, only this one closure the composition root hands it (decision log).
     @ObservationIgnored public var onSessionEnded: ((UserSession) -> Void)?
 
     public init(
@@ -109,7 +103,6 @@ public final class SessionService {
         }
     }
 
-    /// Requests a code, then polls every 5 s for at most 5 min on the injected clock (decision 29 on expiry).
     public func startQuickConnect() async {
         guard let server = serverIdentity else { return }
         pollTask?.cancel()
@@ -131,8 +124,6 @@ public final class SessionService {
         quickConnect = .idle
     }
 
-    /// Back to server entry before any sign-in (slice 019): `SignInFlow` shows `ServerEntryScreen`
-    /// whenever `serverIdentity` is nil.
     public func clearServer() {
         cancelQuickConnect()
         serverIdentity = nil
@@ -157,13 +148,11 @@ public final class SessionService {
         }
     }
 
-    /// Clears the stored session and returns to `.signedOut`, keeping the server so the user
-    /// can sign in again. Every service routes a `.sessionExpired` here.
     public func handleSessionExpiry() {
         pollTask?.cancel()
         pollTask = nil
         let endedSession = signedInSession
-        try? signOutUseCase() // the session is already invalid; a Keychain failure changes nothing about that
+        try? signOutUseCase()
         state = .signedOut
         quickConnect = .idle
         error = .sessionExpired

@@ -6,8 +6,6 @@
 
 import MixtapeDomain
 
-/// What a screen shows for a `LoadState`: the four-way switch the screens make, in one place.
-/// `nil` is a key the service has not been asked about yet and reads as loading, like `.idle`.
 nonisolated enum ContentPhase<Value: Sendable>: Sendable {
     case loading
     case failed(MixtapeError)

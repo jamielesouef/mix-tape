@@ -10,9 +10,6 @@ import Foundation
 import MixtapeDomain
 import SwiftUI
 
-/// The AVPlayer conformer: direct play of native containers and the HLS transcode playlist.
-/// Presents through AVKit's `VideoPlayer` (decision 18) so transport controls, Picture in
-/// Picture and AirPlay come from the platform.
 public final class AVPlayerController: VideoPlayerControlling {
     public var onPositionChange: ((Duration) -> Void)?
     public var onTransportEvent: ((VideoTransportEvent) -> Void)?
@@ -25,13 +22,11 @@ public final class AVPlayerController: VideoPlayerControlling {
     private var jumpObserver: (any NSObjectProtocol)?
     private var statusObservation: NSKeyValueObservation?
     private var rateObservation: NSKeyValueObservation?
-    /// The `startAt` seek in `load` jumps the time too; that jump is not a user seek.
     private var isSeekingToStart = false
     private var didConfigureSession = false
 
     public init() {}
 
-    /// `headers` is ignored: the URL carries `ApiKey` (decision 42) and the private header key is never used.
     public func load(url: URL, startAt: Duration, headers _: [String: String]) {
         configureSessionIfNeeded()
         teardown()
@@ -44,12 +39,12 @@ public final class AVPlayerController: VideoPlayerControlling {
             }
         }
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { [weak self] time in
-            MainActor.assumeIsolated { // the observer runs on the main queue
+            MainActor.assumeIsolated {
                 self?.onPositionChange?(Self.duration(time))
             }
         }
         endObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: item, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { // delivered on the main queue
+            MainActor.assumeIsolated {
                 self?.onEnded?()
             }
         }
@@ -60,8 +55,6 @@ public final class AVPlayerController: VideoPlayerControlling {
                 self?.onFailure?(.transport(message))
             }
         }
-        // AVKit's transport drives the player directly (decision 18), so the player's own state is
-        // the only account of a pause or resume the service can get (slice 014).
         rateObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
             let status = player.timeControlStatus
             let ended = player.currentItem.map { $0.duration.isNumeric && $0.currentTime() >= $0.duration } ?? false
@@ -69,14 +62,13 @@ public final class AVPlayerController: VideoPlayerControlling {
                 switch status {
                 case .paused where ended == false: self?.onTransportEvent?(.paused)
                 case .playing: self?.onTransportEvent?(.resumed)
-                case .paused, .waitingToPlayAtSpecifiedRate: break // the end-of-item pause precedes onEnded; waiting is buffering, not a pause
+                case .paused, .waitingToPlayAtSpecifiedRate: break
                 @unknown default: break
                 }
             }
         }
-        // The only seek signal AVFoundation gives: fires for the system scrubber and for seek(to:) alike.
         jumpObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.timeJumpedNotification, object: item, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { // delivered on the main queue
+            MainActor.assumeIsolated {
                 guard let self, self.isSeekingToStart == false else { return }
                 self.onTransportEvent?(.seeked(Self.duration(self.player.currentTime())))
             }
@@ -119,10 +111,6 @@ public final class AVPlayerController: VideoPlayerControlling {
         AnyView(VideoPlayer(player: player))
     }
 
-    /// Establishes `.playback` independent of whether `AudioPlayerController` has ever run (slice
-    /// 023 decision log), so a video played before any music ignores the Ring/Silent switch. Never
-    /// deactivates — the audio session is shared process-wide, and deactivating it on teardown would
-    /// silence a concurrently playing album.
     private func configureSessionIfNeeded() {
         guard didConfigureSession == false else { return }
         do {

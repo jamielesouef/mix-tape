@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// A landscape card: backdrop, title and the resume progress bar (AC5).
 struct ContinueWatchingCard: View {
     let item: MediaItem
 

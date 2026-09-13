@@ -9,9 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// Backdrop, title, year, runtime, overview, Play / Resume. Play starts from the beginning and
-    /// Resume from the server's position; both present `VideoPlayerScreen` as a full-screen cover.
-    /// Also used for episodes pushed from Continue Watching.
     public struct MovieDetailScreen: View {
         @Environment(\.libraryService) private var libraryService
         @Environment(\.videoPlaybackService) private var videoPlaybackService
@@ -75,7 +72,6 @@
                 get: { videoPlaybackService.isActive && videoPlaybackService.item?.id == item.id },
                 set: { presented in
                     if presented == false {
-                        // On return from the player, reload so the new resume point shows as Resume (slice 008).
                         Task {
                             await videoPlaybackService.stop()
                             await libraryService.loadDetail(id: item.id)
@@ -90,7 +86,6 @@
             Task { await videoPlaybackService.play(item: target, startAt: position) }
         }
 
-        /// The freshly fetched item when it has arrived, else the one this screen was pushed with.
         private var current: MediaItem {
             if case let .loaded(detail) = libraryService.details[item.id] {
                 return detail

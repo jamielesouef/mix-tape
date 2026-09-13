@@ -9,7 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The screen for a pushed `Library`, chosen by kind. Music is the wallet on iOS (§9.1).
     struct LibraryDestination: View {
         let library: Library
 

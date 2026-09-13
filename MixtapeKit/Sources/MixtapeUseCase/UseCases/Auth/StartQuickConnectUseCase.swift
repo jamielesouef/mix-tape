@@ -6,8 +6,6 @@
 
 import MixtapeDomain
 
-/// → `QuickConnectHandshake` (code + secret). Throws `.quickConnectUnavailable` when the
-/// server reports Quick Connect disabled.
 public nonisolated struct StartQuickConnectUseCase: Sendable {
     private let repository: any AuthRepositoryProtocol
 

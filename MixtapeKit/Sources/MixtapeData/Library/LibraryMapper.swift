@@ -17,7 +17,6 @@ nonisolated enum LibraryMapper {
         return Library(id: dto.id, name: dto.name ?? "", kind: kind, imageTag: dto.imageTags?["Primary"])
     }
 
-    /// Items whose `Type` is outside `MediaKind` are dropped rather than failing the list.
     static func items(from dto: ItemsResultDTO) -> [MediaItem] {
         (dto.items ?? []).compactMap(mediaItem)
     }
@@ -27,7 +26,6 @@ nonisolated enum LibraryMapper {
         return Page(items: items, totalCount: dto.totalRecordCount ?? items.count, startIndex: dto.startIndex ?? requested.startIndex)
     }
 
-    /// A single item of an unknown type is a decoding failure: there is no list to drop it from.
     static func detail(from dto: BaseItemDTO) throws -> MediaItem {
         guard let item = mediaItem(from: dto) else { throw MixtapeError.decoding }
         return item

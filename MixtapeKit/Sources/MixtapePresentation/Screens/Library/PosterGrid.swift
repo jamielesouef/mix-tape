@@ -9,7 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// iOS poster grid: 2-up compact / 4-up regular, paged by asking for more as the last cell appears.
     struct PosterGrid: View {
         @Environment(\.horizontalSizeClass) private var sizeClass
         let items: [MediaItem]

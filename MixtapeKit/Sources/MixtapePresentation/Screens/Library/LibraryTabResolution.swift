@@ -6,9 +6,6 @@
 
 import MixtapeDomain
 
-/// What a tvOS kind tab hosts for the libraries the user has (engineering doc §1.5, slice 016): the
-/// one library of its kind, a list of them when there are several, or the empty state. Pure and
-/// platform-shared so the rule is testable without the tvOS-only `LibraryTabScreen`.
 nonisolated enum LibraryTabResolution: Equatable {
     case none
     case one(Library)

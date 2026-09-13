@@ -9,7 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// A TV library on tvOS: mirrors `MovieLibraryShelf` exactly (decision 26) — same call, same shelf.
     public struct SeriesLibraryShelf: View {
         @Environment(\.libraryService) private var libraryService
         let library: Library

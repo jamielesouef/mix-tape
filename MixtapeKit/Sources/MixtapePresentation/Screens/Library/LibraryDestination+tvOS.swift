@@ -9,7 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The shelf for a `Library`, chosen by kind: the tvOS tabs host it and Home's pushes reach it.
     struct LibraryDestination: View {
         let library: Library
 

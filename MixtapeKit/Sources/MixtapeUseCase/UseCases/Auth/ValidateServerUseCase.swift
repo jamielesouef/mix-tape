@@ -7,8 +7,6 @@
 import Foundation
 import MixtapeDomain
 
-/// URL text → `ServerIdentity`. Trims whitespace and trailing slashes. Without a scheme it
-/// tries `https://` and falls back to `http://` on any failure; an explicit scheme is used as given.
 public nonisolated struct ValidateServerUseCase: Sendable {
     private let repository: any AuthRepositoryProtocol
 

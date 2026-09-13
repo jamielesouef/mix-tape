@@ -8,8 +8,6 @@ import Foundation
 import MixtapeDomain
 import MixtapeUseCase
 
-/// The release-build collaborator behind the two player services' placeholders (slice 013).
-/// Resolution and reporting fail as unreachable; the stream URL is one nothing can play.
 nonisolated struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
     func resolveVideo(itemID _: String, startAt _: Duration, session _: UserSession) async throws -> VideoSourceResolution {
         throw MixtapeError.serverUnreachable

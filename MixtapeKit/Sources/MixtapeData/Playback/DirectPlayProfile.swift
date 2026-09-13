@@ -4,7 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// One `DirectPlayProfile` entry of the device profile (engineering doc §8).
 public nonisolated struct DirectPlayProfile: Encodable, Sendable, Equatable {
     public let container: String
     public let type: String

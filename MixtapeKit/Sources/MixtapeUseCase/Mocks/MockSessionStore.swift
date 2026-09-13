@@ -8,7 +8,6 @@
     import Foundation
     import MixtapeDomain
 
-    /// In-memory session store. Set `failure` to make every call throw.
     public final nonisolated class MockSessionStore: SessionStoreProtocol, @unchecked Sendable {
         private let lock = NSLock()
         private var stored: UserSession?

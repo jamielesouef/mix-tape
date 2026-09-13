@@ -9,7 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// A movie library on iOS: the paged poster grid over `LibraryService.pages`. tvOS has `MovieLibraryShelf`.
     public struct MovieLibraryGrid: View {
         @Environment(\.libraryService) private var libraryService
         let library: Library

@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// → the persisted `UserSession`, if any.
 public nonisolated struct RestoreSessionUseCase: Sendable {
     private let store: any SessionStoreProtocol
 

@@ -8,8 +8,6 @@
     import Foundation
     import MixtapeDomain
 
-    /// Closure-driven test double for previews and use-case tests. Each closure defaults to sample
-    /// data so a preview needs to override only the call it is about.
     public nonisolated struct MockLibraryRepository: LibraryRepositoryProtocol {
         public var librariesResult: @Sendable (UserSession) async throws -> [Library]
         public var itemsResult: @Sendable (String, MediaKind, PageRequest, UserSession) async throws -> Page<MediaItem>

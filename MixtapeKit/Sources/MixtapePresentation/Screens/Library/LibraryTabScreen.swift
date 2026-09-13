@@ -9,11 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// One tvOS tab per library kind (decision 26): hosts the shelf of the one library of `kind`, or
-    /// a list of them when the user has several (§1.5, slice 016). The Music tab also carries a
-    /// "Now Playing" button while music is active — the Siri Remote has no skip buttons, so
-    /// `NowPlayingScreen` is the only route to next/previous. That button sits outside the
-    /// `NavigationStack` so it survives the push to an album.
     public struct LibraryTabScreen: View {
         @Environment(\.libraryService) private var libraryService
         @Environment(\.musicPlayerService) private var music
@@ -56,12 +51,6 @@
                     }
                 }
             }
-            // Outside the NavigationStack, not on its root content. Inside, the button went with
-            // the root the moment AlbumDetailScreen was pushed — and that is the screen the user
-            // presses Play from, so next/previous became unreachable exactly when they were wanted.
-            // The Siri Remote has no skip buttons, so this affordance is the only route (§1.12).
-            // An overlay, not a toolbar item (Section 6). The full-width focus section lets an
-            // up-swipe from any album card reach the button, which sits above no card of its own.
             .overlay(alignment: .top) {
                 if kind == .music, music.isActive {
                     HStack {
@@ -73,14 +62,9 @@
                     .focusSection()
                 }
             }
-            // A cover, not a push. `navigationDestination(isPresented:)` is declared at the stack
-            // root, so it is unreliable once a value destination is already on the stack — which
-            // is the whole case this button now has to serve. Menu dismisses the cover.
             .fullScreenCover(isPresented: $showNowPlaying) {
                 NowPlayingScreen()
             }
-            // The end of the album, or stop(), closes the cover — the same named dismissal 015 gave
-            // the iOS sheet; without it the cover sits on "Nothing playing" until Menu.
             .onChange(of: music.isActive) { _, active in
                 if active == false {
                     showNowPlaying = false

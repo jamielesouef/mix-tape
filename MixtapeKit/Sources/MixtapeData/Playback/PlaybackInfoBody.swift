@@ -4,7 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// Request body for `POST /Items/{itemId}/PlaybackInfo` (engineering doc §8).
 nonisolated struct PlaybackInfoBody: Encodable {
     let deviceProfile: DeviceProfile
     let startTimeTicks: Int64

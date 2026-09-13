@@ -8,8 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Art over a title, with a progress bar when the item has a resume point. `aspectRatio` is
-/// width over height: 2:3 for posters, 1 for album art.
 struct PosterCard: View {
     let item: MediaItem
     var aspectRatio: CGFloat = 2 / 3

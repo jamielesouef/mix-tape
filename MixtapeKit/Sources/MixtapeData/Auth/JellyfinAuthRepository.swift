@@ -9,8 +9,6 @@ import MixtapeDomain
 import MixtapeInfrastructure
 import MixtapeUseCase
 
-/// Engineering doc §8 "Auth". Stateless; the stable `DeviceId` is injected so the Quick Connect
-/// flow carries it before any session exists.
 public nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
     private let client: JellyfinHTTPClient
     private let deviceID: String
@@ -40,7 +38,6 @@ public nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
         try await client.get("/QuickConnect/Enabled", auth: context(baseURL: server.baseURL))
     }
 
-    /// `POST`, per decision 5.
     public func initiateQuickConnect(server: ServerIdentity) async throws -> QuickConnectHandshake {
         let dto: QuickConnectResultDTO = try await client.post(
             "/QuickConnect/Initiate", body: EmptyBody(), auth: context(baseURL: server.baseURL),

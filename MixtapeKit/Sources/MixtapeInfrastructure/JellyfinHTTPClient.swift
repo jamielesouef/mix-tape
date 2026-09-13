@@ -7,8 +7,6 @@
 import Foundation
 import MixtapeDomain
 
-/// Wraps `URLSession`: builds the auth header, encodes and decodes JSON, and maps status
-/// codes to `MixtapeError` once so no repository re-derives the table (engineering doc §7).
 public nonisolated struct JellyfinHTTPClient: Sendable {
     public let session: URLSession
     public let deviceName: String
@@ -44,10 +42,7 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
 
     // MARK: - Request assembly
 
-    /// `Authorization: MediaBrowser Client="mixtape", Device="…", DeviceId="…", Version="…", Token="…"`.
-    /// The `Token` component is omitted, not sent empty, when `auth.token` is `nil`.
     func authorizationHeader(for auth: AuthContext) -> String {
-        // The device name is user-controlled text inside a quoted value: escape `\` and `"` (slice 019).
         let device = deviceName.replacing("\\", with: "\\\\").replacing("\"", with: "\\\"")
         var header = "MediaBrowser Client=\"mixtape\", Device=\"\(device)\", DeviceId=\"\(auth.deviceID)\", Version=\"\(auth.appVersion)\""
         if let token = auth.token {
@@ -90,9 +85,6 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
 
     // MARK: - Mapping
 
-    /// `nil` for any 2xx. 401 is `.invalidCredentials` on the credential endpoints,
-    /// `.quickConnectUnavailable` on the Quick Connect endpoints (decision 10) and
-    /// `.sessionExpired` elsewhere; every other non-2xx is `.transport` (decision 9).
     static func map(status: Int, path: String) -> MixtapeError? {
         switch status {
         case 200 ... 299:
@@ -119,7 +111,6 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
 
     // MARK: - JSON
 
-    /// No key-decoding strategy, ever: Jellyfin is PascalCase and every DTO declares `CodingKeys`.
     private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         do {
             return try JSONDecoder().decode(type, from: data)
@@ -128,7 +119,6 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
         }
     }
 
-    /// Sorted keys so a request body is byte-for-byte deterministic; the server does not care and tests can compare it.
     private func encode(_ body: some Encodable) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys

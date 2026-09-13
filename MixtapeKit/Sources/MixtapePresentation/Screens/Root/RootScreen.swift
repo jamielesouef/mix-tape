@@ -7,7 +7,6 @@
 import MixtapeServices
 import SwiftUI
 
-/// Switches on `SessionService.state` (engineering doc §10): splash, the sign-in flow, or the tabs.
 public struct RootScreen: View {
     @Environment(\.sessionService) private var sessionService
 

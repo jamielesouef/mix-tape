@@ -8,8 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Full-screen cover hosting the selected player's view plus a small overlay. AVKit supplies the
-/// transport controls (decision 18); the overlay adds Close and surfaces preparing / failure.
 public struct VideoPlayerScreen: View {
     @Environment(\.videoPlaybackService) private var videoPlaybackService
     @Environment(\.dismiss) private var dismiss

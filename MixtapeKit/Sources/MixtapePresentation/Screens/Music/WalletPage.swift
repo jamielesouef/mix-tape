@@ -9,8 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// One page of the wallet: a fixed `columns × columns` block of sleeves (engineering doc §9.1,
-    /// decision 20). Fixed, not adaptive — slots past the last album stay visible as empty sleeves.
     struct WalletPage: View {
         let albums: [MediaItem]
         let columns: Int

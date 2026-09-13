@@ -8,8 +8,6 @@
     import SwiftUI
 
     extension View {
-        /// The button style for a focusable card in a shared screen: `.card` lifts and shadows the
-        /// focused card, which is what makes a shelf navigable from the Siri Remote.
         func platformCardButtonStyle() -> some View {
             buttonStyle(.card)
         }

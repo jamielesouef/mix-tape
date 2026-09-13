@@ -9,8 +9,6 @@
     import MixtapeDomain
     import MixtapeInfrastructure
 
-    /// An `AudioPlayerControlling` that does nothing audible, for previews. `Stub*` doubles for tests
-    /// live in the test targets.
     public final class MockAudioPlayerController: AudioPlayerControlling {
         public var onPositionChange: ((Duration) -> Void)?
         public var onEnded: (() -> Void)?

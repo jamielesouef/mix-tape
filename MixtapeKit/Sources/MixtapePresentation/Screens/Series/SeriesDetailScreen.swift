@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Season picker → episode list. Episodes arrive sorted by the repository (decision 27).
 public struct SeriesDetailScreen: View {
     @Environment(\.seriesService) private var seriesService
     @State private var selectedSeasonID: String?

@@ -8,9 +8,6 @@ import Foundation
 import MixtapeDomain
 import MixtapeUseCase
 
-/// The release-build collaborator behind `SessionService.placeholder` (slice 013). Every call
-/// fails as unreachable: a placeholder is never the service a running app talks to, and the
-/// `Mock*` factories that stand in for it in Debug are not built into release.
 nonisolated struct PlaceholderAuthRepository: AuthRepositoryProtocol {
     func serverIdentity(at _: URL) async throws -> ServerIdentity {
         throw MixtapeError.serverUnreachable

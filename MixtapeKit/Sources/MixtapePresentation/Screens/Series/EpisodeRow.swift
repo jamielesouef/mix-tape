@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Thumbnail, `S2E4 · Title`, progress bar (engineering doc §9).
 struct EpisodeRow: View {
     let episode: MediaItem
 

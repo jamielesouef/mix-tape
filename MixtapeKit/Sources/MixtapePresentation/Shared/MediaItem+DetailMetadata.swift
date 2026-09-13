@@ -7,7 +7,6 @@
 import MixtapeDomain
 
 extension MediaItem {
-    /// The detail screens' one-line metadata: series, year, runtime, watched — joined with " · ".
     nonisolated var detailMetadata: String {
         var parts: [String] = []
         if let seriesName {

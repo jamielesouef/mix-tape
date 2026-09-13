@@ -7,8 +7,6 @@
 import MixtapeDomain
 import MixtapeUseCase
 
-/// The release-build collaborator behind `LibraryService.placeholder` and
-/// `SeriesService.placeholder` (slice 013). Every call fails as unreachable.
 nonisolated struct PlaceholderLibraryRepository: LibraryRepositoryProtocol {
     func libraries(session _: UserSession) async throws -> [Library] {
         throw MixtapeError.serverUnreachable

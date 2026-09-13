@@ -8,7 +8,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// iOS: server entry, then password sign-in with Quick Connect as the secondary action.
     struct SignInFlow: View {
         @Environment(\.sessionService) private var sessionService
         @State private var usingQuickConnect = false
