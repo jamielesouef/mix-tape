@@ -15,10 +15,16 @@ nonisolated struct ValidateServerUseCase: Sendable {
 
     func callAsFunction(urlText: String) async throws -> ServerIdentity {
         let text = Self.normalised(urlText)
-        guard text.isEmpty == false else { throw MixtapeError.serverUnreachable }
+
+        guard text.isEmpty == false else {
+            throw MixtapeError.serverUnreachable
+        }
+
         if text.contains("://") {
             return try await identity(at: text)
         }
+
+        // No scheme typed: try TLS first, then plain HTTP for a LAN server without a certificate.
         do {
             return try await identity(at: "https://" + text)
         } catch {
@@ -27,15 +33,20 @@ nonisolated struct ValidateServerUseCase: Sendable {
     }
 
     private func identity(at text: String) async throws -> ServerIdentity {
-        guard let url = URL(string: text), url.host() != nil else { throw MixtapeError.serverUnreachable }
+        guard let url = URL(string: text), url.host() != nil else {
+            throw MixtapeError.serverUnreachable
+        }
+
         return try await repository.serverIdentity(at: url)
     }
 
     static func normalised(_ text: String) -> String {
         var result = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
         while result.hasSuffix("/") {
             result.removeLast()
         }
+
         return result
     }
 }

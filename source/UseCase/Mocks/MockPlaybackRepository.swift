@@ -7,21 +7,21 @@
 import Foundation
 
 #if DEBUG
-    import Foundation
 
     nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
-        var audioStreamResult: @Sendable (MediaItem, UserSession, String) -> AudioStream
-        var reportStartResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
-        var reportProgressResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
-        var reportStoppedResult: @Sendable (PlaybackReport, UserSession) async throws -> Void
+        typealias AudioStreamResult = @Sendable (MediaItem, UserSession, String) -> AudioStream
+        typealias ReportResult = @Sendable (PlaybackReport, UserSession) async throws -> Void
+
+        var audioStreamResult: AudioStreamResult
+        var reportStartResult: ReportResult
+        var reportProgressResult: ReportResult
+        var reportStoppedResult: ReportResult
 
         init(
-            audioStreamResult: @escaping @Sendable (MediaItem, UserSession, String) -> AudioStream = { track, _, _ in
-                AudioStream(url: URL(string: "mock://audio/\(track.id)")!, playMethod: isNativeAudioContainer(track.container) ? .directPlay : .transcode)
-            },
-            reportStartResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
-            reportProgressResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
-            reportStoppedResult: @escaping @Sendable (PlaybackReport, UserSession) async throws -> Void = { _, _ in },
+            audioStreamResult: @escaping AudioStreamResult = Self.sampleAudioStream,
+            reportStartResult: @escaping ReportResult = { _, _ in },
+            reportProgressResult: @escaping ReportResult = { _, _ in },
+            reportStoppedResult: @escaping ReportResult = { _, _ in }
         ) {
             self.audioStreamResult = audioStreamResult
             self.reportStartResult = reportStartResult
@@ -29,7 +29,11 @@ import Foundation
             self.reportStoppedResult = reportStoppedResult
         }
 
-        func audioStream(track: MediaItem, session: UserSession, playSessionID: String) -> AudioStream {
+        func audioStream(
+            track: MediaItem,
+            session: UserSession,
+            playSessionID: String
+        ) -> AudioStream {
             audioStreamResult(track, session, playSessionID)
         }
 
@@ -43,6 +47,17 @@ import Foundation
 
         func reportStopped(_ report: PlaybackReport, session: UserSession) async throws {
             try await reportStoppedResult(report, session)
+        }
+
+        // MARK: - Sample data
+
+        /// A fake stream URL carrying the play method the real repository would choose for
+        /// that container, so callers can assert on direct play versus transcode.
+        static let sampleAudioStream: AudioStreamResult = { track, _, _ in
+            AudioStream(
+                url: URL(string: "mock://audio/\(track.id)")!, // literal URL, cannot fail
+                playMethod: isNativeAudioContainer(track.container) ? .directPlay : .transcode
+            )
         }
     }
 #endif

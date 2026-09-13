@@ -15,6 +15,7 @@ nonisolated struct StartQuickConnectUseCase: Sendable {
         guard try await repository.isQuickConnectEnabled(server: server) else {
             throw MixtapeError.quickConnectUnavailable
         }
+
         return try await repository.initiateQuickConnect(server: server)
     }
 }

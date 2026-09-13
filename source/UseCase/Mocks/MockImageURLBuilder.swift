@@ -7,15 +7,30 @@
 import Foundation
 
 #if DEBUG
-    import Foundation
-
     nonisolated struct MockImageURLBuilder: ImageURLBuilderProtocol {
-        init() {}
+        /// Previews want a real picture, so the path is a placeholder image of the requested
+        /// size. The item and tag ride along as query items: the placeholder host ignores
+        /// them, and they keep the builder's inputs visible to tests.
+        func url(
+            itemID: String,
+            tag: String?,
+            kind: ImageKind,
+            maxHeight: Int,
+            session _: UserSession
+        ) -> URL? {
+            guard let tag else {
+                return nil
+            }
 
-        func url(itemID: String, tag: String?, kind: ImageKind, maxHeight: Int, session _: UserSession) -> URL? {
-            guard let tag else { return nil }
-            let name = kind == .primary ? "Primary" : "Backdrop"
-            return URL(string: "mock://images/\(itemID)/\(name)?tag=\(tag)&maxHeight=\(maxHeight)")
+            let width = kind == .primary ? maxHeight : maxHeight * 16 / 9
+
+            var components = URLComponents(string: "https://placecats.com/\(width)/\(maxHeight)")
+            components?.queryItems = [
+                URLQueryItem(name: "itemId", value: itemID),
+                URLQueryItem(name: "tag", value: tag)
+            ]
+
+            return components?.url
         }
     }
 #endif

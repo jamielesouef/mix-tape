@@ -7,7 +7,6 @@
 import Foundation
 
 #if DEBUG
-    import Foundation
 
     final nonisolated class MockSessionStore: SessionStoreProtocol, @unchecked Sendable {
         private let lock = NSLock()
@@ -28,6 +27,7 @@ import Foundation
                 if let failure {
                     throw failure
                 }
+
                 return stored
             }
         }
@@ -37,6 +37,7 @@ import Foundation
                 if let failure {
                     throw failure
                 }
+
                 stored = session
             }
         }
@@ -46,6 +47,7 @@ import Foundation
                 if let failure {
                     throw failure
                 }
+
                 stored = nil
             }
         }

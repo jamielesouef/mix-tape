@@ -13,9 +13,19 @@ nonisolated struct SignInWithPasswordUseCase: Sendable {
         self.store = store
     }
 
-    func callAsFunction(userName: String, password: String, server: ServerIdentity) async throws -> UserSession {
-        let session = try await repository.authenticate(userName: userName, password: password, server: server)
+    func callAsFunction(
+        userName: String,
+        password: String,
+        server: ServerIdentity
+    ) async throws -> UserSession {
+        let session = try await repository.authenticate(
+            userName: userName,
+            password: password,
+            server: server
+        )
+
         try store.save(session)
+
         return session
     }
 }

@@ -14,9 +14,17 @@ nonisolated struct PollQuickConnectUseCase: Sendable {
     }
 
     func callAsFunction(secret: String, server: ServerIdentity) async throws -> UserSession? {
-        guard try await repository.quickConnectState(secret: secret, server: server) else { return nil }
-        let session = try await repository.authenticateWithQuickConnect(secret: secret, server: server)
+        guard try await repository.quickConnectState(secret: secret, server: server) else {
+            return nil
+        }
+
+        let session = try await repository.authenticateWithQuickConnect(
+            secret: secret,
+            server: server
+        )
+
         try store.save(session)
+
         return session
     }
 }

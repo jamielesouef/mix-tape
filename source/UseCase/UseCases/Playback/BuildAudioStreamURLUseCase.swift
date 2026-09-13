@@ -11,7 +11,11 @@ nonisolated struct BuildAudioStreamURLUseCase: Sendable {
         self.repository = repository
     }
 
-    func callAsFunction(track: MediaItem, session: UserSession, playSessionID: String) -> AudioStream {
+    func callAsFunction(
+        track: MediaItem,
+        session: UserSession,
+        playSessionID: String
+    ) -> AudioStream {
         repository.audioStream(track: track, session: session, playSessionID: playSessionID)
     }
 }
