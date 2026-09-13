@@ -1,6 +1,6 @@
 # Mix Tape
 
-A Jellyfin client for iOS 26. Browse video and music libraries, play both, report progress back to the server.
+A Jellyfin client for iOS 26. Browse a music library, play albums, report progress back to the server.
 
 ## Where to read
 
@@ -10,7 +10,7 @@ A Jellyfin client for iOS 26. Browse video and music libraries, play both, repor
 
 ## Toolchain
 
-The project targets Xcode 26.6 / Swift 6.2, Swift 6 language mode, `MainActor` default isolation. A newer Xcode may open it, but write nothing newer than Swift 6.2 and keep `MixTape.xcodeproj` at `objectVersion = 77` — see `CLAUDE.md`. VLCKit is the only third-party dependency, resolved as a remote SPM package on the app target.
+The project targets Xcode 26.6 / Swift 6.2, Swift 6 language mode, `MainActor` default isolation. A newer Xcode may open it, but write nothing newer than Swift 6.2 and keep `MixTape.xcodeproj` at `objectVersion = 77` — see `CLAUDE.md`. No third-party dependencies.
 
 ## Layout
 

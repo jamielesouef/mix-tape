@@ -16,15 +16,13 @@ downloaded from the official stable mirror. The local server runs **10.11.11**,
 and the two differ in a way that matters to this build.
 
 The overlap is large — 293 shared paths, and every endpoint V1 needs is in both.
-But the 12.0.0 spec is **missing 22 paths the running server has**, and two of
-them are on V1's critical path:
+But the 12.0.0 spec is **missing 22 paths the running server has**, and one of
+them is on V1's critical path:
 
-- `/Videos/{itemId}/master.m3u8`
 - `/Audio/{itemId}/master.m3u8`
 
-Those are the HLS transcode URLs behind `PlaybackMethod.transcodeHLS` and the
-music HLS fallback. Implementing against the 12.0.0 spec means implementing
-those two paths from nothing, or silently omitting them.
+That is the HLS fallback URL for music streaming. Implementing against the
+12.0.0 spec means implementing that path from nothing, or silently omitting it.
 
 The difference runs the other way too, but harmlessly: exactly one path exists in
 12.0.0 and not on the server (`/Items/{itemId}/Collections`), and collections are
