@@ -1,13 +1,13 @@
 //
-//  mixtapeUITests.swift
-//  mixtapeUITests
+//  MixtapeUITests.swift
+//  MixtapeUITests
 //
 //  Created by Jamie Le Souef on 3/9/2026.
 //
 
 import XCTest
 
-final class mixtapeUITests: XCTestCase {
+final class MixtapeUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
