@@ -79,8 +79,8 @@ review enforces the folder edges now. `scripts/check-layer-imports.sh` still
 enforces the one part a grep can see: `Domain` and `UseCase` stay framework-free.
 
 The tree is `source/` (`App`, `Domain`, `UseCase`, `Infrastructure`, `Data`,
-`Services`, `Presentation`), `tests/` (five unit-test bundles), `uitest/`
-(XCUITest) and `archive/tvOS/` (decision 52).
+`Services`, `Presentation`), `tests/` (one bundle, folders mirroring `source/`),
+`uitest/` (XCUITest) and `archive/tvOS/` (decision 52).
 
 Repositories are stateless `Sendable` structs; caching is an injected
 collaborator, never hidden inside one. Infrastructure is stateless or
@@ -107,9 +107,9 @@ Use lists and bullet points when asked to, or when the content is multifaceted e
 - Protocol suffix `*Protocol`. `Mock*` in the main target for previews, `Stub*`
   in test targets only.
 - Liquid Glass for chrome, always with a Reduce Transparency fallback.
-- One platform, so no platform divergence. The surviving `+iOS.swift` files and
-  their `#if os(iOS)` guards are a leftover of the tvOS split; leave them where
-  they are rather than renaming them in an unrelated change.
+- One platform, so no platform divergence. The `+iOS.swift` suffixes and
+  `#if os(iOS)` guards were a leftover of the tvOS split and are gone — the
+  files carry the plain type name. Do not reintroduce either.
 
 ## Testing
 

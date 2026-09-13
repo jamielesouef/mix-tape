@@ -1,0 +1,73 @@
+//  VideoPlayerScreen.swift
+//  mixtape
+//
+//  Created by Jamie Le Souëf on 03/09/2026.
+//
+
+import SwiftUI
+
+public struct VideoPlayerScreen: View {
+    @Environment(\.videoPlaybackService) private var videoPlaybackService
+    @Environment(\.dismiss) private var dismiss
+
+    public init() {}
+
+    public var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            if let playerView = videoPlaybackService.playerView {
+                playerView.ignoresSafeArea()
+            }
+            switch videoPlaybackService.status {
+            case .preparing:
+                ProgressView("Preparing…")
+                    .tint(.white)
+                    .foregroundStyle(.white)
+                    .accessibilityIdentifier(VideoPlayerIdentifiers.statusLabel)
+            case let .failed(error):
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.largeTitle)
+                    Text(error.message)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier(VideoPlayerIdentifiers.statusLabel)
+                }
+                .foregroundStyle(.white)
+                .padding(24)
+                .glassChrome()
+                .padding()
+            case .idle, .playing, .paused:
+                EmptyView()
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            Button("Close", systemImage: "xmark") {
+                Task {
+                    await videoPlaybackService.stop()
+                    dismiss()
+                }
+            }
+            .labelStyle(.iconOnly)
+            .padding(12)
+            .glassChrome(cornerRadius: 24)
+            .padding()
+            .accessibilityIdentifier(VideoPlayerIdentifiers.closeButton)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(VideoPlayerIdentifiers.screen)
+    }
+}
+
+#if DEBUG
+    #Preview("loaded") {
+        VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.playing())
+    }
+
+    #Preview("empty") {
+        VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.preparing())
+    }
+
+    #Preview("failure") {
+        VideoPlayerScreen().environment(\.videoPlaybackService, MockVideoPlaybackService.failed(.noPlayableSource))
+    }
+#endif

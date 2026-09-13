@@ -1,37 +1,34 @@
 # Mix Tape Swift MV Architecture
 
-> **Superseded.** This page predates the engineering doc and is kept for history. `SPEC-DECISIONS.md` outranks it, then `docs/engineering-doc.md` (§3 for the layout, §11 for testing, Appendix B for the gate commands). Its platform, XCUITest and build-command statements are stale where they differ; read the engineering doc first and this page only for the MV template's original wording (slice 019).
+> **Superseded.** This page predates the engineering doc and is kept for history. `AGENTS.md` outranks it, then `docs/engineering-doc.md` (§3 for the layout, §11 for testing, Appendix B for the gate commands). Its platform, XCUITest and build-command statements are stale where they differ; read the engineering doc first and this page only for the MV template's original wording (slice 019).
 
 Mix Tape's architecture follows the Swift MV template from the trimr project.
 
 ## Project structure
 
-Superseded by engineering doc §3 — see `SPEC-DECISIONS.md`, decision 1. The layout is one local SPM package with six library targets, two thin app targets, and platform-split UI tests:
+Superseded by engineering doc §3 and by decisions 52–55, which this block has been rewritten to match. The layout is one iOS app target over six layer folders, one unit-test target and one UI-test target:
 
 ```text
-Apps/
-├── MixtapeiOS/   # App target: App.swift, Assets, Info.plist. Nothing else
-└── MixtapeTV/    # App target: App.swift, Assets, Info.plist. Nothing else
-MixtapeKit/
-├── Package.swift
-├── Sources/      # MixtapeDomain, MixtapeUseCase, MixtapeServices,
-│                 # MixtapeInfrastructure, MixtapeData, MixtapePresentation
-└── Tests/        # MixtapeDomainTests, MixtapeUseCaseTests,
-                  # MixtapeServicesTests, MixtapeDataTests,
-                  # MixtapePresentationTests (slice 013)
-uiTests/
-├── iOS/          # iOS UI tests (XCUITest)
-└── tvOS/         # tvOS UI tests (XCUITest)
+source/
+├── App/             # MixtapeApp.swift, AppContainer.swift, Assets, Info.plist
+├── Domain/
+├── UseCase/
+├── Infrastructure/
+├── Data/
+├── Services/
+└── Presentation/
+tests/               # one target, MixtapeTests; folders mirror source/
+uitest/              # one target, MixtapeUITests (XCUITest, not run this round)
+archive/tvOS/        # the removed tvOS build, out of the project (decision 52)
 scripts/
-├── check-layer-imports.sh   # layer edges, run by the gate and a build phase
+├── check-layer-imports.sh   # framework edges, run by the gate and a build phase
 ├── check-glass-fallback.sh  # Reduce Transparency fallback at every Material site
 ├── gate.sh                  # the slice gate
 ├── jf-probe.swift           # server-observable acceptance checks (decision 47)
-├── sim-type.sh              # credential entry on the iOS simulator (decision 46)
-└── tv-remote.sh, tvkey.m    # Siri Remote presses on the Apple TV simulator (decision 49)
+└── sim-type.sh              # credential entry on the iOS simulator (decision 46)
 ```
 
-The layers are SPM targets, not folders inside an app target — `Package.swift` declares the dependency edges and the compiler enforces them. Unit tests live in `MixtapeKit/Tests/` beside the targets they cover. UI tests stay platform-split at the repository root, since XCUITest bundles belong to app targets rather than to the package.
+The layers are folders inside one app module, not SPM targets, so the compiler no longer enforces the dependency edges — review does. `check-layer-imports.sh` still enforces the part a grep can see: `Domain` and `UseCase` import no UI or platform framework.
 
 The layer and feature organisation below applies inside each source target. `AppDomain`, `AppServices` and the other `App*` names in this document are the generic template's names for those layers; this project spells them `Mixtape*`.
 
@@ -41,7 +38,7 @@ No ViewModel layer. `@MainActor @Observable` **services** hold state. Views read
 
 ## Platform baseline
 
-- iOS 26+, MacOS 26+, tvOS 26+ ONLY. No back-deploy. No `#available` checks.
+- iOS 26.1+ ONLY. No macOS, no tvOS. No back-deploy. No `#available` checks.
 - Xcode 26, Swift 6.2, Swift 6 language mode.
 - Set at project level:
   - `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`
@@ -76,7 +73,7 @@ Rules:
 
 ## Jellyfin API integration
 
-Use the checked-in [Jellyfin OpenAPI specification](jellyfin-openapi.json) as the API contract when implementing the iOS and tvOS clients. This copy is the spec served by the local server itself and describes Jellyfin **10.11.11** using OpenAPI **3.0.1**. See [API version and source notes](jellyfin-api.md) for provenance and for how to refresh it after a server upgrade.
+Use the checked-in [Jellyfin OpenAPI specification](jellyfin-openapi.json) as the API contract when implementing the iOS client. This copy is the spec served by the local server itself and describes Jellyfin **10.11.11** using OpenAPI **3.0.1**. See [API version and source notes](jellyfin-api.md) for provenance and for how to refresh it after a server upgrade.
 
 Keep the Jellyfin network client in `AppInfrastructure`, and repository implementations and API DTO-to-domain mapping in `AppData`. Expose domain types through the repository protocols in `AppUseCase` so services and views remain independent of Jellyfin's transport models.
 
@@ -141,8 +138,8 @@ struct AppRoot: App {
 
 ## Testing
 
-- Keep unit tests in `MixtapeKit/Tests/<Target>Tests/`, beside the target they cover.
-- Keep iOS UI tests in `uiTests/iOS/` and tvOS UI tests in `uiTests/tvOS/`.
+- Keep unit tests in `tests/<Layer>/`, mirroring the `source/` folder they cover.
+- Keep UI tests in `uitest/`.
 - Swift Testing only (`@Test`, `@Suite`) for unit tests.
 - Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 - Test behaviour, not the mock's plumbing.

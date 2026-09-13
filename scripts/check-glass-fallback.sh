@@ -20,7 +20,7 @@
 # Exit 0 when clean, 1 with the offending lines otherwise.
 set -u
 cd "$(dirname "$0")/.." || exit 2
-DIRS="MixtapeKit/Sources Apps"
+DIRS="source"
 for dir in $DIRS; do
     [ -d "$dir" ] || { echo "missing $dir"; exit 2; }
 done

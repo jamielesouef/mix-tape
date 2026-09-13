@@ -53,4 +53,6 @@ media/
 .gate-log
 
 # Ad-hoc screen captures from manual/agent-driven simulator walkthroughs. Local evidence, never committed.
-screens/
+# Anchored: unanchored `screens/` also matched every source `Screens/` directory,
+# because the filesystem here is case-insensitive.
+/screens/
