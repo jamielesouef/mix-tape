@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import UIKit
 
 @MainActor
 struct AppContainer {
@@ -14,38 +15,53 @@ struct AppContainer {
     let musicPlayerService: MusicPlayerService
 
     init() {
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 15
-        let client = JellyfinHTTPClient(session: URLSession(configuration: configuration), deviceName: DeviceName.current)
-
+        let client = Self.makeHTTPClient()
         let sessionStore = KeychainSessionStore()
         let deviceID = (try? sessionStore.deviceID()) ?? UUID().uuidString
-        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let appVersion = Self.appVersion
 
-        let authRepository = JellyfinAuthRepository(client: client, deviceID: deviceID, appVersion: appVersion)
+        let authRepository = JellyfinAuthRepository(
+            client: client,
+            deviceID: deviceID,
+            appVersion: appVersion
+        )
+        let libraryRepository = JellyfinLibraryRepository(client: client, appVersion: appVersion)
+        let playbackRepository = JellyfinPlaybackRepository(client: client, appVersion: appVersion)
 
         sessionService = SessionService(
             validateServer: ValidateServerUseCase(repository: authRepository),
-            signInWithPassword: SignInWithPasswordUseCase(repository: authRepository, store: sessionStore),
+            signInWithPassword: SignInWithPasswordUseCase(
+                repository: authRepository,
+                store: sessionStore
+            ),
             startQuickConnect: StartQuickConnectUseCase(repository: authRepository),
-            pollQuickConnect: PollQuickConnectUseCase(repository: authRepository, store: sessionStore),
+            pollQuickConnect: PollQuickConnectUseCase(
+                repository: authRepository,
+                store: sessionStore
+            ),
             restoreSession: RestoreSessionUseCase(store: sessionStore),
-            signOut: SignOutUseCase(store: sessionStore),
+            signOut: SignOutUseCase(store: sessionStore)
         )
 
-        let libraryRepository = JellyfinLibraryRepository(client: client, appVersion: appVersion)
         libraryService = LibraryService(
             fetchLibraries: FetchLibrariesUseCase(repository: libraryRepository),
             fetchLibraryItems: FetchLibraryItemsUseCase(repository: libraryRepository),
             fetchItemDetail: FetchItemDetailUseCase(repository: libraryRepository),
             fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository),
-            sessionService: sessionService,
+            sessionService: sessionService
         )
-        imageService = ImageService(builder: JellyfinImageURLBuilder(), sessionService: sessionService)
 
-        let playbackRepository = JellyfinPlaybackRepository(client: client, appVersion: appVersion)
+        imageService = ImageService(
+            builder: JellyfinImageURLBuilder(),
+            sessionService: sessionService
+        )
 
-        let imageServiceRef = imageService
+        // Captured locally because a struct initialiser cannot escape `self` into a closure.
+        let images = imageService
+        let artworkProvider: @Sendable (MediaItem) async -> UIImage? = { track in
+            await images.image(for: track, kind: .primary, maxHeight: Self.artworkHeight)
+        }
+
         musicPlayerService = MusicPlayerService(
             controller: AudioPlayerController(),
             buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: playbackRepository),
@@ -53,14 +69,37 @@ struct AppContainer {
             reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
             sessionService: sessionService,
-            artworkProvider: { track in await imageServiceRef.image(for: track, kind: .primary, maxHeight: 600) },
+            artworkProvider: artworkProvider
         )
 
-        let libraryServiceRef = libraryService
-        let musicPlayerServiceRef = musicPlayerService
+        let libraries = libraryService
+        let music = musicPlayerService
+
         sessionService.onSessionEnded = { session in
-            libraryServiceRef.endSession()
-            musicPlayerServiceRef.endSession(session)
+            libraries.endSession()
+            music.endSession(session)
         }
+    }
+
+    // MARK: - Private
+
+    private static let requestTimeout: TimeInterval = 15
+
+    /// Lock screen and control centre artwork is shown large, so it is fetched large.
+    private static let artworkHeight = 600
+
+    private static var appVersion: String {
+        Bundle.main
+            .object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+    }
+
+    private static func makeHTTPClient() -> JellyfinHTTPClient {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = requestTimeout
+
+        return JellyfinHTTPClient(
+            session: URLSession(configuration: configuration),
+            deviceName: DeviceName.current
+        )
     }
 }
