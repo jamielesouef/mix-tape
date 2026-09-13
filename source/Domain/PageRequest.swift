@@ -7,9 +7,4 @@
 nonisolated struct PageRequest: Sendable, Equatable {
     let startIndex: Int
     let limit: Int
-
-    init(startIndex: Int, limit: Int) {
-        self.startIndex = startIndex
-        self.limit = limit
-    }
 }

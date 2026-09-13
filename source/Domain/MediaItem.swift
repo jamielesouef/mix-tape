@@ -22,10 +22,21 @@ nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
     let playback: PlaybackState
 
     init(
-        id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?,
-        indexNumber: Int?, parentIndexNumber: Int?, albumArtist: String?, primaryImageTag: String?,
-        backdropImageTag: String?, parentPrimaryImageTag: String?, albumID: String? = nil, container: String? = nil,
-        playback: PlaybackState,
+        id: String,
+        name: String,
+        kind: MediaKind,
+        overview: String?,
+        productionYear: Int?,
+        runtime: Duration?,
+        indexNumber: Int?,
+        parentIndexNumber: Int?,
+        albumArtist: String?,
+        primaryImageTag: String?,
+        backdropImageTag: String?,
+        parentPrimaryImageTag: String?,
+        albumID: String? = nil,
+        container: String? = nil,
+        playback: PlaybackState
     ) {
         self.id = id
         self.name = name

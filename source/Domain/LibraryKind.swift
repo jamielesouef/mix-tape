@@ -5,5 +5,6 @@
 //
 
 nonisolated enum LibraryKind: Sendable, Hashable {
-    case music, unsupported
+    case music
+    case unsupported
 }

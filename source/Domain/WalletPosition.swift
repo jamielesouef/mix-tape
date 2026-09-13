@@ -14,14 +14,22 @@ nonisolated struct WalletPosition: Sendable, Hashable {
     }
 
     init?(albumID: String, in albumIDs: [String], columns: Int) {
-        guard columns > 0, let index = albumIDs.firstIndex(of: albumID) else { return nil }
+        guard columns > 0, let index = albumIDs.firstIndex(of: albumID) else {
+            return nil
+        }
+
         let perPage = columns * columns
+
         self.init(page: index / perPage, slot: index % perPage)
     }
 
     static func pageCount(albumCount: Int, columns: Int) -> Int {
-        guard columns > 0 else { return 1 }
+        guard columns > 0 else {
+            return 1
+        }
+
         let perPage = columns * columns
+
         return max(1, (albumCount + perPage - 1) / perPage)
     }
 }

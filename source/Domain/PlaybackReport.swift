@@ -11,13 +11,4 @@ nonisolated struct PlaybackReport: Sendable, Equatable {
     let position: Duration
     let isPaused: Bool
     let playMethod: PlayMethod
-
-    init(itemID: String, mediaSourceID: String, playSessionID: String, position: Duration, isPaused: Bool, playMethod: PlayMethod) {
-        self.itemID = itemID
-        self.mediaSourceID = mediaSourceID
-        self.playSessionID = playSessionID
-        self.position = position
-        self.isPaused = isPaused
-        self.playMethod = playMethod
-    }
 }

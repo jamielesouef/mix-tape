@@ -9,11 +9,4 @@ nonisolated struct Library: Sendable, Identifiable, Hashable {
     let name: String
     let kind: LibraryKind
     let imageTag: String?
-
-    init(id: String, name: String, kind: LibraryKind, imageTag: String?) {
-        self.id = id
-        self.name = name
-        self.kind = kind
-        self.imageTag = imageTag
-    }
 }

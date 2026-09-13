@@ -5,5 +5,6 @@
 //
 
 nonisolated enum MediaKind: String, Sendable, Hashable {
-    case musicAlbum, audio
+    case musicAlbum
+    case audio
 }

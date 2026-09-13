@@ -16,6 +16,7 @@ extension Duration {
     nonisolated init(ticks: Int64) {
         let seconds = ticks / Self.ticksPerSecond
         let remainder = ticks % Self.ticksPerSecond
+
         self = .seconds(seconds) + .nanoseconds(remainder * 100)
     }
 }

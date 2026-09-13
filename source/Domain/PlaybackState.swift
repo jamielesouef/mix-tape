@@ -10,8 +10,4 @@ nonisolated struct PlaybackState: Sendable, Hashable {
     var hasResumePoint: Bool {
         position > .seconds(0)
     }
-
-    init(position: Duration) {
-        self.position = position
-    }
 }

@@ -8,7 +8,10 @@ extension MediaItem {
     nonisolated var displayTitle: String {
         switch kind {
         case .audio:
-            guard let track = indexNumber else { return name }
+            guard let track = indexNumber else {
+                return name
+            }
+
             return "\(track). \(name)"
         case .musicAlbum:
             return name

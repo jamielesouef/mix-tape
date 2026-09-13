@@ -5,6 +5,9 @@
 //
 
 nonisolated enum PlayerStatus: Sendable, Equatable {
-    case idle, preparing, playing, paused
+    case idle
+    case preparing
+    case playing
+    case paused
     case failed(MixtapeError)
 }

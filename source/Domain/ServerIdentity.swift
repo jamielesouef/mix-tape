@@ -11,11 +11,4 @@ nonisolated struct ServerIdentity: Sendable, Equatable {
     let name: String
     let version: String
     let baseURL: URL
-
-    init(id: String, name: String, version: String, baseURL: URL) {
-        self.id = id
-        self.name = name
-        self.version = version
-        self.baseURL = baseURL
-    }
 }

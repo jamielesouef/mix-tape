@@ -7,9 +7,4 @@
 nonisolated struct QuickConnectHandshake: Sendable, Equatable {
     let secret: String
     let code: String
-
-    init(secret: String, code: String) {
-        self.secret = secret
-        self.code = code
-    }
 }

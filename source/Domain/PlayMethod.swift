@@ -5,5 +5,7 @@
 //
 
 nonisolated enum PlayMethod: Sendable, Equatable {
-    case directPlay, directStream, transcode
+    case directPlay
+    case directStream
+    case transcode
 }

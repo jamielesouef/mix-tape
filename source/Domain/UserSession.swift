@@ -12,12 +12,4 @@ nonisolated struct UserSession: Sendable, Equatable {
     let userName: String
     let accessToken: String
     let deviceID: String
-
-    init(serverURL: URL, userID: String, userName: String, accessToken: String, deviceID: String) {
-        self.serverURL = serverURL
-        self.userID = userID
-        self.userName = userName
-        self.accessToken = accessToken
-        self.deviceID = deviceID
-    }
 }

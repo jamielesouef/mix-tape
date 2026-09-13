@@ -5,5 +5,6 @@
 //
 
 nonisolated enum ImageKind: Sendable {
-    case primary, backdrop
+    case primary
+    case backdrop
 }
