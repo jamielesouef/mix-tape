@@ -16,7 +16,7 @@ struct TrackRow: View {
                 .lineLimit(1)
             Spacer()
             if let runtime = track.runtime {
-                Text(runtime.formatted(.time(pattern: .minuteSecond)))
+                Text(runtime, format: .time(pattern: .minuteSecond))
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
             }

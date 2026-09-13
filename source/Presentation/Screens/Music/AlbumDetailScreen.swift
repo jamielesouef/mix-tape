@@ -80,7 +80,7 @@ struct AlbumDetailScreen: View {
 
     /// Artist and year, with the separator dropped when either one is missing.
     private var subtitle: String {
-        [album.albumArtist, album.productionYear.map(String.init)]
+        [album.albumArtist, album.productionYear.map { $0.formatted(.number.grouping(.never)) }]
             .compactMap(\.self)
             .joined(separator: " · ")
     }

@@ -63,7 +63,7 @@ struct WalletScreen: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier(WalletIdentifiers.emptyLabel)
             case .loaded:
-                Text("Page \(pageIndex + 1) of \(pageCount)")
+                Text("Page \(pageIndex + 1, format: .number) of \(pageCount, format: .number)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier(WalletIdentifiers.pageIndicator)
