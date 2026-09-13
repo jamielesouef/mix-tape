@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct RootTabScreen: View {
-    @Environment(\.musicPlayerService) private var music
+    @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @State private var showNowPlaying = false
 
     public init() {}

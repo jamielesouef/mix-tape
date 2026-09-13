@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct ServerEntryScreen: View {
-    @Environment(\.sessionService) private var sessionService
+    @Environment(\.sessionService) private var sessionService: SessionService
     @State private var urlText = ""
 
     public init() {}

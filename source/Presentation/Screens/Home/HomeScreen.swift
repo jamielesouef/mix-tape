@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct HomeScreen: View {
-    @Environment(\.libraryService) private var libraryService
+    @Environment(\.libraryService) private var libraryService: LibraryService
 
     public init() {}
 
@@ -45,7 +45,7 @@ public struct HomeScreen: View {
                     .padding(.vertical)
                 }
             }
-            .navigationTitle("Home")
+            .navigationBarHidden(true)
             .navigationDestination(for: MediaItem.self) { item in
                 MediaItemDestination(item: item)
             }

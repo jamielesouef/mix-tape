@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct NowPlayingScreen: View {
-    @Environment(\.musicPlayerService) private var music
+    @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @State private var scrubbing: Double?
 
     public init() {}

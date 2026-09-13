@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct GlassChrome: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency: Bool
     var cornerRadius: CGFloat = 16
 
     func body(content: Content) -> some View {

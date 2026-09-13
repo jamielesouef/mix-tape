@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct QuickConnectScreen: View {
-    @Environment(\.sessionService) private var sessionService
+    @Environment(\.sessionService) private var sessionService: SessionService
     let onCancel: () -> Void
     let onUsePassword: (() -> Void)?
 

@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct SignInFlow: View {
-    @Environment(\.sessionService) private var sessionService
+    @Environment(\.sessionService) private var sessionService: SessionService
     @State private var usingQuickConnect = false
 
     var body: some View {
