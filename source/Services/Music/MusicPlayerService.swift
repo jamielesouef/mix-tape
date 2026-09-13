@@ -14,6 +14,9 @@ final class MusicPlayerService {
     static let nowPlayingInterval: Duration = .seconds(5)
     static let stallTickThreshold = 3
 
+    /// Pressing previous this far into a track restarts it rather than stepping back a track.
+    static let restartWindow: Duration = .seconds(3)
+
     private(set) var album: MediaItem?
     private(set) var queue: [MediaItem] = []
     private(set) var currentIndex: Int?
@@ -22,13 +25,23 @@ final class MusicPlayerService {
     private(set) var finishedAlbumID: String?
 
     var current: MediaItem? {
-        guard let currentIndex, queue.indices.contains(currentIndex) else { return nil }
+        guard let currentIndex, queue.indices.contains(currentIndex) else {
+            return nil
+        }
+
         return queue[currentIndex]
     }
 
     var hasNextTrack: Bool {
-        guard let currentIndex else { return false }
+        guard let currentIndex else {
+            return false
+        }
+
         return currentIndex + 1 < queue.count
+    }
+
+    var isActive: Bool {
+        status != .idle
     }
 
     @ObservationIgnored private var progressTask: Task<Void, Never>?
@@ -54,7 +67,7 @@ final class MusicPlayerService {
         reportStopped: ReportPlaybackStoppedUseCase,
         sessionService: SessionService,
         clock: any Clock<Duration> = ContinuousClock(),
-        artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil,
+        artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil
     ) {
         self.controller = controller
         self.buildAudioStreamURL = buildAudioStreamURL
@@ -64,6 +77,7 @@ final class MusicPlayerService {
         self.sessionService = sessionService
         self.clock = clock
         self.artworkProvider = artworkProvider
+
         controller.onEnded = { [weak self] in self?.trackDidEnd() }
         controller.onFailure = { [weak self] error in self?.handleFailure(error) }
         controller.onPositionChange = { [weak self] position in self?.position = position }
@@ -78,17 +92,18 @@ final class MusicPlayerService {
         progressTask?.cancel()
     }
 
-    var isActive: Bool {
-        status != .idle
-    }
-
     func play(album: MediaItem, tracks: [MediaItem], startingAt index: Int) async {
-        guard tracks.isEmpty == false, tracks.indices.contains(index) else { return }
+        guard tracks.isEmpty == false, tracks.indices.contains(index) else {
+            return
+        }
+
         enqueueStoppedReportForCurrent()
+
         self.album = album
         queue = tracks
         finishedAlbumID = nil
         claimedFinishID = nil
+
         await start(index: index)
     }
 
@@ -96,13 +111,19 @@ final class MusicPlayerService {
         switch status {
         case .playing: pause()
         case .paused: resume()
-        case .idle, .preparing, .failed: break
+        case .idle,
+             .preparing,
+             .failed: break
         }
     }
 
     func next() async {
-        guard let currentIndex else { return }
+        guard let currentIndex else {
+            return
+        }
+
         enqueueStoppedReportForCurrent()
+
         if currentIndex + 1 < queue.count {
             await start(index: currentIndex + 1)
         } else {
@@ -111,34 +132,43 @@ final class MusicPlayerService {
     }
 
     func previous() async {
-        guard let currentIndex else { return }
-        if position > .seconds(3) {
+        guard let currentIndex else {
+            return
+        }
+
+        let isPastRestartWindow = position > Self.restartWindow
+
+        guard isPastRestartWindow == false, currentIndex > 0 else {
             seek(to: .zero)
             return
         }
-        guard currentIndex > 0 else {
-            seek(to: .zero)
-            return
-        }
+
         enqueueStoppedReportForCurrent()
+
         await start(index: currentIndex - 1)
     }
 
     func seek(to requested: Duration) {
         let target = max(.zero, requested)
+
         controller.seek(to: target)
         position = target
+
         reportOnce(isPaused: status == .paused)
         refreshNowPlaying()
     }
 
     func stop() async {
         tearDown(reportingTo: session)
+
         await reportTask?.value
     }
 
     func claimFinish(albumID: String) -> Bool {
-        guard finishedAlbumID == albumID, claimedFinishID == nil else { return false }
+        guard finishedAlbumID == albumID, claimedFinishID == nil else {
+            return false
+        }
+
         claimedFinishID = albumID
         return true
     }
@@ -158,12 +188,27 @@ final class MusicPlayerService {
         progressTask?.cancel()
         progressTask = nil
         currentGeneration = OperationGeneration()
+
         if let track = current, let session {
-            let stream = buildAudioStreamURL(track: track, session: session, playSessionID: playSessionID)
-            let stoppedReport = report(for: track, position: position, isPaused: false, stream: stream)
-            enqueueReport { [reportStopped] in await reportStopped(stoppedReport, session: session) }
+            let stream = buildAudioStreamURL(
+                track: track,
+                session: session,
+                playSessionID: playSessionID
+            )
+            let stoppedReport = report(
+                for: track,
+                position: position,
+                isPaused: false,
+                stream: stream
+            )
+
+            enqueueReport { [reportStopped] in
+                await reportStopped(stoppedReport, session: session)
+            }
         }
+
         controller.stop()
+
         status = .idle
         album = nil
         queue = []
@@ -174,24 +219,39 @@ final class MusicPlayerService {
     }
 
     private func start(index: Int) async {
-        guard let session, queue.indices.contains(index) else { return }
+        guard let session, queue.indices.contains(index) else {
+            return
+        }
+
         progressTask?.cancel()
+
         let generation = OperationGeneration()
+        let track = queue[index]
+
         currentGeneration = generation
         currentIndex = index
         position = .zero
         playSessionID = UUID().uuidString
         artwork = nil
         status = .preparing
-        let track = queue[index]
-        let stream = buildAudioStreamURL(track: track, session: session, playSessionID: playSessionID)
+
+        let stream = buildAudioStreamURL(
+            track: track,
+            session: session,
+            playSessionID: playSessionID
+        )
+
         controller.load(url: stream.url)
         controller.play()
         controller.setNextTrackEnabled(index + 1 < queue.count)
+
         status = .playing
+
         let startReport = report(for: track, position: .zero, isPaused: false, stream: stream)
+
         enqueueReport { [reportStart] in await reportStart(startReport, session: session) }
         startProgressReporting(track: track, stream: stream, generation: generation)
+
         await refreshNowPlayingAsync(generation: generation)
     }
 
@@ -200,17 +260,25 @@ final class MusicPlayerService {
     }
 
     private func pause() {
-        guard status == .playing else { return }
+        guard status == .playing else {
+            return
+        }
+
         controller.pause()
         status = .paused
+
         reportOnce(isPaused: true)
         refreshNowPlaying()
     }
 
     private func resume() {
-        guard status == .paused else { return }
+        guard status == .paused else {
+            return
+        }
+
         controller.play()
         status = .playing
+
         reportOnce(isPaused: false)
         refreshNowPlaying()
     }
@@ -218,9 +286,21 @@ final class MusicPlayerService {
     private func trackDidEnd() {
         let endingTrackID = current?.id
         let generation = currentGeneration
+
         Task { [weak self] in
-            guard let self, generation == currentGeneration, let currentIndex, current?.id == endingTrackID else { return }
+            guard let self else {
+                return
+            }
+            guard
+                generation == currentGeneration,
+                let currentIndex,
+                current?.id == endingTrackID
+            else {
+                return
+            }
+
             enqueueStoppedReportForCurrent()
+
             if currentIndex + 1 < queue.count {
                 await start(index: currentIndex + 1)
             } else {
@@ -233,75 +313,146 @@ final class MusicPlayerService {
         progressTask?.cancel()
         progressTask = nil
         currentGeneration = OperationGeneration()
+
         controller.stop()
+
         status = .idle
         position = .zero
+        currentIndex = nil
         claimedFinishID = nil
         finishedAlbumID = album?.id
-        currentIndex = nil
     }
 
-    private func startProgressReporting(track: MediaItem, stream: AudioStream, generation: OperationGeneration) {
+    private func startProgressReporting(
+        track: MediaItem,
+        stream: AudioStream,
+        generation: OperationGeneration
+    ) {
         progressTask?.cancel()
+
         progressTask = Task { [weak self] in
-            var elapsed: Duration = .zero
+            var elapsedSinceReport: Duration = .zero
             var lastPosition: Duration = .zero
             var hasAdvanced = false
             var staleTicks = 0
+
             while true {
-                guard let clock = self?.clock else { return }
+                guard let clock = self?.clock else {
+                    return
+                }
+
                 do {
                     try await clock.sleep(for: Self.nowPlayingInterval)
                 } catch {
                     return
                 }
-                guard let self, Task.isCancelled == false else { return }
-                guard status == .playing, generation == currentGeneration, current?.id == track.id, let session else { continue }
+
+                guard let self, Task.isCancelled == false else {
+                    return
+                }
+                guard
+                    status == .playing,
+                    generation == currentGeneration,
+                    current?.id == track.id,
+                    let session
+                else {
+                    continue
+                }
+
                 if position > .zero {
                     hasAdvanced = true
                 }
+
                 if hasAdvanced {
                     staleTicks = position == lastPosition ? staleTicks + 1 : 0
                 }
+
                 lastPosition = position
+
                 guard staleTicks < Self.stallTickThreshold else {
                     handleFailure(.transport("Playback stalled: position has not advanced"))
                     return
                 }
+
                 refreshNowPlaying()
-                elapsed += Self.nowPlayingInterval
-                guard elapsed >= Self.progressInterval else { continue }
-                elapsed = .zero
-                await reportProgress(report(for: track, position: position, isPaused: false, stream: stream), session: session)
+
+                elapsedSinceReport += Self.nowPlayingInterval
+
+                guard elapsedSinceReport >= Self.progressInterval else {
+                    continue
+                }
+
+                elapsedSinceReport = .zero
+
+                let progressReport = report(
+                    for: track,
+                    position: position,
+                    isPaused: false,
+                    stream: stream
+                )
+
+                await reportProgress(progressReport, session: session)
             }
         }
     }
 
     private func reportOnce(isPaused: Bool) {
-        guard let track = current, let session else { return }
-        let stream = buildAudioStreamURL(track: track, session: session, playSessionID: playSessionID)
-        Task { await reportProgress(report(for: track, position: position, isPaused: isPaused, stream: stream), session: session) }
+        guard let (progressReport, session) = currentReport(isPaused: isPaused) else {
+            return
+        }
+
+        Task { await reportProgress(progressReport, session: session) }
     }
 
     private func enqueueStoppedReportForCurrent() {
-        guard let track = current, let session else { return }
-        let stream = buildAudioStreamURL(track: track, session: session, playSessionID: playSessionID)
-        let stoppedReport = report(for: track, position: position, isPaused: false, stream: stream)
+        guard let (stoppedReport, session) = currentReport(isPaused: false) else {
+            return
+        }
+
         enqueueReport { [reportStopped] in await reportStopped(stoppedReport, session: session) }
+    }
+
+    /// A report for whatever is playing now, paired with the session it belongs to. Nil when
+    /// nothing is playing or nobody is signed in, which is every caller's cue to do nothing.
+    private func currentReport(
+        isPaused: Bool
+    ) -> (report: PlaybackReport, session: UserSession)? {
+        guard let track = current, let session else {
+            return nil
+        }
+
+        let stream = buildAudioStreamURL(
+            track: track,
+            session: session,
+            playSessionID: playSessionID
+        )
+        let report = report(for: track, position: position, isPaused: isPaused, stream: stream)
+
+        return (report, session)
     }
 
     private func enqueueReport(_ send: @escaping () async -> Void) {
         let previous = reportTask
+
         reportTask = Task {
             await previous?.value
             await send()
         }
     }
 
-    private func report(for track: MediaItem, position: Duration, isPaused: Bool, stream: AudioStream) -> PlaybackReport {
+    private func report(
+        for track: MediaItem,
+        position: Duration,
+        isPaused: Bool,
+        stream: AudioStream
+    ) -> PlaybackReport {
         PlaybackReport(
-            itemID: track.id, mediaSourceID: track.id, playSessionID: playSessionID,
-            position: position, isPaused: isPaused, playMethod: stream.playMethod,
+            itemID: track.id,
+            mediaSourceID: track.id,
+            playSessionID: playSessionID,
+            position: position,
+            isPaused: isPaused,
+            playMethod: stream.playMethod
         )
     }
 
@@ -312,10 +463,18 @@ final class MusicPlayerService {
     private func refreshNowPlayingAsync(generation: OperationGeneration) async {
         if let track = current, let artworkProvider {
             let fetched = await artworkProvider(track)
-            guard generation == currentGeneration else { return }
+
+            guard generation == currentGeneration else {
+                return
+            }
+
             artwork = fetched
         }
-        guard generation == currentGeneration else { return }
+
+        guard generation == currentGeneration else {
+            return
+        }
+
         refreshNowPlaying()
     }
 
@@ -327,7 +486,7 @@ final class MusicPlayerService {
             artwork: artwork,
             duration: current?.runtime,
             position: position,
-            isPlaying: status == .playing,
+            isPlaying: status == .playing
         )
     }
 
