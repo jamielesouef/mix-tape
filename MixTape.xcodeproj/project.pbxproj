@@ -39,23 +39,23 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AD00000000000000000011 /* MixtapeKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MixtapeKit; sourceTree = "<group>"; };
 		000000000000000000000120 /* iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = mixtape.entitlements; sourceTree = "<group>"; };
+		AD00000000000000000011 /* MixtapeKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MixtapeKit; sourceTree = "<group>"; };
 		D9916EF53048EEED005E88CA /* tvOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D9916F0B3048EEEE005E88CA /* tvOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tvOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E0D4B3CE15CDF059A53DABF8 /* iOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AD00000000000000000005 /* Exceptions for "MixtapeiOS" folder in "iOS" target */ = {
+		AD00000000000000000005 /* Exceptions for "Apps/MixtapeiOS" folder in "iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = 000000000000000100000000 /* iOS */;
 		};
-		AD00000000000000000006 /* Exceptions for "MixtapeTV" folder in "tvOS" target */ = {
+		AD00000000000000000006 /* Exceptions for "Apps/MixtapeTV" folder in "tvOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -65,35 +65,35 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AD00000000000000000007 /* Shared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Apps/Shared;
-			sourceTree = "<group>";
-		};
-		AD00000000000000000001 /* MixtapeiOS */ = {
+		AD00000000000000000001 /* Apps/MixtapeiOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AD00000000000000000005 /* Exceptions for "MixtapeiOS" folder in "iOS" target */,
+				AD00000000000000000005 /* Exceptions for "Apps/MixtapeiOS" folder in "iOS" target */,
 			);
 			path = Apps/MixtapeiOS;
 			sourceTree = "<group>";
 		};
-		AD00000000000000000002 /* MixtapeTV */ = {
+		AD00000000000000000002 /* Apps/MixtapeTV */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AD00000000000000000006 /* Exceptions for "MixtapeTV" folder in "tvOS" target */,
+				AD00000000000000000006 /* Exceptions for "Apps/MixtapeTV" folder in "tvOS" target */,
 			);
 			path = Apps/MixtapeTV;
 			sourceTree = "<group>";
 		};
-		AD00000000000000000003 /* iOS UI tests */ = {
+		AD00000000000000000003 /* uiTests/iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = uiTests/iOS;
 			sourceTree = "<group>";
 		};
-		AD00000000000000000004 /* tvOS UI tests */ = {
+		AD00000000000000000004 /* uiTests/tvOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = uiTests/tvOS;
+			sourceTree = "<group>";
+		};
+		AD00000000000000000007 /* Apps/Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Apps/Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -146,11 +146,11 @@
 			isa = PBXGroup;
 			children = (
 				AD00000000000000000011 /* MixtapeKit */,
-				AD00000000000000000001 /* MixtapeiOS */,
-				AD00000000000000000002 /* MixtapeTV */,
-				AD00000000000000000007 /* Shared */,
-				AD00000000000000000003 /* iOS UI tests */,
-				AD00000000000000000004 /* tvOS UI tests */,
+				AD00000000000000000001 /* Apps/MixtapeiOS */,
+				AD00000000000000000002 /* Apps/MixtapeTV */,
+				AD00000000000000000007 /* Apps/Shared */,
+				AD00000000000000000003 /* uiTests/iOS */,
+				AD00000000000000000004 /* uiTests/tvOS */,
 				698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */,
 				000000000000000000000020 /* Products */,
 			);
@@ -184,8 +184,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000001 /* MixtapeiOS */,
-				AD00000000000000000007 /* Shared */,
+				AD00000000000000000001 /* Apps/MixtapeiOS */,
+				AD00000000000000000007 /* Apps/Shared */,
 			);
 			name = iOS;
 			packageProductDependencies = (
@@ -214,7 +214,7 @@
 				B8DEC531C1799FBCEBA75237 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000003 /* iOS UI tests */,
+				AD00000000000000000003 /* uiTests/iOS */,
 			);
 			name = iOSUITests;
 			productName = MixTapeUITests;
@@ -235,8 +235,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000002 /* MixtapeTV */,
-				AD00000000000000000007 /* Shared */,
+				AD00000000000000000002 /* Apps/MixtapeTV */,
+				AD00000000000000000007 /* Apps/Shared */,
 			);
 			name = tvOS;
 			packageProductDependencies = (
@@ -265,7 +265,7 @@
 				D9916F0D3048EEEE005E88CA /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000004 /* tvOS UI tests */,
+				AD00000000000000000004 /* uiTests/tvOS */,
 			);
 			name = tvOSUITests;
 			productName = mixtape.tvUITests;
@@ -654,26 +654,6 @@
 			};
 			name = Release;
 		};
-		A2CD0FF8F3A088621E6B1217 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = J2VZJQ63FQ;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixTapeUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
-				TEST_TARGET_NAME = iOS;
-			};
-			name = Debug;
-		};
 		2343448EA2CAF2BD37DEBA36 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -687,13 +667,33 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				TEST_TARGET_NAME = iOS;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
+		};
+		A2CD0FF8F3A088621E6B1217 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J2VZJQ63FQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixTapeUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = iOS;
+			};
+			name = Debug;
 		};
 		D9916F123048EEEE005E88CA /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -777,11 +777,11 @@
 				SDKROOT = appletvos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = NO;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				TEST_TARGET_NAME = tvOS;
 				TVOS_DEPLOYMENT_TARGET = 26.0;
 			};
@@ -800,11 +800,11 @@
 				SDKROOT = appletvos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = NO;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				TEST_TARGET_NAME = tvOS;
 				TVOS_DEPLOYMENT_TARGET = 26.0;
 				VALIDATE_PRODUCT = YES;
