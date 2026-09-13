@@ -7,8 +7,8 @@
 import SwiftUI
 
 public struct VideoPlayerScreen: View {
-    @Environment(\.videoPlaybackService) private var videoPlaybackService
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.videoPlaybackService) private var videoPlaybackService: VideoPlaybackService
+    @Environment(\.dismiss) private var dismiss: DismissAction
 
     public init() {}
 

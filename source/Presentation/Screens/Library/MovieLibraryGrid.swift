@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct MovieLibraryGrid: View {
-    @Environment(\.libraryService) private var libraryService
+    @Environment(\.libraryService) private var libraryService: LibraryService
     let library: Library
 
     public init(library: Library) {

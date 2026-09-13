@@ -7,8 +7,8 @@
 import SwiftUI
 
 public struct MovieDetailScreen: View {
-    @Environment(\.libraryService) private var libraryService
-    @Environment(\.videoPlaybackService) private var videoPlaybackService
+    @Environment(\.libraryService) private var libraryService: LibraryService
+    @Environment(\.videoPlaybackService) private var videoPlaybackService: VideoPlaybackService
     let item: MediaItem
 
     public init(item: MediaItem) {

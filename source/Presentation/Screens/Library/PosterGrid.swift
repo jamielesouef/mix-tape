@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct PosterGrid: View {
-    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.horizontalSizeClass) private var sizeClass: UserInterfaceSizeClass?
     let items: [MediaItem]
     let loadMore: () async -> Void
 

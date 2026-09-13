@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct MiniPlayer: View {
-    @Environment(\.musicPlayerService) private var music
+    @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @Binding var showNowPlaying: Bool
 
     var body: some View {

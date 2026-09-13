@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct SettingsScreen: View {
-    @Environment(\.sessionService) private var sessionService
+    @Environment(\.sessionService) private var sessionService: SessionService
 
     public init() {}
 

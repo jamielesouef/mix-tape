@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct RootScreen: View {
-    @Environment(\.sessionService) private var sessionService
+    @Environment(\.sessionService) private var sessionService: SessionService
 
     public init() {}
 
@@ -19,7 +19,7 @@ public struct RootScreen: View {
             case .signedOut:
                 SignInFlow()
             case .signedIn:
-                RootTabScreen()
+                HomeScreen()
             }
         }
         .task {

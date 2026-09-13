@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct AlbumSleeve: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency: Bool
     let album: MediaItem?
     var isPulsing = false
 

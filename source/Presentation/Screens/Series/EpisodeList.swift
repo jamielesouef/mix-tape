@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct EpisodeList: View {
-    @Environment(\.seriesService) private var seriesService
+    @Environment(\.seriesService) private var seriesService: SeriesService
     let seriesID: String
     let seasonID: String
 

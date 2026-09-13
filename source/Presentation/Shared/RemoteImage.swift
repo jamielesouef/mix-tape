@@ -12,7 +12,7 @@ struct RemoteImage: View {
         case library(Library)
     }
 
-    @Environment(\.imageService) private var imageService
+    @Environment(\.imageService) private var imageService: ImageService
     @State private var image: UIImage?
     let source: Source
     let maxHeight: Int

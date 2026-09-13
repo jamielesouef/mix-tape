@@ -8,7 +8,7 @@ import SwiftUI
 import UIKit
 
 struct VLCPlayerView: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency: Bool
     @State var model: VLCTransportModel
     @State private var scrubbing: Double?
     let videoView: UIView

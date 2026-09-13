@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct SignInScreen: View {
-    @Environment(\.sessionService) private var sessionService
+    @Environment(\.sessionService) private var sessionService: SessionService
     @State private var userName = ""
     @State private var password = ""
     let onUseQuickConnect: () -> Void

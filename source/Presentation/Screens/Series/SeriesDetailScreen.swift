@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct SeriesDetailScreen: View {
-    @Environment(\.seriesService) private var seriesService
+    @Environment(\.seriesService) private var seriesService: SeriesService
     @State private var selectedSeasonID: String?
     let series: MediaItem
 

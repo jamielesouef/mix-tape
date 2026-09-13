@@ -7,7 +7,7 @@
 import SwiftUI
 
 public struct LibraryListScreen: View {
-    @Environment(\.libraryService) private var libraryService
+    @Environment(\.libraryService) private var libraryService: LibraryService
 
     public init() {}
 

@@ -7,11 +7,11 @@
 import SwiftUI
 
 public struct WalletScreen: View {
-    @Environment(\.libraryService) private var libraryService
-    @Environment(\.musicPlayerService) private var music
-    @Environment(\.horizontalSizeClass) private var sizeClass
-    @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.libraryService) private var libraryService: LibraryService
+    @Environment(\.musicPlayerService) private var music: MusicPlayerService
+    @Environment(\.horizontalSizeClass) private var sizeClass: UserInterfaceSizeClass?
+    @Environment(\.scenePhase) private var scenePhase: ScenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion: Bool
     @Namespace private var sleeves
     @State private var pageIndex = 0
     @State private var pulledAlbum: MediaItem?

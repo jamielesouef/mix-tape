@@ -7,8 +7,8 @@
 import SwiftUI
 
 public struct AlbumDetailScreen: View {
-    @Environment(\.libraryService) private var libraryService
-    @Environment(\.musicPlayerService) private var music
+    @Environment(\.libraryService) private var libraryService: LibraryService
+    @Environment(\.musicPlayerService) private var music: MusicPlayerService
     let album: MediaItem
 
     public init(album: MediaItem) {
