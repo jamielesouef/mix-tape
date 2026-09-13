@@ -7,18 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AD00000000000000000301 /* MixtapeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000101 /* MixtapeDomain */; };
-		AD00000000000000000302 /* MixtapeUseCase in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000102 /* MixtapeUseCase */; };
-		AD00000000000000000303 /* MixtapeInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000103 /* MixtapeInfrastructure */; };
-		AD00000000000000000304 /* MixtapeData in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000104 /* MixtapeData */; };
-		AD00000000000000000305 /* MixtapeServices in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000105 /* MixtapeServices */; };
-		AD00000000000000000306 /* MixtapePresentation in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000106 /* MixtapePresentation */; };
-		AD00000000000000000401 /* MixtapeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000201 /* MixtapeDomain */; };
-		AD00000000000000000402 /* MixtapeUseCase in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000202 /* MixtapeUseCase */; };
-		AD00000000000000000403 /* MixtapeInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000203 /* MixtapeInfrastructure */; };
-		AD00000000000000000404 /* MixtapeData in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000204 /* MixtapeData */; };
-		AD00000000000000000405 /* MixtapeServices in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000205 /* MixtapeServices */; };
-		AD00000000000000000406 /* MixtapePresentation in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000206 /* MixtapePresentation */; };
+		AD00000000000000000301 /* VLCKitSPM in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000101 /* VLCKitSPM */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,73 +16,51 @@
 			containerPortal = 000000000000000000000000 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 000000000000000100000000;
-			remoteInfo = iOS;
+			remoteInfo = Mixtape;
 		};
-		D9916F0C3048EEEE005E88CA /* PBXContainerItemProxy */ = {
+		AD000000000000000000A9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 000000000000000000000000 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D9916EF43048EEED005E88CA;
-			remoteInfo = tvOS;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = Mixtape;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000120 /* iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000120 /* Mixtape.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mixtape.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = mixtape.entitlements; sourceTree = "<group>"; };
-		AD00000000000000000011 /* MixtapeKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MixtapeKit; sourceTree = "<group>"; };
-		D9916EF53048EEED005E88CA /* tvOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D9916F0B3048EEEE005E88CA /* tvOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tvOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E0D4B3CE15CDF059A53DABF8 /* iOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD000000000000000000A7 /* MixtapeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MixtapeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0D4B3CE15CDF059A53DABF8 /* MixtapeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MixtapeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AD00000000000000000005 /* Exceptions for "Apps/MixtapeiOS" folder in "iOS" target */ = {
+		AD00000000000000000005 /* Exceptions for "source" folder in "Mixtape" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				App/Info.plist,
 			);
-			target = 000000000000000100000000 /* iOS */;
-		};
-		AD00000000000000000006 /* Exceptions for "Apps/MixtapeTV" folder in "tvOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = D9916EF43048EEED005E88CA /* tvOS */;
+			target = 000000000000000100000000 /* Mixtape */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AD00000000000000000001 /* Apps/MixtapeiOS */ = {
+		AD00000000000000000001 /* source */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AD00000000000000000005 /* Exceptions for "Apps/MixtapeiOS" folder in "iOS" target */,
+				AD00000000000000000005 /* Exceptions for "source" folder in "Mixtape" target */,
 			);
-			path = Apps/MixtapeiOS;
+			path = source;
 			sourceTree = "<group>";
 		};
-		AD00000000000000000002 /* Apps/MixtapeTV */ = {
+		AD00000000000000000003 /* uitest */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				AD00000000000000000006 /* Exceptions for "Apps/MixtapeTV" folder in "tvOS" target */,
-			);
-			path = Apps/MixtapeTV;
+			path = uitest;
 			sourceTree = "<group>";
 		};
-		AD00000000000000000003 /* uiTests/iOS */ = {
+		AD000000000000000000AA /* tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = uiTests/iOS;
-			sourceTree = "<group>";
-		};
-		AD00000000000000000004 /* uiTests/tvOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = uiTests/tvOS;
-			sourceTree = "<group>";
-		};
-		AD00000000000000000007 /* Apps/Shared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Apps/Shared;
+			path = tests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -103,36 +70,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AD00000000000000000301 /* MixtapeDomain in Frameworks */,
-				AD00000000000000000302 /* MixtapeUseCase in Frameworks */,
-				AD00000000000000000303 /* MixtapeInfrastructure in Frameworks */,
-				AD00000000000000000304 /* MixtapeData in Frameworks */,
-				AD00000000000000000305 /* MixtapeServices in Frameworks */,
-				AD00000000000000000306 /* MixtapePresentation in Frameworks */,
+				AD00000000000000000301 /* VLCKitSPM in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD000000000000000000A5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D1337A41505B3DCD2C884C99 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D9916EF23048EEED005E88CA /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AD00000000000000000401 /* MixtapeDomain in Frameworks */,
-				AD00000000000000000402 /* MixtapeUseCase in Frameworks */,
-				AD00000000000000000403 /* MixtapeInfrastructure in Frameworks */,
-				AD00000000000000000404 /* MixtapeData in Frameworks */,
-				AD00000000000000000405 /* MixtapeServices in Frameworks */,
-				AD00000000000000000406 /* MixtapePresentation in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D9916F083048EEEE005E88CA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -145,12 +94,9 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				AD00000000000000000011 /* MixtapeKit */,
-				AD00000000000000000001 /* Apps/MixtapeiOS */,
-				AD00000000000000000002 /* Apps/MixtapeTV */,
-				AD00000000000000000007 /* Apps/Shared */,
-				AD00000000000000000003 /* uiTests/iOS */,
-				AD00000000000000000004 /* uiTests/tvOS */,
+				AD00000000000000000001 /* source */,
+				AD000000000000000000AA /* tests */,
+				AD00000000000000000003 /* uitest */,
 				698644EC7AD8FC5300D5CA72 /* mixtape.entitlements */,
 				000000000000000000000020 /* Products */,
 			);
@@ -159,10 +105,9 @@
 		000000000000000000000020 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000120 /* iOS.app */,
-				E0D4B3CE15CDF059A53DABF8 /* iOSUITests.xctest */,
-				D9916EF53048EEED005E88CA /* tvOS.app */,
-				D9916F0B3048EEEE005E88CA /* tvOSUITests.xctest */,
+				000000000000000000000120 /* Mixtape.app */,
+				AD000000000000000000A7 /* MixtapeTests.xctest */,
+				E0D4B3CE15CDF059A53DABF8 /* MixtapeUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -170,9 +115,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		000000000000000100000000 /* iOS */ = {
+		000000000000000100000000 /* Mixtape */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "iOS" */;
+			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "Mixtape" */;
 			buildPhases = (
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
@@ -184,25 +129,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000001 /* Apps/MixtapeiOS */,
-				AD00000000000000000007 /* Apps/Shared */,
+				AD00000000000000000001 /* source */,
 			);
-			name = iOS;
+			name = Mixtape;
 			packageProductDependencies = (
-				AD00000000000000000101 /* MixtapeDomain */,
-				AD00000000000000000102 /* MixtapeUseCase */,
-				AD00000000000000000103 /* MixtapeInfrastructure */,
-				AD00000000000000000104 /* MixtapeData */,
-				AD00000000000000000105 /* MixtapeServices */,
-				AD00000000000000000106 /* MixtapePresentation */,
+				AD00000000000000000101 /* VLCKitSPM */,
 			);
-			productName = MixTape;
-			productReference = 000000000000000000000120 /* iOS.app */;
+			productName = Mixtape;
+			productReference = 000000000000000000000120 /* Mixtape.app */;
 			productType = "com.apple.product-type.application";
 		};
-		0B02110A39621D4101399232 /* iOSUITests */ = {
+		0B02110A39621D4101399232 /* MixtapeUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7852893E7082533FEACFE183 /* Build configuration list for PBXNativeTarget "iOSUITests" */;
+			buildConfigurationList = 7852893E7082533FEACFE183 /* Build configuration list for PBXNativeTarget "MixtapeUITests" */;
 			buildPhases = (
 				2EFC71C16B63E2B5CC84EEE6 /* Sources */,
 				D1337A41505B3DCD2C884C99 /* Frameworks */,
@@ -214,63 +153,33 @@
 				B8DEC531C1799FBCEBA75237 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000003 /* uiTests/iOS */,
+				AD00000000000000000003 /* uitest */,
 			);
-			name = iOSUITests;
-			productName = MixTapeUITests;
-			productReference = E0D4B3CE15CDF059A53DABF8 /* iOSUITests.xctest */;
+			name = MixtapeUITests;
+			productName = MixtapeUITests;
+			productReference = E0D4B3CE15CDF059A53DABF8 /* MixtapeUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		D9916EF43048EEED005E88CA /* tvOS */ = {
+		AD000000000000000000A0 /* MixtapeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D9916F113048EEEE005E88CA /* Build configuration list for PBXNativeTarget "tvOS" */;
+			buildConfigurationList = AD000000000000000000A1 /* Build configuration list for PBXNativeTarget "MixtapeTests" */;
 			buildPhases = (
-				D9916EF13048EEED005E88CA /* Sources */,
-				D9916EF23048EEED005E88CA /* Frameworks */,
-				D9916EF33048EEED005E88CA /* Resources */,
-				C0DE0130000000000000A001 /* Check Layer Imports */,
+				AD000000000000000000A4 /* Sources */,
+				AD000000000000000000A5 /* Frameworks */,
+				AD000000000000000000A6 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AD000000000000000000A8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AD00000000000000000002 /* Apps/MixtapeTV */,
-				AD00000000000000000007 /* Apps/Shared */,
+				AD000000000000000000AA /* tests */,
 			);
-			name = tvOS;
-			packageProductDependencies = (
-				AD00000000000000000201 /* MixtapeDomain */,
-				AD00000000000000000202 /* MixtapeUseCase */,
-				AD00000000000000000203 /* MixtapeInfrastructure */,
-				AD00000000000000000204 /* MixtapeData */,
-				AD00000000000000000205 /* MixtapeServices */,
-				AD00000000000000000206 /* MixtapePresentation */,
-			);
-			productName = mixtape.tv;
-			productReference = D9916EF53048EEED005E88CA /* tvOS.app */;
-			productType = "com.apple.product-type.application";
-		};
-		D9916F0A3048EEEE005E88CA /* tvOSUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D9916F173048EEEE005E88CA /* Build configuration list for PBXNativeTarget "tvOSUITests" */;
-			buildPhases = (
-				D9916F073048EEEE005E88CA /* Sources */,
-				D9916F083048EEEE005E88CA /* Frameworks */,
-				D9916F093048EEEE005E88CA /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				D9916F0D3048EEEE005E88CA /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AD00000000000000000004 /* uiTests/tvOS */,
-			);
-			name = tvOSUITests;
-			productName = mixtape.tvUITests;
-			productReference = D9916F0B3048EEEE005E88CA /* tvOSUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
+			name = MixtapeTests;
+			productName = MixtapeTests;
+			productReference = AD000000000000000000A7 /* MixtapeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -289,12 +198,9 @@
 						CreatedOnToolsVersion = 27.0;
 						TestTargetID = 000000000000000100000000;
 					};
-					D9916EF43048EEED005E88CA = {
+					AD000000000000000000A0 = {
 						CreatedOnToolsVersion = 27.0;
-					};
-					D9916F0A3048EEEE005E88CA = {
-						CreatedOnToolsVersion = 27.0;
-						TestTargetID = D9916EF43048EEED005E88CA;
+						TestTargetID = 000000000000000100000000;
 					};
 				};
 			};
@@ -308,17 +214,16 @@
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				AD00000000000000000010 /* XCLocalSwiftPackageReference "MixtapeKit" */,
+				AD00000000000000000010 /* XCRemoteSwiftPackageReference "vlckit-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				000000000000000100000000 /* iOS */,
-				0B02110A39621D4101399232 /* iOSUITests */,
-				D9916EF43048EEED005E88CA /* tvOS */,
-				D9916F0A3048EEEE005E88CA /* tvOSUITests */,
+				000000000000000100000000 /* Mixtape */,
+				AD000000000000000000A0 /* MixtapeTests */,
+				0B02110A39621D4101399232 /* MixtapeUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -338,14 +243,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D9916EF33048EEED005E88CA /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D9916F093048EEEE005E88CA /* Resources */ = {
+		AD000000000000000000A6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -356,26 +254,6 @@
 
 /* Begin PBXShellScriptBuildPhase section */
 		B5A28072A198C1156566389F /* Check Layer Imports */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Check Layer Imports";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/check-layer-imports.stamp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -e\n\"${SRCROOT}/scripts/check-layer-imports.sh\"\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-		};
-		C0DE0130000000000000A001 /* Check Layer Imports */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -412,14 +290,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D9916EF13048EEED005E88CA /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D9916F073048EEEE005E88CA /* Sources */ = {
+		AD000000000000000000A4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -429,16 +300,17 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		AD000000000000000000A8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Mixtape;
+			target = 000000000000000100000000 /* Mixtape */;
+			targetProxy = AD000000000000000000A9 /* PBXContainerItemProxy */;
+		};
 		B8DEC531C1799FBCEBA75237 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = iOS;
-			target = 000000000000000100000000 /* iOS */;
+			name = Mixtape;
+			target = 000000000000000100000000 /* Mixtape */;
 			targetProxy = 65C09784CE101961AB25BBD6 /* PBXContainerItemProxy */;
-		};
-		D9916F0D3048EEEE005E88CA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D9916EF43048EEED005E88CA /* tvOS */;
-			targetProxy = D9916F0C3048EEEE005E88CA /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -503,13 +375,13 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PROJECT_UNIQUE_VALUE = CCSU85QQ;
+				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = NO;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
@@ -566,12 +438,12 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PROJECT_UNIQUE_VALUE = CCSU85QQ;
+				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = NO;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_VERSION = 6.0;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -587,7 +459,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Apps/MixtapeiOS/Info.plist;
+				INFOPLIST_FILE = source/App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = mixtape;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "mixtape connects to the Jellyfin server you enter, which is usually on your home network.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -626,7 +498,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Apps/MixtapeiOS/Info.plist;
+				INFOPLIST_FILE = source/App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = mixtape;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "mixtape connects to the Jellyfin server you enter, which is usually on your home network.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -663,14 +535,14 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixTapeUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixtapeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = iOS;
+				TEST_TARGET_NAME = Mixtape;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -684,129 +556,56 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixTapeUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixtapeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = iOS;
+				TEST_TARGET_NAME = Mixtape;
 			};
 			name = Debug;
 		};
-		D9916F123048EEEE005E88CA /* Debug */ = {
+		AD000000000000000000A2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = J2VZJQ63FQ;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Apps/MixtapeTV/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "mixtape connects to the Jellyfin server you enter, which is usually on your home network.";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "mobi.jamie.mixtape-tv";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = NO;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
-			};
-			name = Debug;
-		};
-		D9916F133048EEEE005E88CA /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = J2VZJQ63FQ;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Apps/MixtapeTV/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "mixtape connects to the Jellyfin server you enter, which is usually on your home network.";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "mobi.jamie.mixtape-tv";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = NO;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		D9916F183048EEEE005E88CA /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J2VZJQ63FQ;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "mobi.jamie.mixtape-tvUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixtapeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = NO;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TEST_TARGET_NAME = tvOS;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mixtape.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mixtape";
 			};
 			name = Debug;
 		};
-		D9916F193048EEEE005E88CA /* Release */ = {
+		AD000000000000000000A3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J2VZJQ63FQ;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "mobi.jamie.mixtape-tvUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = mobi.jamie.mixtape.MixtapeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = NO;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TEST_TARGET_NAME = tvOS;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mixtape.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mixtape";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -823,7 +622,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		000000000000000110000000 /* Build configuration list for PBXNativeTarget "iOS" */ = {
+		000000000000000110000000 /* Build configuration list for PBXNativeTarget "Mixtape" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				000000000000000111000000 /* Debug */,
@@ -832,7 +631,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7852893E7082533FEACFE183 /* Build configuration list for PBXNativeTarget "iOSUITests" */ = {
+		7852893E7082533FEACFE183 /* Build configuration list for PBXNativeTarget "MixtapeUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A2CD0FF8F3A088621E6B1217 /* Debug */,
@@ -841,81 +640,33 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D9916F113048EEEE005E88CA /* Build configuration list for PBXNativeTarget "tvOS" */ = {
+		AD000000000000000000A1 /* Build configuration list for PBXNativeTarget "MixtapeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D9916F123048EEEE005E88CA /* Debug */,
-				D9916F133048EEEE005E88CA /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D9916F173048EEEE005E88CA /* Build configuration list for PBXNativeTarget "tvOSUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D9916F183048EEEE005E88CA /* Debug */,
-				D9916F193048EEEE005E88CA /* Release */,
+				AD000000000000000000A2 /* Debug */,
+				AD000000000000000000A3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		AD00000000000000000010 /* XCLocalSwiftPackageReference "MixtapeKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = MixtapeKit;
+/* Begin XCRemoteSwiftPackageReference section */
+		AD00000000000000000010 /* XCRemoteSwiftPackageReference "vlckit-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tylerjonesio/vlckit-spm.git";
+			requirement = {
+				kind = exactVersion;
+				version = 3.6.0;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AD00000000000000000101 /* MixtapeDomain */ = {
+		AD00000000000000000101 /* VLCKitSPM */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeDomain;
-		};
-		AD00000000000000000102 /* MixtapeUseCase */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeUseCase;
-		};
-		AD00000000000000000103 /* MixtapeInfrastructure */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeInfrastructure;
-		};
-		AD00000000000000000104 /* MixtapeData */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeData;
-		};
-		AD00000000000000000105 /* MixtapeServices */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeServices;
-		};
-		AD00000000000000000106 /* MixtapePresentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapePresentation;
-		};
-		AD00000000000000000201 /* MixtapeDomain */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeDomain;
-		};
-		AD00000000000000000202 /* MixtapeUseCase */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeUseCase;
-		};
-		AD00000000000000000203 /* MixtapeInfrastructure */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeInfrastructure;
-		};
-		AD00000000000000000204 /* MixtapeData */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeData;
-		};
-		AD00000000000000000205 /* MixtapeServices */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapeServices;
-		};
-		AD00000000000000000206 /* MixtapePresentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MixtapePresentation;
+			package = AD00000000000000000010 /* XCRemoteSwiftPackageReference "vlckit-spm" */;
+			productName = VLCKitSPM;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

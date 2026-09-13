@@ -1,6 +1,6 @@
 # mixtape — build repo
 
-A Jellyfin client for iOS and tvOS. Browse video and music libraries, play both,
+A Jellyfin client for iOS. Browse video and music libraries, play both,
 report progress back.
 
 `docs/engineering-doc.md` is the source of truth. Appendix A in it is the
@@ -16,10 +16,15 @@ that makes the task easier.
 
 ## Target
 
-iOS 26+, tvOS 26+. No macOS. No back-deploy, no `#available`.
+iOS only — iPhone and iPad, portrait. No macOS, no tvOS. No back-deploy,
+no `#available`. The deployment target is **26.1**, not 26.0: the wallet's
+`tabViewBottomAccessory` is 26.1 API and `#available` is banned (decision 52).
 Swift 6 language mode.
 `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
-VLCKit is the only third-party dependency.
+VLCKit is the only third-party dependency, a remote package on the app target.
+Its pin lives in `MixTape.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+Package.resolved` and must stay committed — without it every `xcodebuild` call
+re-resolves and loses the binary artifact (decision 53).
 
 ## The toolchain here is ahead of the one this must stay compatible with
 
@@ -51,7 +56,8 @@ dismisses, the wallet returns to the page that album came from.
 These are absent, not disabled, not deferred to V2. Do not add them. Do not add
 an abstraction that only a cross-album queue would use.
 
-tvOS gets a conventional focus-driven album grid. No wallet there.
+The tvOS build is gone (decision 52). Its files sit in `archive/tvOS/`, out of
+the project. Do not revive them as part of an unrelated change.
 
 ## Architecture — MV, never MVVM
 
@@ -64,10 +70,17 @@ Presentation → Services → UseCase → Domain
                   Data, Infrastructure
 ```
 
-Six SPM targets in `MixtapeKit`, layout and dependency edges per engineering doc
-§3. `MixtapePresentation` never depends on `MixtapeData`, `MixtapeUseCase`, or
-`MixtapeInfrastructure`. `MixtapeUseCase` never imports SwiftUI or Observation.
-The composition root in the app target is the only place that sees all six.
+Six layer folders under `source/`, all compiled into the one app target
+(decision 53). There is no `MixtapeKit` package and no `import MixtapeDomain`.
+The edges are still the rule — `Presentation` never reaches into `Data`,
+`UseCase` or `Infrastructure`; `UseCase` never imports SwiftUI or Observation;
+`AppContainer.swift` is the only place that wires all six — but nothing but
+review enforces the folder edges now. `scripts/check-layer-imports.sh` still
+enforces the one part a grep can see: `Domain` and `UseCase` stay framework-free.
+
+The tree is `source/` (`App`, `Domain`, `UseCase`, `Infrastructure`, `Data`,
+`Services`, `Presentation`), `tests/` (one bundle, folders mirroring `source/`),
+`uitest/` (XCUITest) and `archive/tvOS/` (decision 52).
 
 Repositories are stateless `Sendable` structs; caching is an injected
 collaborator, never hidden inside one. Infrastructure is stateless or
@@ -94,8 +107,9 @@ Use lists and bullet points when asked to, or when the content is multifaceted e
 - Protocol suffix `*Protocol`. `Mock*` in the main target for previews, `Stub*`
   in test targets only.
 - Liquid Glass for chrome, always with a Reduce Transparency fallback.
-- Platform divergence: two files with `#if os(iOS)` / `#if os(tvOS)`, named for
-  what they are. Never one file branching inside a body.
+- One platform, so no platform divergence. The `+iOS.swift` suffixes and
+  `#if os(iOS)` guards were a leftover of the tvOS split and are gone — the
+  files carry the plain type name. Do not reintroduce either.
 
 ## Testing
 
@@ -104,10 +118,15 @@ Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 Test behaviour, not the mock's plumbing. Inject a clock; never sleep.
 Repositories are tested against a stubbed `URLProtocol` — never a live server.
 
-**No XCUITest this round.** The `iOSUITests` and `tvOSUITests` targets stay
-wired up and their stub files stay in place, but no UI test is written and none
-runs in a gate. Do not add one, and do not "temporarily" enable the targets to
-check something.
+All unit tests are one Xcode test target, `MixtapeTests`, over the whole of
+`tests/` — folders named `tests/Domain`, `tests/UseCase`, etc. to match
+`source/` (decision 54), but one target, not five (decision 55). It loads into
+the app as its test host, so every file uses `@testable import Mixtape` — one
+module, one import (decisions 52 and 53).
+
+**No XCUITest this round.** The `MixtapeUITests` target stays wired up and its
+stub file stays in place, but no UI test is written and none runs in a gate. Do
+not add one, and do not "temporarily" enable the target to check something.
 
 Accessibility identifiers are **still required** on every screen, per
 engineering doc §9 — they are what makes the deferred UI tests writable, and
@@ -128,12 +147,10 @@ mapping runs against captured JSON fixtures, repositories against a stubbed
 `URLProtocol`. A test that needs the server running is a broken test.
 
 Read the server through `./scripts/jf-probe.swift` (decision 47); `curl` is
-denied on this machine. Drive the Apple TV simulator with
-`./scripts/tv-remote.sh <udid> up|down|left|right|select|menu|type:TEXT`
-(decision 49) — `idb ui key` and `idb ui remote` are refused on this
-CoreSimulator, and the Xcode 26.6 Simulator app's keyboard never reaches tvOS.
-Screenshot between presses with `xcrun simctl io <udid> screenshot`; there is
-no accessibility tree for tvOS over `idb`, so identifier queries wait for XCUITest.
+denied on this machine. Enter credentials on the iOS simulator with
+`./scripts/sim-type.sh` (decision 46) and screenshot with
+`xcrun simctl io <udid> screenshot`. The Apple TV remote helpers moved to
+`archive/tvOS/scripts/` with the rest of the tvOS build.
 
 ## Scope
 
@@ -150,16 +167,15 @@ gate commands that a workflow can call for the second. Do not build either.
 A slice is done only when all of the following hold. Do not start the next slice
 until they do.
 
-1. `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
-2. `xcodebuild test` passes for both schemes, unit tests only — new tests
-   included, none skipped, none commented out:
+1. `xcodebuild build` passes for the `Mixtape` scheme.
+2. `xcodebuild test` passes for it, unit tests only — new tests included, none
+   skipped, none commented out:
 
    ```
-   -skip-testing:iOSUITests      # iOS scheme
-   -skip-testing:tvOSUITests     # tvOS scheme
+   -skip-testing:MixtapeUITests
    ```
 
-   Skipping the UI bundles is the *only* permitted exclusion. Skipping a unit
+   Skipping the UI bundle is the *only* permitted exclusion. Skipping a unit
    test is never a way to pass this gate.
 3. `./scripts/check-layer-imports.sh` exits 0. **Slice 1 creates this script**
    (engineering doc §13 step 1); until it exists, slice 1 is the only slice that
