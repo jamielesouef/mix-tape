@@ -11,7 +11,11 @@ nonisolated struct PlaceholderAuthRepository: AuthRepositoryProtocol {
         throw MixtapeError.serverUnreachable
     }
 
-    func authenticate(userName _: String, password _: String, server _: ServerIdentity) async throws -> UserSession {
+    func authenticate(
+        userName _: String,
+        password _: String,
+        server _: ServerIdentity
+    ) async throws -> UserSession {
         throw MixtapeError.serverUnreachable
     }
 
@@ -27,7 +31,10 @@ nonisolated struct PlaceholderAuthRepository: AuthRepositoryProtocol {
         throw MixtapeError.serverUnreachable
     }
 
-    func authenticateWithQuickConnect(secret _: String, server _: ServerIdentity) async throws -> UserSession {
+    func authenticateWithQuickConnect(
+        secret _: String,
+        server _: ServerIdentity
+    ) async throws -> UserSession {
         throw MixtapeError.serverUnreachable
     }
 }

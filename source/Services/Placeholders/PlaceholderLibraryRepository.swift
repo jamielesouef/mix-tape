@@ -9,7 +9,12 @@ nonisolated struct PlaceholderLibraryRepository: LibraryRepositoryProtocol {
         throw MixtapeError.serverUnreachable
     }
 
-    func items(in _: String, kind _: MediaKind, page _: PageRequest, session _: UserSession) async throws -> Page<MediaItem> {
+    func items(
+        in _: String,
+        kind _: MediaKind,
+        page _: PageRequest,
+        session _: UserSession
+    ) async throws -> Page<MediaItem> {
         throw MixtapeError.serverUnreachable
     }
 

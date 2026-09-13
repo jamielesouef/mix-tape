@@ -7,8 +7,15 @@
 import Foundation
 
 nonisolated struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
-    func audioStream(track: MediaItem, session: UserSession, playSessionID _: String) -> AudioStream {
-        AudioStream(url: session.serverURL.appending(path: "Audio/\(track.id)/unavailable"), playMethod: .directPlay)
+    func audioStream(
+        track: MediaItem,
+        session: UserSession,
+        playSessionID _: String
+    ) -> AudioStream {
+        AudioStream(
+            url: session.serverURL.appending(path: "Audio/\(track.id)/unavailable"),
+            playMethod: .directPlay
+        )
     }
 
     func reportStart(_: PlaybackReport, session _: UserSession) async throws {

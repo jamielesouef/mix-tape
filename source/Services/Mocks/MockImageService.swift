@@ -7,7 +7,9 @@
 #if DEBUG
 
     enum MockImageService {
-        static func make(sessionService: SessionService = MockSessionService.signedIn()) -> ImageService {
+        static func make(
+            sessionService: SessionService = MockSessionService.signedIn()
+        ) -> ImageService {
             ImageService(builder: MockImageURLBuilder(), sessionService: sessionService)
         }
     }

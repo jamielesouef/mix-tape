@@ -16,7 +16,7 @@ extension MusicPlayerService {
                 reportStart: ReportPlaybackStartUseCase(repository: repository),
                 reportProgress: ReportPlaybackProgressUseCase(repository: repository),
                 reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-                sessionService: .placeholder,
+                sessionService: .placeholder
             )
         #endif
     }()

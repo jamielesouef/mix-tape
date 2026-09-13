@@ -7,7 +7,13 @@
 import Foundation
 
 nonisolated struct PlaceholderImageURLBuilder: ImageURLBuilderProtocol {
-    func url(itemID _: String, tag _: String?, kind _: ImageKind, maxHeight _: Int, session _: UserSession) -> URL? {
+    func url(
+        itemID _: String,
+        tag _: String?,
+        kind _: ImageKind,
+        maxHeight _: Int,
+        session _: UserSession
+    ) -> URL? {
         nil
     }
 }

@@ -18,7 +18,7 @@ extension SessionService {
                 pollQuickConnect: PollQuickConnectUseCase(repository: repository, store: store),
                 restoreSession: RestoreSessionUseCase(store: store),
                 signOut: SignOutUseCase(store: store),
-                initialState: .signedOut,
+                initialState: .signedOut
             )
         #endif
     }()

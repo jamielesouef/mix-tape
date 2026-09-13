@@ -9,7 +9,7 @@
     enum MockMusicPlayerService {
         static func make(
             repository: MockPlaybackRepository = MockPlaybackRepository(),
-            sessionService: SessionService = MockSessionService.signedIn(),
+            sessionService: SessionService = MockSessionService.signedIn()
         ) -> MusicPlayerService {
             MusicPlayerService(
                 controller: MockAudioPlayerController(),
@@ -17,7 +17,7 @@
                 reportStart: ReportPlaybackStartUseCase(repository: repository),
                 reportProgress: ReportPlaybackProgressUseCase(repository: repository),
                 reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-                sessionService: sessionService,
+                sessionService: sessionService
             )
         }
 
@@ -27,7 +27,15 @@
 
         static func playing() -> MusicPlayerService {
             let service = make()
-            Task { await service.play(album: MockMedia.albums[0], tracks: MockMedia.tracks, startingAt: 0) }
+
+            Task {
+                await service.play(
+                    album: MockMedia.albums[0],
+                    tracks: MockMedia.tracks,
+                    startingAt: 0
+                )
+            }
+
             return service
         }
     }

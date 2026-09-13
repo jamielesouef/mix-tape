@@ -13,7 +13,7 @@
             quickConnect: QuickConnectUIState = .idle,
             error: MixtapeError? = nil,
             repository: MockAuthRepository = MockAuthRepository(),
-            store: MockSessionStore = MockSessionStore(),
+            store: MockSessionStore = MockSessionStore()
         ) -> SessionService {
             SessionService(
                 validateServer: ValidateServerUseCase(repository: repository),
@@ -25,7 +25,7 @@
                 initialState: state,
                 serverIdentity: serverIdentity,
                 quickConnect: quickConnect,
-                error: error,
+                error: error
             )
         }
 
@@ -42,10 +42,16 @@
         }
 
         static func signedIn() -> SessionService {
-            make(state: .signedIn(MockAuthRepository.sampleSession), serverIdentity: MockAuthRepository.sampleServer)
+            make(
+                state: .signedIn(MockAuthRepository.sampleSession),
+                serverIdentity: MockAuthRepository.sampleServer
+            )
         }
 
-        static func failed(_ error: MixtapeError, serverIdentity: ServerIdentity? = nil) -> SessionService {
+        static func failed(
+            _ error: MixtapeError,
+            serverIdentity: ServerIdentity? = nil
+        ) -> SessionService {
             make(serverIdentity: serverIdentity, error: error)
         }
 
@@ -54,7 +60,10 @@
         }
 
         static func quickConnectWaiting(code: String = "123456") -> SessionService {
-            make(serverIdentity: MockAuthRepository.sampleServer, quickConnect: .waiting(code: code))
+            make(
+                serverIdentity: MockAuthRepository.sampleServer,
+                quickConnect: .waiting(code: code)
+            )
         }
 
         static func quickConnectFailed(_ error: MixtapeError) -> SessionService {

@@ -13,7 +13,7 @@
             libraries: LoadState<[Library]> = .idle,
             pages: [String: LoadState<Page<MediaItem>>] = [:],
             details: [String: LoadState<MediaItem>] = [:],
-            tracks: [String: LoadState<[MediaItem]>] = [:],
+            tracks: [String: LoadState<[MediaItem]>] = [:]
         ) -> LibraryService {
             LibraryService(
                 fetchLibraries: FetchLibrariesUseCase(repository: repository),
@@ -24,7 +24,7 @@
                 libraries: libraries,
                 pages: pages,
                 details: details,
-                tracks: tracks,
+                tracks: tracks
             )
         }
 
@@ -41,10 +41,10 @@
             return make(
                 libraries: .loaded(libraries),
                 pages: [
-                    "lib-music": .loaded(page(MockLibraryRepository.sampleAlbums)),
+                    "lib-music": .loaded(page(MockLibraryRepository.sampleAlbums))
                 ],
                 details: ["album-1": .loaded(MockLibraryRepository.sampleAlbums[0])],
-                tracks: ["album-1": .loaded(MockLibraryRepository.sampleTracks)],
+                tracks: ["album-1": .loaded(MockLibraryRepository.sampleTracks)]
             )
         }
 
@@ -52,7 +52,7 @@
             make(
                 libraries: .loaded([]),
                 pages: ["lib-music": .loaded(page([]))],
-                tracks: ["album-1": .loaded([])],
+                tracks: ["album-1": .loaded([])]
             )
         }
 
@@ -62,12 +62,12 @@
                     librariesResult: { _ in throw error },
                     itemsResult: { _, _, _, _ in throw error },
                     itemResult: { _, _ in throw error },
-                    tracksResult: { _, _ in throw error },
+                    tracksResult: { _, _ in throw error }
                 ),
                 libraries: .failed(error),
                 pages: ["lib-music": .failed(error)],
                 details: ["album-1": .failed(error)],
-                tracks: ["album-1": .failed(error)],
+                tracks: ["album-1": .failed(error)]
             )
         }
 

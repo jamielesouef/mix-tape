@@ -7,8 +7,6 @@
 import Foundation
 
 #if DEBUG
-    import Foundation
-
     final class MockAudioPlayerController: AudioPlayerControlling {
         var onPositionChange: ((Duration) -> Void)?
         var onEnded: (() -> Void)?
