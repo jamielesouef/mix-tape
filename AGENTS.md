@@ -1,7 +1,7 @@
 # mixtape — build repo
 
-A Jellyfin client for iOS. Browse video and music libraries, play both,
-report progress back.
+A Jellyfin client for iOS. Browse a music library, play albums, report
+progress back.
 
 `docs/engineering-doc.md` is the source of truth. Appendix A in it is the
 architecture template. `docs/jellyfin-openapi.json` (Jellyfin 10.11.11, OpenAPI
@@ -21,10 +21,7 @@ no `#available`. The deployment target is **26.1**, not 26.0: the wallet's
 `tabViewBottomAccessory` is 26.1 API and `#available` is banned (decision 52).
 Swift 6 language mode.
 `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
-VLCKit is the only third-party dependency, a remote package on the app target.
-Its pin lives in `MixTape.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
-Package.resolved` and must stay committed — without it every `xcodebuild` call
-re-resolves and loses the binary artifact (decision 53).
+No third-party dependencies — VLCKit was removed along with video playback.
 
 ## The toolchain here is ahead of the one this must stay compatible with
 
