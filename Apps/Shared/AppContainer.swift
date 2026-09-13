@@ -12,8 +12,6 @@ import MixtapePresentation
 import MixtapeServices
 import MixtapeUseCase
 
-/// Composition root (engineering doc §10): the one place that sees all six layers.
-/// Builds the client, then repositories, then use cases, then services — by hand.
 @MainActor
 struct AppContainer {
     let sessionService: SessionService
@@ -29,8 +27,6 @@ struct AppContainer {
         let client = JellyfinHTTPClient(session: URLSession(configuration: configuration), deviceName: DeviceName.current)
 
         let sessionStore = KeychainSessionStore()
-        // A Keychain that cannot even hold the device id is broken beyond what this app can fix;
-        // a per-launch id keeps the app usable for the session.
         let deviceID = (try? sessionStore.deviceID()) ?? UUID().uuidString
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
 
@@ -88,9 +84,6 @@ struct AppContainer {
             artworkProvider: { track in await imageServiceRef.image(for: track, kind: .primary, maxHeight: 600) },
         )
 
-        // Slice 020: the only place all six services are visible wires the teardown fan-out —
-        // SessionService holds no reference to any of them, only this closure. ImageService is
-        // deliberately excluded (decision log: its cache keys carry no auth and no user id).
         let libraryServiceRef = libraryService
         let seriesServiceRef = seriesService
         let musicPlayerServiceRef = musicPlayerService
@@ -103,8 +96,6 @@ struct AppContainer {
         }
     }
 
-    /// The shipped profile is always `permissive`. In DEBUG builds the `-mixtape-force-transcode`
-    /// launch argument swaps in the restrictive profile so AC8 can be demonstrated live (fork F3).
     private static var deviceProfile: DeviceProfile {
         #if DEBUG
             if CommandLine.arguments.contains("-mixtape-force-transcode") {

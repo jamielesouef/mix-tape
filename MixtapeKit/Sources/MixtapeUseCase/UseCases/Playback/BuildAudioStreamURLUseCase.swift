@@ -6,8 +6,6 @@
 
 import MixtapeDomain
 
-/// Track → `AudioStream` (URL + wire `PlayMethod`), per decision 40. Delegates to the repository,
-/// which is the one place that both builds the URL and knows whether it will transcode (decision 23).
 public nonisolated struct BuildAudioStreamURLUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 

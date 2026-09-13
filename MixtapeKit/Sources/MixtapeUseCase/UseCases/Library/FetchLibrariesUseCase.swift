@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// The user's libraries, with `.unsupported` collection types filtered out.
 public nonisolated struct FetchLibrariesUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 

@@ -7,13 +7,11 @@
 import MixtapeDomain
 
 nonisolated enum PlaybackMapper {
-    /// A response without a `PlaySessionId` cannot be reported against, so it is a decoding failure.
     static func resolution(from dto: PlaybackInfoResponseDTO) throws -> VideoSourceResolution {
         guard let playSessionID = dto.playSessionId else { throw MixtapeError.decoding }
         return VideoSourceResolution(playSessionID: playSessionID, sources: (dto.mediaSources ?? []).compactMap(candidate))
     }
 
-    /// Codecs come from the first `Video` and first `Audio` stream; a source with no id is skipped.
     static func candidate(from dto: MediaSourceInfoDTO) -> MediaSourceCandidate? {
         guard let id = dto.id else { return nil }
         let streams = dto.mediaStreams ?? []

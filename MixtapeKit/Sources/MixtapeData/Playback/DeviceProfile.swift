@@ -4,9 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// The `DeviceProfile` posted with `PlaybackInfo`. `permissive` is what the app ships (§8: VLCKit's
-/// range, so the server never transcodes needlessly); `forceTranscode` exists only for the
-/// DEBUG launch argument that demonstrates AC8 (decision 14, fork F3).
 public nonisolated struct DeviceProfile: Encodable, Sendable, Equatable {
     public let name: String
     public let maxStreamingBitrate: Int

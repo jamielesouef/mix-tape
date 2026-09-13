@@ -8,8 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// The detail screen for a pushed `MediaItem`, chosen by kind. Every `NavigationStack` that pushes
-/// items declares this once as its `navigationDestination(for: MediaItem.self)`.
 struct MediaItemDestination: View {
     let item: MediaItem
 

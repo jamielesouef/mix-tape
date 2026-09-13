@@ -7,8 +7,6 @@
 import Foundation
 import MixtapeDomain
 
-/// The audio player seam. `MusicPlayerService` owns one of these and drives it; the lock-screen and
-/// remote events arrive back through the `onRemote…` callbacks (engineering doc §6/§7).
 @MainActor
 public protocol AudioPlayerControlling: AnyObject {
     var onPositionChange: ((Duration) -> Void)? { get set }

@@ -6,8 +6,6 @@
 
 import MixtapeDomain
 
-/// `POST /Sessions/Playing/Progress`. A dropped heartbeat never becomes a playback error (§8),
-/// so failures are swallowed here.
 public nonisolated struct ReportPlaybackProgressUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 

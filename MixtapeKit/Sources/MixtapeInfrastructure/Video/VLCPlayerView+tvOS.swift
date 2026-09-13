@@ -8,13 +8,8 @@
     import SwiftUI
     import UIKit
 
-    /// Hosts VLC's video surface under a Siri Remote transport (engineering doc §9, tvOS table):
-    /// Play/Pause on the remote or select on the focused button toggles, a swipe or arrow left/right
-    /// steps the position by ten seconds. Menu leaves through the hosting cover.
     struct VLCPlayerView: View {
         @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-        // The cover's Close button is outside this view; unless focus starts here the remote's
-        // Play/Pause and swipe commands never reach the modifiers below.
         @FocusState private var transportFocused: Bool
         @State var model: VLCTransportModel
         let videoView: UIView
@@ -61,9 +56,7 @@
             }
         }
 
-        /// Liquid Glass with the required Reduce Transparency fallback (engineering doc §9).
         private var transportBackground: AnyShapeStyle {
-            // glass-fallback: the ternary is the fallback — opaque black when reduced (slice 019).
             reduceTransparency ? AnyShapeStyle(.black) : AnyShapeStyle(.ultraThinMaterial)
         }
     }

@@ -4,9 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// One `MediaSource` from a `PlaybackInfo` response, before method selection.
-/// `PlaybackRepositoryProtocol.resolveVideo` returns these; `ResolveVideoPlaybackUseCase`
-/// turns them into a `PlaybackPlan` (decision 12).
 public nonisolated struct MediaSourceCandidate: Sendable, Equatable {
     public let id: String
     public let container: String

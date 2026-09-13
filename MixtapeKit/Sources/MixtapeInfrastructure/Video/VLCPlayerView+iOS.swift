@@ -8,12 +8,9 @@
     import SwiftUI
     import UIKit
 
-    /// Hosts VLC's video surface under the touch transport (decision 18): play/pause and a scrub
-    /// slider. Lives in Infrastructure because Presentation only ever sees the controller's `AnyView`.
     struct VLCPlayerView: View {
         @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
         @State var model: VLCTransportModel
-        /// The fraction under the finger while dragging; one `scrub` fires on release (slice 019).
         @State private var scrubbing: Double?
         let videoView: UIView
         let controller: VLCPlayerController
@@ -51,9 +48,7 @@
             }
         }
 
-        /// Liquid Glass with the required Reduce Transparency fallback (engineering doc §9).
         private var transportBackground: AnyShapeStyle {
-            // glass-fallback: the ternary is the fallback — opaque black when reduced (slice 019).
             reduceTransparency ? AnyShapeStyle(.black) : AnyShapeStyle(.ultraThinMaterial)
         }
     }

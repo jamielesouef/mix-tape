@@ -9,9 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The root of a tvOS kind tab when the user has more than one library of that kind (§1.5, slice
-    /// 016): every library, as a focusable row that pushes its shelf. With a single library the tab
-    /// hosts the shelf directly and this screen never appears.
     struct LibraryKindListScreen: View {
         let libraries: [Library]
 

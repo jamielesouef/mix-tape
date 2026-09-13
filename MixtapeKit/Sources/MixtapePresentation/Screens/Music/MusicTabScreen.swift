@@ -9,8 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The Music tab: the wallet for the first music library (engineering doc §9.1). Further music
-    /// libraries stay reachable from the Libraries tab, as wallets too.
     public struct MusicTabScreen: View {
         @Environment(\.libraryService) private var libraryService
 

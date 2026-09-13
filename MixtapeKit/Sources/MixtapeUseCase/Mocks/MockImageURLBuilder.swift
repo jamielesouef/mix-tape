@@ -8,8 +8,6 @@
     import Foundation
     import MixtapeDomain
 
-    /// Builds a predictable `mock://` URL when a tag exists and `nil` when it does not, so previews
-    /// and tests never touch a server.
     public nonisolated struct MockImageURLBuilder: ImageURLBuilderProtocol {
         public init() {}
 

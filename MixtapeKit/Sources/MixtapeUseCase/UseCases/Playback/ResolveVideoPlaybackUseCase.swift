@@ -7,10 +7,6 @@
 import Foundation
 import MixtapeDomain
 
-/// Item + start position → `PlaybackPlan` (engineering doc §8 "Choosing the method"). The first
-/// source wins; a direct-play or direct-stream source gets a client-built stream URL carrying
-/// `ApiKey` (decision 42) and `deviceId` (decision 26); a transcode passes the server's
-/// `TranscodingUrl` through verbatim (decision 7 carve-out).
 public nonisolated struct ResolveVideoPlaybackUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 

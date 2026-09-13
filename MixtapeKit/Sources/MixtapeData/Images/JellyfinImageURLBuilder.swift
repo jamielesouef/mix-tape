@@ -8,8 +8,6 @@ import Foundation
 import MixtapeDomain
 import MixtapeUseCase
 
-/// Engineering doc §8 "Images", corrected by decision 25: `maxHeight` (not `fillHeight`), `nil`
-/// without a tag, and no auth — image requests are anonymous on this server.
 public nonisolated struct JellyfinImageURLBuilder: ImageURLBuilderProtocol {
     public init() {}
 

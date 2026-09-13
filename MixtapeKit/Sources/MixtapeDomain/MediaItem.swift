@@ -11,19 +11,14 @@ public nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
     public let overview: String?
     public let productionYear: Int?
     public let runtime: Duration?
-    /// Episode or track number.
     public let indexNumber: Int?
-    /// Season number.
     public let parentIndexNumber: Int?
     public let seriesName: String?
     public let albumArtist: String?
     public let primaryImageTag: String?
     public let backdropImageTag: String?
-    /// Album art inherited by tracks (decision 25: a track's own tags are empty).
     public let parentPrimaryImageTag: String?
-    /// The album a track belongs to; the item id its art is fetched against (decision 25).
     public let albumID: String?
-    /// Media container for an audio track, used to decide direct-stream vs HLS (slice 009).
     public let container: String?
     public let playback: PlaybackState
 

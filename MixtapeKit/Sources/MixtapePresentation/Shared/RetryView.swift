@@ -7,7 +7,6 @@
 import MixtapeDomain
 import SwiftUI
 
-/// The failure affordance (AC16): the error and a Retry button, never a blank screen.
 struct RetryView: View {
     let error: MixtapeError
     let retry: () async -> Void

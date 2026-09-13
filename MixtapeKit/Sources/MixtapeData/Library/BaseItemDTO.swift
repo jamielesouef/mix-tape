@@ -4,7 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// `BaseItemDto`, the shape every library call returns. Image fields per decision 25.
 nonisolated struct BaseItemDTO: Decodable {
     let id: String
     let name: String?

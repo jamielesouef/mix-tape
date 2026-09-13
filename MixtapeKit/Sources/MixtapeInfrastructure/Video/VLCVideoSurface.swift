@@ -8,8 +8,6 @@
     import SwiftUI
     import UIKit
 
-    /// libVLC renders into any `UIView` set as the player's `drawable` (the public `VLCVideoView`
-    /// is only forward-declared), so this wraps a plain `UIView` for SwiftUI.
     struct VLCVideoSurface: UIViewRepresentable {
         let videoView: UIView
 

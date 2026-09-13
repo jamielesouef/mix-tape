@@ -8,8 +8,6 @@
     import Foundation
     import MixtapeDomain
 
-    /// Closure-driven test double for previews and use-case tests. Each closure defaults to a
-    /// plausible success so a preview needs to override only the call it is about.
     public nonisolated struct MockAuthRepository: AuthRepositoryProtocol {
         public var serverIdentityResult: @Sendable (URL) async throws -> ServerIdentity
         public var authenticateResult: @Sendable (String, String, ServerIdentity) async throws -> UserSession

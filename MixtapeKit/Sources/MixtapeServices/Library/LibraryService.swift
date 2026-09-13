@@ -8,9 +8,6 @@ import MixtapeDomain
 import MixtapeUseCase
 import Observation
 
-/// Engineering doc §6. Holds the libraries, Continue Watching and a per-library page cache so tab
-/// switches do not refetch. Paging: `limit = 60`, `startIndex` advanced by the returned count;
-/// `loadMore` is a no-op while a load is in flight or after a short page.
 @Observable
 public final class LibraryService {
     public static let pageSize = 60
@@ -20,17 +17,11 @@ public final class LibraryService {
     public private(set) var pages: [String: LoadState<Page<MediaItem>>] = [:]
     public private(set) var details: [String: LoadState<MediaItem>] = [:]
     public private(set) var tracks: [String: LoadState<[MediaItem]>] = [:]
-    /// A `loadMore` failure that leaves `pages[id]`'s already-accumulated `.loaded` page intact
-    /// (§6 decision log) — additive so the view can show an inline "load more failed" signal
-    /// instead of blanking a partly-loaded library.
     public private(set) var pageLoadError: [String: MixtapeError] = [:]
 
     private var inFlight: Set<String> = []
     private var exhausted: Set<String> = []
     private var tracksInFlight: Set<String> = []
-    /// Bumped by `refresh()`; every in-flight load's post-await write checks it, supplementing
-    /// 020's session-identity guard — closes the same-session race a plain pull-to-refresh has
-    /// with an in-progress page load, which session equality alone cannot see (023 §6).
     private var currentGeneration = OperationGeneration()
 
     private let fetchLibraries: FetchLibrariesUseCase
@@ -79,7 +70,6 @@ public final class LibraryService {
         loadedLibraries.first { $0.id == id }
     }
 
-    /// Libraries and Continue Watching (decision 13: no Recently Added).
     public func loadHome() async {
         guard let session else { return }
         let epoch = session
@@ -110,7 +100,6 @@ public final class LibraryService {
         }
     }
 
-    /// First page of a library. A library already loaded is left alone — that is the cache.
     public func loadLibrary(id: String) async {
         guard let session else { return }
         let epoch = session
@@ -144,10 +133,6 @@ public final class LibraryService {
         pages[id] = .loading
         do {
             let page = try await fetchLibraryItems(libraryID: id, kind: Self.itemKind(library.kind), page: PageRequest(startIndex: 0, limit: Self.pageSize), session: session)
-            // Re-checked after the await: 020's session-identity guard closes the reentrancy hazard
-            // where handle(error) below fires SessionService's endSession() fan-out mid-flight and
-            // this write would otherwise repopulate the cache that fan-out just cleared; the
-            // generation check closes the same-session refresh() race (023 §6).
             if self.session == epoch, currentGeneration == generation {
                 pages[id] = .loaded(page)
                 if page.items.count < Self.pageSize || page.items.count >= page.totalCount {
@@ -162,7 +147,6 @@ public final class LibraryService {
         }
     }
 
-    /// Next page, appended. No-op while in flight, after a short page, or before the first page.
     public func loadMore(libraryID id: String) async {
         guard let session, let library = library(id: id) else { return }
         let epoch = session
@@ -183,8 +167,6 @@ public final class LibraryService {
                 }
             }
         } catch {
-            // §6 decision log: a later-page failure leaves the accumulated `.loaded` page alone —
-            // the failure surfaces additively through `pageLoadError`, not by overwriting `pages[id]`.
             let mapped = handle(error)
             if self.session == epoch, currentGeneration == generation {
                 pageLoadError[id] = mapped
@@ -210,9 +192,6 @@ public final class LibraryService {
         }
     }
 
-    /// Coalesced via `tracksInFlight`, keyed by albumID and separate from `inFlight` (which guards
-    /// `loadLibrary`/`loadMore`) — two views asking for the same album's tracks within the same
-    /// load fire one network request (023 §6).
     public func loadTracks(albumID: String) async {
         guard let session else { return }
         let epoch = session
@@ -237,9 +216,6 @@ public final class LibraryService {
         }
     }
 
-    /// Drops every cache and reloads Home. Bumps the generation first so any load already in
-    /// flight sees a stale generation on its post-await write and skips it (023 §6, additive to
-    /// 020's session-identity guard). Library pages reload on their next appearance.
     public func refresh() async {
         currentGeneration = OperationGeneration()
         pages = [:]
@@ -250,10 +226,6 @@ public final class LibraryService {
         await loadHome()
     }
 
-    /// Slice 020: `SessionService`'s fan-out calls this when a session ends — sign-out or expiry.
-    /// Every cache returns to its starting `.idle`/empty value, never `.failed` (decision log): the
-    /// next screen's `.task` gate is `if case .idle`, so a `.failed` write would strand it on a
-    /// manual-retry view instead of refetching silently for the next session.
     public func endSession() {
         libraries = .idle
         continueWatching = .idle
@@ -278,7 +250,6 @@ public final class LibraryService {
         }
     }
 
-    /// Maps and, for `.sessionExpired`, hands the session back to `SessionService` (§6).
     private func handle(_ error: any Error) -> MixtapeError {
         let mapped = (error as? MixtapeError) ?? .transport(error.localizedDescription)
         if mapped == .sessionExpired {

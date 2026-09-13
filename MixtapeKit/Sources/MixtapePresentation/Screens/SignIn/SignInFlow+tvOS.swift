@@ -8,8 +8,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// tvOS: server entry, then Quick Connect first with password sign-in as the secondary action
-    /// (engineering doc §9, tvOS table).
     struct SignInFlow: View {
         @Environment(\.sessionService) private var sessionService
         @State private var usingPassword = false

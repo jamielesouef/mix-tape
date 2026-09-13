@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// Takes both ids: the endpoint needs the series and a bare season id cannot reach it (decision 30).
 public nonisolated struct FetchEpisodesUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 

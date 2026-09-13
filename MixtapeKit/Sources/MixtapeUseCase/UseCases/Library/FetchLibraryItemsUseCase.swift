@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// One page of a library's items.
 public nonisolated struct FetchLibraryItemsUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 

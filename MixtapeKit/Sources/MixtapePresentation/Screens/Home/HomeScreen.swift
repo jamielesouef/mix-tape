@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Continue Watching only (decision 13: no Recently Added).
 public struct HomeScreen: View {
     @Environment(\.libraryService) private var libraryService
 

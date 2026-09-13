@@ -7,9 +7,7 @@
 import Foundation
 import Security
 
-/// Generic `Data` get/set/delete for one Keychain service, keyed by account.
 public nonisolated struct KeychainStore: Sendable {
-    /// An `OSStatus` other than success or item-not-found.
     public struct Failure: Error, Equatable {
         let status: OSStatus
     }
@@ -33,8 +31,6 @@ public nonisolated struct KeychainStore: Sendable {
         }
     }
 
-    /// Update in place, add only when nothing is there (slice 019): a delete-then-add would lose
-    /// the stored credential if the add failed.
     public func set(_ data: Data, account: String) throws {
         let attributes: [String: Any] = [
             kSecValueData as String: data,

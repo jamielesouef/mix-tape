@@ -4,8 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// The one body shared by `/Sessions/Playing`, `/Progress` and `/Stopped` (engineering doc §8;
-/// decision 32 verified the extra fields are ignored where they do not apply).
 nonisolated struct PlaybackReportBody: Encodable {
     let itemId: String
     let mediaSourceId: String

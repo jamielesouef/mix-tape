@@ -6,8 +6,6 @@
 
 import MixtapeDomain
 
-/// `POST /Sessions/Playing/Stopped`, closing the session 006's start report opened. Failures are
-/// swallowed (§8).
 public nonisolated struct ReportPlaybackStoppedUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 

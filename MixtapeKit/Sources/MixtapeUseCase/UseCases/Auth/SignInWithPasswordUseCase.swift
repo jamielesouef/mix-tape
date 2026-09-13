@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// Credentials → `UserSession`, persisted through the session store.
 public nonisolated struct SignInWithPasswordUseCase: Sendable {
     private let repository: any AuthRepositoryProtocol
     private let store: any SessionStoreProtocol

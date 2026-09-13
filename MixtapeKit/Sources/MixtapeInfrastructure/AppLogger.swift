@@ -6,8 +6,6 @@
 
 import os
 
-/// One subsystem, three categories (engineering doc §7). Messages are logged `.public`;
-/// never interpolate a token or a credential into one (decision 45).
 public nonisolated struct AppLogger: Sendable {
     public static let network = AppLogger(category: "network")
     public static let playback = AppLogger(category: "playback")

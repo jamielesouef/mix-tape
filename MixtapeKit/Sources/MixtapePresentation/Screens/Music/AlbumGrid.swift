@@ -9,8 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// The tvOS album shelf — iOS has the wallet (engineering doc §1.1, §9.1). The library title over a
-    /// focus-driven grid of album cards, paged as the last card appears.
     public struct AlbumGrid: View {
         @Environment(\.libraryService) private var libraryService
         let library: Library

@@ -7,7 +7,6 @@
 import Foundation
 import MixtapeDomain
 
-/// Keychain representation of a `UserSession`.
 nonisolated struct StoredSessionDTO: Codable {
     let serverURL: URL
     let userID: String

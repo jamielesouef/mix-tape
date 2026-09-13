@@ -8,8 +8,6 @@
     import MixtapeDomain
     import MixtapeUseCase
 
-    /// Preview and placeholder factories: real `LibraryService` instances over the mock repository,
-    /// started in the state the preview is about.
     public enum MockLibraryService {
         public static func make(
             repository: MockLibraryRepository = MockLibraryRepository(),
@@ -43,7 +41,6 @@
             make(libraries: .loading, continueWatching: .loading, pages: ["lib-movies": .loading, "lib-shows": .loading, "lib-music": .loading])
         }
 
-        /// Everything loaded from the sample data.
         public static func loaded() -> LibraryService {
             let libraries = MockLibraryRepository.sampleLibraries.filter { $0.kind != .unsupported }
             return make(
@@ -59,7 +56,6 @@
             )
         }
 
-        /// Loaded, with nothing in it.
         public static func empty() -> LibraryService {
             make(
                 libraries: .loaded([]),

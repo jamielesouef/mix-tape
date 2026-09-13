@@ -10,8 +10,6 @@
     import MixtapeInfrastructure
     import SwiftUI
 
-    /// A `VideoPlayerControlling` that plays nothing: previews get a black view and a controller that
-    /// answers every call. `Stub*` doubles for tests live in the test targets.
     public final class MockVideoPlayerController: VideoPlayerControlling {
         public var onPositionChange: ((Duration) -> Void)?
         public var onTransportEvent: ((VideoTransportEvent) -> Void)?

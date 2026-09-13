@@ -7,7 +7,6 @@
 import MixtapeDomain
 
 public extension MixtapeError {
-    /// User-facing text for inline error labels.
     nonisolated var message: String {
         switch self {
         case .serverUnreachable: "Couldn't reach the server. Check the address and that it's running."

@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// Art, album artist, year, track list, Play. Play renders and does nothing until slice 009.
 public struct AlbumDetailScreen: View {
     @Environment(\.libraryService) private var libraryService
     @Environment(\.musicPlayerService) private var music

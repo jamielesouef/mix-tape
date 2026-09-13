@@ -8,18 +8,12 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// The docked mini player above the iOS tab bar, shown whenever music is active. Tapping it asks
-/// its host to present `NowPlayingScreen`: the sheet is not this view's, because this view leaves
-/// the hierarchy the moment music stops and could never dismiss anything (slice 015). Liquid Glass
-/// with the Reduce Transparency fallback (§9).
 struct MiniPlayer: View {
     @Environment(\.musicPlayerService) private var music
     @Binding var showNowPlaying: Bool
 
     var body: some View {
         if let track = Self.dockedTrack(in: music) {
-            // Two sibling buttons, not one nested in the other: a nested button is flattened into its
-            // parent's accessibility element and VoiceOver never reaches it (slice 012).
             HStack(spacing: 12) {
                 Button { showNowPlaying = true } label: {
                     HStack(spacing: 12) {
@@ -52,9 +46,6 @@ struct MiniPlayer: View {
         }
     }
 
-    /// The track the dock shows, or `nil` when it must not render at all: nothing playing, or an
-    /// album that has finished and is waiting for the wallet to return it. Platform-shared so it
-    /// is testable without the iOS accessory that hosts the view.
     static func dockedTrack(in music: MusicPlayerService) -> MediaItem? {
         music.isActive ? music.current : nil
     }

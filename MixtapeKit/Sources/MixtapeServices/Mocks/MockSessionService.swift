@@ -8,8 +8,6 @@
     import MixtapeDomain
     import MixtapeUseCase
 
-    /// Preview and placeholder factories: real `SessionService` instances over mock repositories,
-    /// started in the state the preview is about.
     public enum MockSessionService {
         public static func make(
             state: SessionService.State = .signedOut,

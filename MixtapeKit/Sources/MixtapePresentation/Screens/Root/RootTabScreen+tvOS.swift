@@ -8,14 +8,10 @@
     import MixtapeServices
     import SwiftUI
 
-    /// tvOS: Home, Movies, Shows, Music, Settings across the top (decision 26). No mini player and no
-    /// wallet — §1.1 keeps the wallet iOS-only and tvOS on conventional shelves.
     public struct RootTabScreen: View {
         public init() {}
 
         public var body: some View {
-            // Identifiers sit on the tabs themselves (§9 "every interactive element"), so the tab-bar
-            // items can be addressed to switch tabs — not only the content behind them (slice 016).
             TabView {
                 Tab("Home", systemImage: "house") {
                     HomeScreen()

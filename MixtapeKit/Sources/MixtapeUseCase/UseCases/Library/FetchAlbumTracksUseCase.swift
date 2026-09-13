@@ -6,7 +6,6 @@
 
 import MixtapeDomain
 
-/// The whole album, unpaged (decision 26): §1.1 needs every track, never a page.
 public nonisolated struct FetchAlbumTracksUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 

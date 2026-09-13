@@ -8,8 +8,6 @@ import MixtapeDomain
 import MixtapeUseCase
 import Observation
 
-/// Engineering doc §6, decision 30: `episodes` takes both ids. Per-series and per-season caches,
-/// cleared on `refresh()`.
 @Observable
 public final class SeriesService {
     public private(set) var seasons: [String: LoadState<[MediaItem]>] = [:]
@@ -17,8 +15,6 @@ public final class SeriesService {
 
     private var seasonsInFlight: Set<String> = []
     private var episodesInFlight: Set<String> = []
-    /// Bumped by `refresh()`; every in-flight load's post-await write checks it, supplementing
-    /// 020's session-identity guard (023 §6 — same rationale as `LibraryService.currentGeneration`).
     private var currentGeneration = OperationGeneration()
 
     private let fetchSeasons: FetchSeasonsUseCase
@@ -39,8 +35,6 @@ public final class SeriesService {
         self.episodes = episodes
     }
 
-    /// Coalesced via `seasonsInFlight`, keyed by seriesID — two views asking for the same series'
-    /// seasons within the same load fire one network request (023 §6).
     public func loadSeasons(seriesID: String) async {
         guard let session else { return }
         let epoch = session
@@ -65,8 +59,6 @@ public final class SeriesService {
         }
     }
 
-    /// Coalesced via `episodesInFlight`, keyed by seasonID — two views asking for the same
-    /// season's episodes within the same load fire one network request (023 §6).
     public func loadEpisodes(seriesID: String, seasonID: String) async {
         guard let session else { return }
         let epoch = session
@@ -91,16 +83,12 @@ public final class SeriesService {
         }
     }
 
-    /// Bumps the generation first so any load already in flight sees a stale generation on its
-    /// post-await write and skips it (023 §6, additive to 020's session-identity guard).
     public func refresh() {
         currentGeneration = OperationGeneration()
         seasons = [:]
         episodes = [:]
     }
 
-    /// Slice 020: `SessionService`'s fan-out calls this when a session ends — sign-out or expiry.
-    /// Every cache returns to empty, never `.failed` — same rationale as `LibraryService.endSession()`.
     public func endSession() {
         seasons = [:]
         episodes = [:]

@@ -9,11 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// One album in a clear plastic sleeve (engineering doc §9.1): art inset in a rounded rect with a
-    /// thin border and a single diagonal specular highlight. `nil` is an empty sleeve on a partial
-    /// page. Under Reduce Transparency the sheen goes and it is a flat bordered card. The highlight
-    /// is static — the tilt-following sheen is cut (slice 010 decision log), so Reduce Motion has
-    /// nothing left to switch off.
     struct AlbumSleeve: View {
         @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
         let album: MediaItem?

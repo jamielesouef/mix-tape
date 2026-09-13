@@ -4,7 +4,6 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-/// Clears the persisted session. No server call.
 public nonisolated struct SignOutUseCase: Sendable {
     private let store: any SessionStoreProtocol
 

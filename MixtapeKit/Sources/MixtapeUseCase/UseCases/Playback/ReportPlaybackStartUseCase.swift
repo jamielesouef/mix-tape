@@ -6,8 +6,6 @@
 
 import MixtapeDomain
 
-/// `POST /Sessions/Playing`, once per play. Failures never surface as playback errors (§8): the
-/// repository logs them and this swallows them.
 public nonisolated struct ReportPlaybackStartUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 

@@ -9,7 +9,6 @@
     import MixtapeServices
     import SwiftUI
 
-    /// A TV library on iOS: mirrors `MovieLibraryGrid` exactly (decision 26). tvOS has `SeriesLibraryShelf`.
     public struct SeriesLibraryGrid: View {
         @Environment(\.libraryService) private var libraryService
         let library: Library

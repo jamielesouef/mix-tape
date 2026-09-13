@@ -8,7 +8,6 @@ import MixtapeDomain
 import MixtapeServices
 import SwiftUI
 
-/// An image from `ImageService`, with a symbol placeholder while loading or when there is no art.
 struct RemoteImage: View {
     enum Source: Hashable {
         case item(MediaItem, ImageKind)

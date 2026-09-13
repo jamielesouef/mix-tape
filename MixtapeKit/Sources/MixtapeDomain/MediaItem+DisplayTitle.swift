@@ -5,8 +5,6 @@
 //
 
 public extension MediaItem {
-    /// Episodes render as `S2E4 · Title`, tracks as `3. Title`, everything else as the name.
-    /// A missing index number falls back to the bare name.
     nonisolated var displayTitle: String {
         switch kind {
         case .episode:

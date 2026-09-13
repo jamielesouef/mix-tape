@@ -9,8 +9,6 @@ import MixtapeDomain
 import MixtapeInfrastructure
 import MixtapeUseCase
 
-/// Engineering doc §8 "Playback resolution" and "Progress reporting". Stateless; the device
-/// profile is injected so the DEBUG force-transcode profile can replace the shipped one (fork F3).
 public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
     private let client: JellyfinHTTPClient
     private let appVersion: String
@@ -32,10 +30,6 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
         return try PlaybackMapper.resolution(from: dto)
     }
 
-    /// `/Audio/{itemId}/universal` with the native-container list and no bitrate cap (decision 43),
-    /// authenticated with `ApiKey` in the query (decision 42). A non-decodable container falls back
-    /// to `main.m3u8` directly (Triage 24; `SPEC-DECISIONS.md` 51) rather than `universal`, whose
-    /// master playlist joins `TranscodeReasons` with unencoded spaces Kestrel rejects with 400.
     public func audioStream(track: MediaItem, session: UserSession, playSessionID: String) -> AudioStream {
         guard isNativeAudioContainer(track.container) else {
             AppLogger.playback.info("audio HLS fallback fired for track \(track.id) (container \(track.container ?? "?"))")
@@ -55,9 +49,6 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
         return AudioStream(url: url, playMethod: .directPlay)
     }
 
-    /// `GetVariantHlsAudioPlaylist` requested directly with the client's own query, so its own
-    /// segment URIs inherit a space-free query the way `universal`'s master playlist did not
-    /// (Triage 24). `segmentContainer`, not `transcodingContainer`, is what this operation declares.
     private func hlsFallbackURL(track: MediaItem, session: UserSession, playSessionID: String) -> URL {
         var components = URLComponents(url: session.serverURL.appending(path: "/Audio/\(track.id)/main.m3u8"), resolvingAgainstBaseURL: false)
         components?.queryItems = [
@@ -71,8 +62,6 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
         return components?.url ?? session.serverURL
     }
 
-    /// All three reports share one body (§8; decision 32). Each is logged on `network` and
-    /// rethrown; the use case decides to swallow (§8).
     public func reportStart(_ report: PlaybackReport, session: UserSession) async throws {
         try await post("/Sessions/Playing", report, session, "start")
     }

@@ -7,7 +7,6 @@
 #if os(iOS)
     import UIKit
 
-    /// The `Device` component of the Authorization header.
     public nonisolated enum DeviceName {
         @MainActor public static var current: String {
             UIDevice.current.name

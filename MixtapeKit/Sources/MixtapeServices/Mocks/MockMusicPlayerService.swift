@@ -8,8 +8,6 @@
     import MixtapeDomain
     import MixtapeUseCase
 
-    /// Preview and placeholder factories: real `MusicPlayerService` instances over the mock repository
-    /// and a silent controller, started in the state the preview is about.
     public enum MockMusicPlayerService {
         public static func make(
             repository: MockPlaybackRepository = MockPlaybackRepository(),
@@ -29,7 +27,6 @@
             make()
         }
 
-        /// Playing the sample album from its first track.
         public static func playing() -> MusicPlayerService {
             let service = make()
             Task { await service.play(album: MockMedia.albums[0], tracks: MockMedia.tracks, startingAt: 0) }
