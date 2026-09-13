@@ -1,12 +1,13 @@
-//  RootScreen.swift
-//  mixtape
 //
-//  Created by Jamie Le Souëf on 03/09/2026.
+//  HomeScreen.swift
+//  MixTape
+//
+//  Created by Jamie Le Souef on 13/9/2026.
 //
 
 import SwiftUI
 
-struct RootScreen: View {
+struct HomeScreen: View {
     @Environment(\.sessionService) private var sessionService: SessionService
 
     init() {}
@@ -19,7 +20,7 @@ struct RootScreen: View {
             case .signedOut:
                 SignInFlow()
             case .signedIn:
-                RootTabScreen()
+                Text("Hi")
             }
         }
         .task {
@@ -32,15 +33,15 @@ struct RootScreen: View {
 
 #if DEBUG
     #Preview("loading") {
-        RootScreen().environment(\.sessionService, MockSessionService.loading())
+        HomeScreen().environment(\.sessionService, MockSessionService.loading())
     }
 
     #Preview("signed out") {
-        RootScreen().environment(\.sessionService, MockSessionService.signedOut())
+        HomeScreen().environment(\.sessionService, MockSessionService.signedOut())
     }
 
     #Preview("signed in") {
-        RootScreen()
+        HomeScreen()
             .environment(\.sessionService, MockSessionService.signedIn())
             .environment(\.libraryService, MockLibraryService.loaded())
     }
