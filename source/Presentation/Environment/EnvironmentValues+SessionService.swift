@@ -7,5 +7,6 @@
 import SwiftUI
 
 extension EnvironmentValues {
-    @Entry var sessionService: SessionService = .placeholder
+    /// SwiftUI reads environment defaults on the main actor, so the placeholder is reachable.
+    @Entry var sessionService: SessionService = MainActor.assumeIsolated { .placeholder }
 }

@@ -7,5 +7,6 @@
 import SwiftUI
 
 extension EnvironmentValues {
-    @Entry var musicPlayerService: MusicPlayerService = .placeholder
+    /// SwiftUI reads environment defaults on the main actor, so the placeholder is reachable.
+    @Entry var musicPlayerService: MusicPlayerService = MainActor.assumeIsolated { .placeholder }
 }
