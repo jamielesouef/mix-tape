@@ -14,7 +14,7 @@ nonisolated enum AudioInterruptionAction: Equatable {
 
 nonisolated func audioInterruptionAction(
     type: AVAudioSession.InterruptionType,
-    options: AVAudioSession.InterruptionOptions,
+    options: AVAudioSession.InterruptionOptions
 ) -> AudioInterruptionAction {
     switch type {
     case .began: .pause

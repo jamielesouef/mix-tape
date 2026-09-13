@@ -15,14 +15,4 @@ nonisolated struct NowPlayingInfo: Sendable {
     let duration: Duration?
     let position: Duration
     let isPlaying: Bool
-
-    init(title: String, artist: String, albumTitle: String, artwork: UIImage?, duration: Duration?, position: Duration, isPlaying: Bool) {
-        self.title = title
-        self.artist = artist
-        self.albumTitle = albumTitle
-        self.artwork = artwork
-        self.duration = duration
-        self.position = position
-        self.isPlaying = isPlaying
-    }
 }
