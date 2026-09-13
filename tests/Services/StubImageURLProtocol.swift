@@ -36,7 +36,10 @@ final class StubImageURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
-        guard let url = request.url else { return false }
+        guard let url = request.url else {
+            return false
+        }
+
         return registry.handler(for: url) != nil
     }
 
@@ -49,12 +52,21 @@ final class StubImageURLProtocol: URLProtocol, @unchecked Sendable {
             client?.urlProtocol(self, didFailWithError: URLError(.unknown))
             return
         }
+
         Task {
             let (statusCode, data) = await handler()
-            guard let http = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil) else {
+            guard
+                let http = HTTPURLResponse(
+                    url: url,
+                    statusCode: statusCode,
+                    httpVersion: nil,
+                    headerFields: nil
+                )
+            else {
                 client?.urlProtocol(self, didFailWithError: URLError(.unknown))
                 return
             }
+
             client?.urlProtocol(self, didReceive: http, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)

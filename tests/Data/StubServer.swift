@@ -45,7 +45,18 @@ final class StubServer: @unchecked Sendable {
     func respond(status: Int, body: Data = Data()) {
         lock.withLock {
             handler = { request in
-                let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+                guard
+                    let url = request.url,
+                    let response = HTTPURLResponse(
+                        url: url,
+                        statusCode: status,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )
+                else {
+                    throw URLError(.badURL)
+                }
+
                 return (response, body)
             }
         }
@@ -68,7 +79,10 @@ final class StubServer: @unchecked Sendable {
     }
 
     func handle(_ request: URLRequest) throws -> (HTTPURLResponse, Data) {
-        guard let handler = lock.withLock({ handler }) else { throw URLError(.unknown) }
+        guard let handler = lock.withLock({ handler }) else {
+            throw URLError(.unknown)
+        }
+
         return try handler(request)
     }
 
@@ -78,20 +92,29 @@ final class StubServer: @unchecked Sendable {
 
     private static func readBody(of request: URLRequest) -> String? {
         if let body = request.httpBody {
-            return String(decoding: body, as: UTF8.self)
+            return String(bytes: body, encoding: .utf8)
         }
-        guard let stream = request.httpBodyStream else { return nil }
+
+        guard let stream = request.httpBodyStream else {
+            return nil
+        }
+
         stream.open()
         defer { stream.close() }
+
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 1024)
+
         while stream.hasBytesAvailable {
             let read = stream.read(&buffer, maxLength: buffer.count)
+
             if read <= 0 {
                 break
             }
+
             data.append(buffer, count: read)
         }
-        return String(decoding: data, as: UTF8.self)
+
+        return String(bytes: data, encoding: .utf8)
     }
 }

@@ -5,8 +5,8 @@
 //
 
 import Foundation
-@testable import Mixtape
 import Testing
+@testable import Mixtape
 
 @Suite(.tags(.useCase))
 struct BuildAudioStreamURLUseCaseTests {
@@ -14,19 +14,41 @@ struct BuildAudioStreamURLUseCaseTests {
 
     private func track(container: String?) -> MediaItem {
         MediaItem(
-            id: "track-1", name: "Song", kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200), indexNumber: 1, parentIndexNumber: 1,
-            albumArtist: "Artist", primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: "a1", albumID: "album-1", container: container,
-            playback: PlaybackState(position: .zero),
+            id: "track-1",
+            name: "Song",
+            kind: .audio,
+            overview: nil,
+            productionYear: nil,
+            runtime: .seconds(200),
+            indexNumber: 1,
+            parentIndexNumber: 1,
+            albumArtist: "Artist",
+            primaryImageTag: nil,
+            backdropImageTag: nil,
+            parentPrimaryImageTag: "a1",
+            albumID: "album-1",
+            container: container,
+            playback: PlaybackState(position: .zero)
         )
     }
 
-    @Test func `a flac track direct-plays and the mock builder is used`() {
-        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(track: track(container: "flac"), session: session, playSessionID: "psid-1")
+    @Test
+    func `a flac track direct-plays and the mock builder is used`() {
+        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(
+            track: track(container: "flac"),
+            session: session,
+            playSessionID: "psid-1"
+        )
         #expect(stream.playMethod == .directPlay)
     }
 
-    @Test func `an exotic container transcodes`() {
-        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(track: track(container: "opus"), session: session, playSessionID: "psid-2")
+    @Test
+    func `an exotic container transcodes`() {
+        let stream = BuildAudioStreamURLUseCase(repository: MockPlaybackRepository())(
+            track: track(container: "opus"),
+            session: session,
+            playSessionID: "psid-2"
+        )
         #expect(stream.playMethod == .transcode)
     }
 }

@@ -4,8 +4,8 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-@testable import Mixtape
 import Testing
+@testable import Mixtape
 
 @Suite(.tags(.domain))
 struct IsNativeAudioContainerTests {
@@ -15,9 +15,12 @@ struct IsNativeAudioContainerTests {
         ("mp3", true),
         (nil as String?, true),
         ("opus", false),
-        ("ogg,vorbis", false),
+        ("ogg,vorbis", false)
     ])
-    func `native containers direct-stream, exotic ones transcode`(container: String?, native: Bool) {
+    func `native containers direct-stream, exotic ones transcode`(
+        container: String?,
+        native: Bool
+    ) {
         #expect(isNativeAudioContainer(container) == native)
     }
 }

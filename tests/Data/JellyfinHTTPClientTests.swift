@@ -5,8 +5,8 @@
 //
 
 import Foundation
-@testable import Mixtape
 import Testing
+@testable import Mixtape
 
 @Suite(.tags(.repository))
 struct JellyfinHTTPClientTests {
@@ -29,7 +29,9 @@ struct JellyfinHTTPClientTests {
     }
 
     private func error(_ path: String) async -> MixtapeError? {
-        do { _ = try await get(path); return nil } catch let error as MixtapeError { return error } catch { return nil }
+        do { _ = try await get(path)
+            return nil
+        } catch let error as MixtapeError { return error } catch { return nil }
     }
 
     // MARK: Status-code table
@@ -56,7 +58,8 @@ struct JellyfinHTTPClientTests {
         }
     }
 
-    @Test func `two hundred range is success for fire and forget`() async throws {
+    @Test
+    func `two hundred range is success for fire and forget`() async throws {
         stub.respond(status: 204)
         try await client.post("/Sessions/Playing/Stopped", body: EmptyBody(), auth: signedIn)
         #expect(stub.lastRequest?.httpMethod == "POST")
@@ -68,7 +71,8 @@ struct JellyfinHTTPClientTests {
         #expect(await error("/System/Info/Public") == .serverUnreachable)
     }
 
-    @Test func `other URL errors are transport`() async {
+    @Test
+    func `other URL errors are transport`() async {
         stub.fail(.networkConnectionLost)
         guard case .transport = await error("/Items") else {
             Issue.record("networkConnectionLost did not map to .transport")
@@ -76,57 +80,102 @@ struct JellyfinHTTPClientTests {
         }
     }
 
-    @Test func `undecodable body is decoding error`() async {
+    @Test
+    func `undecodable body is decoding error`() async {
         stub.respond(status: 200, body: Data("not json".utf8))
         #expect(await error("/System/Info/Public") == .decoding)
     }
 
     // MARK: Header
 
-    @Test func `header with token is exact`() async throws {
-        stub.respond(status: 200, body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8))
+    @Test
+    func `header with token is exact`() async throws {
+        stub.respond(
+            status: 200,
+            body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8)
+        )
         _ = try await get("/System/Info", auth: signedIn)
         let header = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
-        #expect(header == #"MediaBrowser Client="mixtape", Device="Test iPhone", DeviceId="device-1", Version="1.0", Token="tok""#)
+        #expect(header ==
+            #"MediaBrowser Client="mixtape", Device="Test iPhone", DeviceId="device-1", Version="1.0", Token="tok""#)
         #expect(stub.lastRequest?.value(forHTTPHeaderField: "X-Emby-Authorization") == nil)
     }
 
-    @Test func `header without token omits the component`() async throws {
-        stub.respond(status: 200, body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8))
+    @Test
+    func `header without token omits the component`() async throws {
+        stub.respond(
+            status: 200,
+            body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8)
+        )
         _ = try await get("/System/Info/Public", auth: signedOut)
         let header = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
-        #expect(header == #"MediaBrowser Client="mixtape", Device="Test iPhone", DeviceId="device-1", Version="1.0""#)
+        #expect(header ==
+            #"MediaBrowser Client="mixtape", Device="Test iPhone", DeviceId="device-1", Version="1.0""#)
     }
 
-    @Test func `device name quotes and backslashes are escaped in the header`() async throws {
-        stub.respond(status: 200, body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8))
-        let quoted = JellyfinHTTPClient(session: stub.session, deviceName: #"Jamie's "iPhone" \ test"#)
+    @Test
+    func `device name quotes and backslashes are escaped in the header`() async throws {
+        stub.respond(
+            status: 200,
+            body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8)
+        )
+        let quoted = JellyfinHTTPClient(
+            session: stub.session,
+            deviceName: #"Jamie's "iPhone" \ test"#
+        )
         let _: PascalCaseFixture = try await quoted.get("/System/Info", auth: signedIn)
         let header = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
-        #expect(header == #"MediaBrowser Client="mixtape", Device="Jamie's \"iPhone\" \\ test", DeviceId="device-1", Version="1.0", Token="tok""#)
+        let expectedHeader = #"MediaBrowser Client="mixtape", "#
+            + #"Device="Jamie's \"iPhone\" \\ test", "#
+            + #"DeviceId="device-1", Version="1.0", Token="tok""#
+
+        #expect(header == expectedHeader)
     }
 
     // MARK: Request assembly and decoding
 
-    @Test func `pascal case decodes through explicit coding keys`() async throws {
-        stub.respond(status: 200, body: Data(#"{"ServerName":"mixtape","Version":"10.11.11","Id":"abc"}"#.utf8))
+    @Test
+    func `pascal case decodes through explicit coding keys`() async throws {
+        stub.respond(
+            status: 200,
+            body: Data(#"{"ServerName":"mixtape","Version":"10.11.11","Id":"abc"}"#.utf8)
+        )
         let decoded = try await get("/System/Info/Public")
         #expect(decoded == PascalCaseFixture(serverName: "mixtape", version: "10.11.11"))
     }
 
-    @Test func `path and query are appended to the base URL`() async throws {
+    @Test
+    func `path and query are appended to the base URL`() async throws {
         stub.respond(status: 200, body: Data(#"{"ServerName":"m","Version":"v"}"#.utf8))
-        let query = [URLQueryItem(name: "userId", value: "u1"), URLQueryItem(name: "limit", value: "20")]
+        let query = [
+            URLQueryItem(name: "userId", value: "u1"),
+            URLQueryItem(name: "limit", value: "20")
+        ]
         _ = try await client.get("/Items", query: query, auth: signedIn) as PascalCaseFixture
-        #expect(stub.lastRequest?.url?.absoluteString == "http://localhost:8096/Items?userId=u1&limit=20")
+        #expect(stub.lastRequest?.url?
+            .absoluteString == "http://localhost:8096/Items?userId=u1&limit=20")
         #expect(stub.lastRequest?.httpMethod == "GET")
     }
 
-    @Test func `post encodes the body as JSON`() async throws {
-        struct Body: Encodable { let Username: String }
+    @Test
+    func `post encodes the body as JSON`() async throws {
         stub.respond(status: 200, body: Data(#"{"ServerName":"m","Version":"v"}"#.utf8))
-        _ = try await client.post("/Users/AuthenticateByName", body: Body(Username: "jamie"), auth: signedOut) as PascalCaseFixture
+        _ = try await client.post(
+            "/Users/AuthenticateByName",
+            body: AuthenticateBody(username: "jamie"),
+            auth: signedOut
+        ) as PascalCaseFixture
         #expect(stub.lastRequest?.value(forHTTPHeaderField: "Content-Type") == "application/json")
         #expect(stub.lastBody() == #"{"Username":"jamie"}"#)
+    }
+
+    /// Stands in for a real request body: Jellyfin expects PascalCase on the wire, so the
+    /// coding key differs from the Swift property name exactly as it does in `Data`.
+    private struct AuthenticateBody: Encodable {
+        let username: String
+
+        enum CodingKeys: String, CodingKey {
+            case username = "Username"
+        }
     }
 }

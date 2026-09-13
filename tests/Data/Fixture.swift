@@ -8,8 +8,8 @@ import Foundation
 import Testing
 @testable import Mixtape
 
-// A class, not an enum, so `Bundle(for:)` can find the test bundle. There is no
-// `Bundle.module` outside a Swift package.
+/// A class, not an enum, so `Bundle(for:)` can find the test bundle. There is no
+/// `Bundle.module` outside a Swift package.
 final class Fixture {
     static func data(_ name: String) throws -> Data {
         let bundle = Bundle(for: Fixture.self)

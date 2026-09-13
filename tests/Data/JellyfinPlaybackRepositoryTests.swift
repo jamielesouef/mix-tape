@@ -5,37 +5,58 @@
 //
 
 import Foundation
-@testable import Mixtape
 import Testing
+@testable import Mixtape
 
 @Suite(.tags(.repository))
 struct JellyfinPlaybackRepositoryTests {
     private let stub = StubServer()
     private func repository() -> JellyfinPlaybackRepository {
-        JellyfinPlaybackRepository(client: JellyfinHTTPClient(session: stub.session, deviceName: "Test iPhone"), appVersion: "1.0")
+        JellyfinPlaybackRepository(
+            client: JellyfinHTTPClient(session: stub.session, deviceName: "Test iPhone"),
+            appVersion: "1.0"
+        )
     }
 
     private let session = UserSession(
         serverURL: URL(string: "http://localhost:8096")!,
-        userID: "user-1", userName: "jamie", accessToken: "tok-1", deviceID: "device-1",
+        userID: "user-1",
+        userName: "jamie",
+        accessToken: "tok-1",
+        deviceID: "device-1"
     )
 
-    @Test func `report start posts the shared body`() async throws {
+    @Test
+    func `report start posts the shared body`() async throws {
         stub.respond(status: 204)
         let report = PlaybackReport(
-            itemID: "item-1", mediaSourceID: "src", playSessionID: "psid",
-            position: .seconds(30), isPaused: false, playMethod: .transcode,
+            itemID: "item-1",
+            mediaSourceID: "src",
+            playSessionID: "psid",
+            position: .seconds(30),
+            isPaused: false,
+            playMethod: .transcode
         )
         try await repository().reportStart(report, session: session)
         #expect(stub.lastRequest?.url?.path() == "/Sessions/Playing")
-        #expect(stub.lastBody() == #"{"CanSeek":true,"IsPaused":false,"ItemId":"item-1","MediaSourceId":"src","PlayMethod":"Transcode","PlaySessionId":"psid","PositionTicks":300000000}"#)
+        // Keys are alphabetical because the client encodes with `.sortedKeys`.
+        let expectedBody = #"{"CanSeek":true,"IsPaused":false,"ItemId":"item-1","#
+            + #""MediaSourceId":"src","PlayMethod":"Transcode","#
+            + #""PlaySessionId":"psid","PositionTicks":300000000}"#
+
+        #expect(stub.lastBody() == expectedBody)
     }
 
-    @Test func `report start rethrows a server failure`() async {
+    @Test
+    func `report start rethrows a server failure`() async {
         stub.respond(status: 503)
         let report = PlaybackReport(
-            itemID: "item-1", mediaSourceID: "src", playSessionID: "psid",
-            position: .zero, isPaused: false, playMethod: .directPlay,
+            itemID: "item-1",
+            mediaSourceID: "src",
+            playSessionID: "psid",
+            position: .zero,
+            isPaused: false,
+            playMethod: .directPlay
         )
         await #expect(throws: MixtapeError.self) {
             try await repository().reportStart(report, session: session)

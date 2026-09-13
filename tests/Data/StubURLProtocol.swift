@@ -19,10 +19,13 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func startLoading() {
-        guard let id = request.value(forHTTPHeaderField: Self.headerName), let server = StubServer.registry.server(for: id) else {
+        guard
+            let id = request.value(forHTTPHeaderField: Self.headerName),
+            let server = StubServer.registry.server(for: id) else {
             client?.urlProtocol(self, didFailWithError: URLError(.unknown))
             return
         }
+
         server.record(request)
         do {
             let (response, data) = try server.handle(request)

@@ -5,32 +5,33 @@
 //
 
 import Foundation
-@testable import Mixtape
 import Testing
+@testable import Mixtape
 
 @Suite(.tags(.repository))
 struct JellyfinAudioStreamTests {
     private let session = UserSession(
-        serverURL: URL(string: "http://localhost:8096")!,
-        userID: "user-1", userName: "jamie", accessToken: "tok-1", deviceID: "device-1",
+        serverURL: URL(string: "http://localhost:8096")!, // literal URL, parsing cannot fail
+        userID: "user-1",
+        userName: "jamie",
+        accessToken: "tok-1",
+        deviceID: "device-1"
     )
 
-    private func repository() -> JellyfinPlaybackRepository {
-        JellyfinPlaybackRepository(client: JellyfinHTTPClient(session: StubServer().session, deviceName: "Test iPhone"), appVersion: "1.0")
-    }
-
-    private func track(id: String, container: String?) -> MediaItem {
-        MediaItem(
-            id: id, name: "Song", kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200), indexNumber: 1, parentIndexNumber: 1,
-            albumArtist: "Artist", primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: "a1", albumID: "album-1", container: container,
-            playback: PlaybackState(position: .zero),
+    @Test
+    func `the universal url carries the container list, ApiKey and no bitrate cap`() throws {
+        let stream = repository().audioStream(
+            track: track(id: "t1", container: "flac"),
+            session: session,
+            playSessionID: "psid-1"
         )
-    }
 
-    @Test func `the universal url carries the container list, ApiKey and no bitrate cap`() throws {
-        let stream = repository().audioStream(track: track(id: "t1", container: "flac"), session: session, playSessionID: "psid-1")
-        let components = try #require(URLComponents(url: stream.url, resolvingAgainstBaseURL: false))
-        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        let components = try #require(URLComponents(
+            url: stream.url,
+            resolvingAgainstBaseURL: false
+        ))
+        let query = Self.query(in: components)
+
         #expect(components.path == "/Audio/t1/universal")
         #expect(query["userId"] == "user-1")
         #expect(query["deviceId"] == "device-1")
@@ -43,14 +44,32 @@ struct JellyfinAudioStreamTests {
         #expect(stream.playMethod == .directPlay)
     }
 
-    @Test func `an exotic container reports transcode`() {
-        #expect(repository().audioStream(track: track(id: "t2", container: "opus"), session: session, playSessionID: "psid-2").playMethod == .transcode)
+    @Test
+    func `an exotic container reports transcode`() {
+        let stream = repository().audioStream(
+            track: track(id: "t2", container: "opus"),
+            session: session,
+            playSessionID: "psid-2"
+        )
+
+        #expect(stream.playMethod == .transcode)
     }
 
-    @Test func `the non-native fallback requests main m3u8 directly with the caller's play session id`() throws {
-        let stream = repository().audioStream(track: track(id: "t3", container: "opus"), session: session, playSessionID: "psid-3")
-        let components = try #require(URLComponents(url: stream.url, resolvingAgainstBaseURL: false))
-        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+    @Test
+    func `the non-native fallback requests main m3u8 directly with the caller's play session id`(
+    ) throws {
+        let stream = repository().audioStream(
+            track: track(id: "t3", container: "opus"),
+            session: session,
+            playSessionID: "psid-3"
+        )
+
+        let components = try #require(URLComponents(
+            url: stream.url,
+            resolvingAgainstBaseURL: false
+        ))
+        let query = Self.query(in: components)
+
         #expect(components.path == "/Audio/t3/main.m3u8")
         #expect(query["mediaSourceId"] == "t3")
         #expect(query["playSessionId"] == "psid-3")
@@ -63,5 +82,38 @@ struct JellyfinAudioStreamTests {
         #expect(query["container"] == nil)
         #expect(query["transcodingProtocol"] == nil)
         #expect(stream.playMethod == .transcode)
+    }
+
+    private static func query(in components: URLComponents) -> [String: String] {
+        let items = components.queryItems ?? []
+
+        return Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
+    }
+
+    private func repository() -> JellyfinPlaybackRepository {
+        JellyfinPlaybackRepository(
+            client: JellyfinHTTPClient(session: StubServer().session, deviceName: "Test iPhone"),
+            appVersion: "1.0"
+        )
+    }
+
+    private func track(id: String, container: String?) -> MediaItem {
+        MediaItem(
+            id: id,
+            name: "Song",
+            kind: .audio,
+            overview: nil,
+            productionYear: nil,
+            runtime: .seconds(200),
+            indexNumber: 1,
+            parentIndexNumber: 1,
+            albumArtist: "Artist",
+            primaryImageTag: nil,
+            backdropImageTag: nil,
+            parentPrimaryImageTag: "a1",
+            albumID: "album-1",
+            container: container,
+            playback: PlaybackState(position: .zero)
+        )
     }
 }
