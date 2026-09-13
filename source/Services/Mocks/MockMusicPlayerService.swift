@@ -6,6 +6,7 @@
 
 #if DEBUG
 
+    @MainActor
     enum MockMusicPlayerService {
         static func make(
             repository: MockPlaybackRepository = MockPlaybackRepository(),

@@ -6,6 +6,7 @@
 
 #if DEBUG
 
+    @MainActor
     enum MockImageService {
         static func make(
             sessionService: SessionService = MockSessionService.signedIn()

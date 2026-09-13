@@ -6,6 +6,7 @@
 
 #if DEBUG
 
+    @MainActor
     enum MockSessionService {
         static func make(
             state: SessionService.State = .signedOut,

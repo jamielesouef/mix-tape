@@ -6,6 +6,7 @@
 
 #if DEBUG
 
+    @MainActor
     enum MockLibraryService {
         static func make(
             repository: MockLibraryRepository = MockLibraryRepository(),

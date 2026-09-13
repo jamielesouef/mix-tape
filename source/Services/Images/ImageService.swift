@@ -8,6 +8,7 @@ import Foundation
 import Observation
 import UIKit
 
+@MainActor
 @Observable
 final class ImageService {
     static let cacheLimitBytes = 120 * 1024 * 1024

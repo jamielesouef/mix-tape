@@ -8,6 +8,7 @@ import Foundation
 import Observation
 import UIKit
 
+@MainActor
 @Observable
 final class MusicPlayerService {
     static let progressInterval: Duration = .seconds(10)
