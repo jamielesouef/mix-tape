@@ -16,7 +16,7 @@ struct WalletPositionTests {
         ("d", WalletPosition(page: 0, slot: 3)),
         ("e", WalletPosition(page: 1, slot: 0))
     ])
-    func `2×2 pages hold four albums, the fifth opens a partial page`(
+    func `a 2×2 wallet holds four albums, the fifth opens a partial page`(
         albumID: String,
         expected: WalletPosition
     ) {
@@ -29,7 +29,7 @@ struct WalletPositionTests {
         ("j", WalletPosition(page: 1, slot: 0)),
         ("k", WalletPosition(page: 1, slot: 1)),
     ])
-    func `3×3 pages hold nine albums, the tenth opens a partial page`(
+    func `a 3×3 wallet holds nine albums, the tenth opens a partial page`(
         albumID: String,
         expected: WalletPosition
     ) {
