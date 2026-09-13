@@ -6,27 +6,27 @@
 
 import Foundation
 
-public nonisolated struct JellyfinHTTPClient: Sendable {
-    public let session: URLSession
-    public let deviceName: String
+nonisolated struct JellyfinHTTPClient: Sendable {
+    let session: URLSession
+    let deviceName: String
 
     private static let credentialPaths: Set<String> = [
         "/Users/AuthenticateByName", "/Users/AuthenticateWithQuickConnect",
     ]
     private static let quickConnectPaths: Set<String> = ["/QuickConnect/Enabled", "/QuickConnect/Initiate"]
 
-    public init(session: URLSession, deviceName: String) {
+    init(session: URLSession, deviceName: String) {
         self.session = session
         self.deviceName = deviceName
     }
 
-    public func get<T: Decodable & Sendable>(_ path: String, query: [URLQueryItem] = [], auth: AuthContext) async throws -> T {
+    func get<T: Decodable & Sendable>(_ path: String, query: [URLQueryItem] = [], auth: AuthContext) async throws -> T {
         let request = try makeRequest(method: "GET", path: path, query: query, auth: auth, body: nil)
         let data = try await perform(request, path: path)
         return try decode(T.self, from: data)
     }
 
-    public func post<T: Decodable & Sendable>(
+    func post<T: Decodable & Sendable>(
         _ path: String, body: some Encodable & Sendable, query: [URLQueryItem] = [], auth: AuthContext,
     ) async throws -> T {
         let request = try makeRequest(method: "POST", path: path, query: query, auth: auth, body: encode(body))
@@ -34,7 +34,7 @@ public nonisolated struct JellyfinHTTPClient: Sendable {
         return try decode(T.self, from: data)
     }
 
-    public func post(_ path: String, body: some Encodable & Sendable, query: [URLQueryItem] = [], auth: AuthContext) async throws {
+    func post(_ path: String, body: some Encodable & Sendable, query: [URLQueryItem] = [], auth: AuthContext) async throws {
         let request = try makeRequest(method: "POST", path: path, query: query, auth: auth, body: encode(body))
         _ = try await perform(request, path: path)
     }

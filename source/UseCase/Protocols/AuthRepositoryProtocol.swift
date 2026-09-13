@@ -6,7 +6,7 @@
 
 import Foundation
 
-public nonisolated protocol AuthRepositoryProtocol: Sendable {
+nonisolated protocol AuthRepositoryProtocol: Sendable {
     func serverIdentity(at url: URL) async throws -> ServerIdentity
     func authenticate(userName: String, password: String, server: ServerIdentity) async throws -> UserSession
     func isQuickConnectEnabled(server: ServerIdentity) async throws -> Bool

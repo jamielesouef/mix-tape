@@ -6,11 +6,11 @@
 
 import Foundation
 
-public nonisolated struct AudioStream: Sendable, Equatable {
-    public let url: URL
-    public let playMethod: PlayMethod
+nonisolated struct AudioStream: Sendable, Equatable {
+    let url: URL
+    let playMethod: PlayMethod
 
-    public init(url: URL, playMethod: PlayMethod) {
+    init(url: URL, playMethod: PlayMethod) {
         self.url = url
         self.playMethod = playMethod
     }

@@ -8,18 +8,18 @@ import Foundation
 import Observation
 
 @Observable
-public final class SessionService {
-    public enum State: Equatable, Sendable {
+final class SessionService {
+    enum State: Equatable, Sendable {
         case loading
         case signedOut
         case signedIn(UserSession)
     }
 
-    public private(set) var state: State
-    public private(set) var serverIdentity: ServerIdentity?
-    public private(set) var error: MixtapeError?
-    public private(set) var quickConnect: QuickConnectUIState
-    public private(set) var isBusy = false
+    private(set) var state: State
+    private(set) var serverIdentity: ServerIdentity?
+    private(set) var error: MixtapeError?
+    private(set) var quickConnect: QuickConnectUIState
+    private(set) var isBusy = false
 
     private let validateServer: ValidateServerUseCase
     private let signInWithPassword: SignInWithPasswordUseCase
@@ -33,9 +33,9 @@ public final class SessionService {
     static let pollTimeout: Duration = .seconds(5 * 60)
 
     @ObservationIgnored var pollTask: Task<Void, Never>?
-    @ObservationIgnored public var onSessionEnded: ((UserSession) -> Void)?
+    @ObservationIgnored var onSessionEnded: ((UserSession) -> Void)?
 
-    public init(
+    init(
         validateServer: ValidateServerUseCase,
         signInWithPassword: SignInWithPasswordUseCase,
         startQuickConnect: StartQuickConnectUseCase,
@@ -65,7 +65,7 @@ public final class SessionService {
         pollTask?.cancel()
     }
 
-    public func restore() async {
+    func restore() async {
         do {
             if let session = try restoreSession() {
                 state = .signedIn(session)
@@ -78,7 +78,7 @@ public final class SessionService {
         }
     }
 
-    public func validateServer(urlText: String) async {
+    func validateServer(urlText: String) async {
         isBusy = true
         defer { isBusy = false }
         error = nil
@@ -89,7 +89,7 @@ public final class SessionService {
         }
     }
 
-    public func signIn(userName: String, password: String) async {
+    func signIn(userName: String, password: String) async {
         guard let server = serverIdentity else { return }
         isBusy = true
         defer { isBusy = false }
@@ -102,7 +102,7 @@ public final class SessionService {
         }
     }
 
-    public func startQuickConnect() async {
+    func startQuickConnect() async {
         guard let server = serverIdentity else { return }
         pollTask?.cancel()
         error = nil
@@ -117,19 +117,19 @@ public final class SessionService {
         }
     }
 
-    public func cancelQuickConnect() {
+    func cancelQuickConnect() {
         pollTask?.cancel()
         pollTask = nil
         quickConnect = .idle
     }
 
-    public func clearServer() {
+    func clearServer() {
         cancelQuickConnect()
         serverIdentity = nil
         error = nil
     }
 
-    public func signOut() {
+    func signOut() {
         pollTask?.cancel()
         pollTask = nil
         let endedSession = signedInSession
@@ -147,7 +147,7 @@ public final class SessionService {
         }
     }
 
-    public func handleSessionExpiry() {
+    func handleSessionExpiry() {
         pollTask?.cancel()
         pollTask = nil
         let endedSession = signedInSession

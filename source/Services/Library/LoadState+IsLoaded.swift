@@ -5,7 +5,7 @@
 //
 
 extension LoadState {
-    nonisolated var isLoaded: Bool {
+    var isLoaded: Bool {
         if case .loaded = self {
             return true
         }

@@ -6,6 +6,6 @@
 
 import Foundation
 
-public nonisolated func redactingURLs(_ message: String) -> String {
+nonisolated func redactingURLs(_ message: String) -> String {
     message.replacing(/https?:\/\/\S+/, with: "<url>")
 }

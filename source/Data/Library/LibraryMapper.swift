@@ -7,8 +7,6 @@
 nonisolated enum LibraryMapper {
     static func library(from dto: BaseItemDTO) -> Library {
         let kind: LibraryKind = switch dto.collectionType {
-        case "movies": .movies
-        case "tvshows": .tvShows
         case "music": .music
         default: .unsupported
         }
@@ -41,23 +39,18 @@ nonisolated enum LibraryMapper {
             runtime: dto.runTimeTicks.map { Duration(ticks: $0) },
             indexNumber: dto.indexNumber,
             parentIndexNumber: dto.parentIndexNumber,
-            seriesName: dto.seriesName,
             albumArtist: dto.albumArtist,
             primaryImageTag: dto.imageTags?["Primary"],
             backdropImageTag: dto.backdropImageTags?.first,
             parentPrimaryImageTag: dto.albumPrimaryImageTag,
             albumID: dto.albumId,
             container: dto.container,
-            playback: PlaybackState(position: position, isWatched: dto.userData?.played ?? false),
+            playback: PlaybackState(position: position),
         )
     }
 
     private static func kind(_ type: String?) -> MediaKind? {
         switch type {
-        case "Movie": .movie
-        case "Series": .series
-        case "Season": .season
-        case "Episode": .episode
         case "MusicAlbum": .musicAlbum
         case "Audio": .audio
         default: nil

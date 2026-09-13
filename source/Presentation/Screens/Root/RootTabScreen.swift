@@ -6,18 +6,14 @@
 
 import SwiftUI
 
-public struct RootTabScreen: View {
+struct RootTabScreen: View {
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @State private var showNowPlaying = false
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         TabView {
-            Tab("Home", systemImage: "house") {
-                HomeScreen()
-            }
-            .accessibilityIdentifier(RootTabIdentifiers.homeTab)
             Tab("Libraries", systemImage: "books.vertical") {
                 LibraryListScreen()
             }

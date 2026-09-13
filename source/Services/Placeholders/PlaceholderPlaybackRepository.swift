@@ -7,10 +7,6 @@
 import Foundation
 
 nonisolated struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
-    func resolveVideo(itemID _: String, startAt _: Duration, session _: UserSession) async throws -> VideoSourceResolution {
-        throw MixtapeError.serverUnreachable
-    }
-
     func audioStream(track: MediaItem, session: UserSession, playSessionID _: String) -> AudioStream {
         AudioStream(url: session.serverURL.appending(path: "Audio/\(track.id)/unavailable"), playMethod: .directPlay)
     }

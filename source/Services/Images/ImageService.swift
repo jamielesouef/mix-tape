@@ -9,8 +9,8 @@ import Observation
 import UIKit
 
 @Observable
-public final class ImageService {
-    public static let cacheLimitBytes = 120 * 1024 * 1024
+final class ImageService {
+    static let cacheLimitBytes = 120 * 1024 * 1024
 
     private let builder: any ImageURLBuilderProtocol
     private let sessionService: SessionService
@@ -18,14 +18,14 @@ public final class ImageService {
     @ObservationIgnored private let cache = NSCache<NSURL, UIImage>()
     @ObservationIgnored private var inFlightRequests: [URL: Task<UIImage?, Never>] = [:]
 
-    public init(builder: any ImageURLBuilderProtocol, sessionService: SessionService, urlSession: URLSession = .shared) {
+    init(builder: any ImageURLBuilderProtocol, sessionService: SessionService, urlSession: URLSession = .shared) {
         self.builder = builder
         self.sessionService = sessionService
         self.urlSession = urlSession
         cache.totalCostLimit = Self.cacheLimitBytes
     }
 
-    public func imageURL(for item: MediaItem, kind: ImageKind, maxHeight: Int) -> URL? {
+    func imageURL(for item: MediaItem, kind: ImageKind, maxHeight: Int) -> URL? {
         guard let session else { return nil }
         if kind == .primary, item.kind == .audio, item.primaryImageTag == nil, let albumID = item.albumID {
             return builder.url(itemID: albumID, tag: item.parentPrimaryImageTag, kind: .primary, maxHeight: maxHeight, session: session)
@@ -34,20 +34,20 @@ public final class ImageService {
         return builder.url(itemID: item.id, tag: tag, kind: kind, maxHeight: maxHeight, session: session)
     }
 
-    public func imageURL(for library: Library, maxHeight: Int) -> URL? {
+    func imageURL(for library: Library, maxHeight: Int) -> URL? {
         guard let session else { return nil }
         return builder.url(itemID: library.id, tag: library.imageTag, kind: .primary, maxHeight: maxHeight, session: session)
     }
 
-    public func image(for item: MediaItem, kind: ImageKind, maxHeight: Int) async -> UIImage? {
+    func image(for item: MediaItem, kind: ImageKind, maxHeight: Int) async -> UIImage? {
         await image(at: imageURL(for: item, kind: kind, maxHeight: maxHeight))
     }
 
-    public func image(for library: Library, maxHeight: Int) async -> UIImage? {
+    func image(for library: Library, maxHeight: Int) async -> UIImage? {
         await image(at: imageURL(for: library, maxHeight: maxHeight))
     }
 
-    public func image(at url: URL?) async -> UIImage? {
+    func image(at url: URL?) async -> UIImage? {
         guard let url else { return nil }
         if let cached = cache.object(forKey: url as NSURL) {
             return cached

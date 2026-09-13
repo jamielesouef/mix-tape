@@ -7,7 +7,7 @@
 import Foundation
 
 @MainActor
-public protocol AudioPlayerControlling: AnyObject {
+protocol AudioPlayerControlling: AnyObject {
     var onPositionChange: ((Duration) -> Void)? { get set }
     var onEnded: (() -> Void)? { get set }
     var onFailure: ((MixtapeError) -> Void)? { get set }

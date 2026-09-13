@@ -8,15 +8,14 @@ import Foundation
 import Observation
 
 @Observable
-public final class LibraryService {
-    public static let pageSize = 60
+final class LibraryService {
+    static let pageSize = 60
 
-    public private(set) var libraries: LoadState<[Library]> = .idle
-    public private(set) var continueWatching: LoadState<[MediaItem]> = .idle
-    public private(set) var pages: [String: LoadState<Page<MediaItem>>] = [:]
-    public private(set) var details: [String: LoadState<MediaItem>] = [:]
-    public private(set) var tracks: [String: LoadState<[MediaItem]>] = [:]
-    public private(set) var pageLoadError: [String: MixtapeError] = [:]
+    private(set) var libraries: LoadState<[Library]> = .idle
+    private(set) var pages: [String: LoadState<Page<MediaItem>>] = [:]
+    private(set) var details: [String: LoadState<MediaItem>] = [:]
+    private(set) var tracks: [String: LoadState<[MediaItem]>] = [:]
+    private(set) var pageLoadError: [String: MixtapeError] = [:]
 
     private var inFlight: Set<String> = []
     private var exhausted: Set<String> = []
@@ -27,18 +26,15 @@ public final class LibraryService {
     private let fetchLibraryItems: FetchLibraryItemsUseCase
     private let fetchItemDetail: FetchItemDetailUseCase
     private let fetchAlbumTracks: FetchAlbumTracksUseCase
-    private let fetchContinueWatching: FetchContinueWatchingUseCase
     private let sessionService: SessionService
 
-    public init(
+    init(
         fetchLibraries: FetchLibrariesUseCase,
         fetchLibraryItems: FetchLibraryItemsUseCase,
         fetchItemDetail: FetchItemDetailUseCase,
         fetchAlbumTracks: FetchAlbumTracksUseCase,
-        fetchContinueWatching: FetchContinueWatchingUseCase,
         sessionService: SessionService,
         libraries: LoadState<[Library]> = .idle,
-        continueWatching: LoadState<[MediaItem]> = .idle,
         pages: [String: LoadState<Page<MediaItem>>] = [:],
         details: [String: LoadState<MediaItem>] = [:],
         tracks: [String: LoadState<[MediaItem]>] = [:],
@@ -48,33 +44,30 @@ public final class LibraryService {
         self.fetchLibraryItems = fetchLibraryItems
         self.fetchItemDetail = fetchItemDetail
         self.fetchAlbumTracks = fetchAlbumTracks
-        self.fetchContinueWatching = fetchContinueWatching
         self.sessionService = sessionService
         self.libraries = libraries
-        self.continueWatching = continueWatching
         self.pages = pages
         self.details = details
         self.tracks = tracks
         self.pageLoadError = pageLoadError
     }
 
-    public var loadedLibraries: [Library] {
+    var loadedLibraries: [Library] {
         if case let .loaded(list) = libraries {
             return list
         }
         return []
     }
 
-    public func library(id: String) -> Library? {
+    func library(id: String) -> Library? {
         loadedLibraries.first { $0.id == id }
     }
 
-    public func loadHome() async {
+    func loadHome() async {
         guard let session else { return }
         let epoch = session
         let generation = currentGeneration
         libraries = .loading
-        continueWatching = .loading
         do {
             let loaded = try await fetchLibraries(session: session)
             if self.session == epoch, currentGeneration == generation {
@@ -86,20 +79,9 @@ public final class LibraryService {
                 libraries = .failed(mapped)
             }
         }
-        do {
-            let loaded = try await fetchContinueWatching(session: session)
-            if self.session == epoch, currentGeneration == generation {
-                continueWatching = .loaded(loaded)
-            }
-        } catch {
-            let mapped = handle(error)
-            if self.session == epoch, currentGeneration == generation {
-                continueWatching = .failed(mapped)
-            }
-        }
     }
 
-    public func loadLibrary(id: String) async {
+    func loadLibrary(id: String) async {
         guard let session else { return }
         let epoch = session
         let generation = currentGeneration
@@ -146,7 +128,7 @@ public final class LibraryService {
         }
     }
 
-    public func loadMore(libraryID id: String) async {
+    func loadMore(libraryID id: String) async {
         guard let session, let library = library(id: id) else { return }
         let epoch = session
         let generation = currentGeneration
@@ -173,7 +155,7 @@ public final class LibraryService {
         }
     }
 
-    public func loadDetail(id: String) async {
+    func loadDetail(id: String) async {
         guard let session else { return }
         let epoch = session
         let generation = currentGeneration
@@ -191,7 +173,7 @@ public final class LibraryService {
         }
     }
 
-    public func loadTracks(albumID: String) async {
+    func loadTracks(albumID: String) async {
         guard let session else { return }
         let epoch = session
         let generation = currentGeneration
@@ -215,7 +197,7 @@ public final class LibraryService {
         }
     }
 
-    public func refresh() async {
+    func refresh() async {
         currentGeneration = OperationGeneration()
         pages = [:]
         details = [:]
@@ -225,9 +207,8 @@ public final class LibraryService {
         await loadHome()
     }
 
-    public func endSession() {
+    func endSession() {
         libraries = .idle
-        continueWatching = .idle
         pages = [:]
         details = [:]
         tracks = [:]
@@ -241,12 +222,8 @@ public final class LibraryService {
         return nil
     }
 
-    static func itemKind(_ kind: LibraryKind) -> MediaKind {
-        switch kind {
-        case .movies: .movie
-        case .tvShows: .series
-        case .music, .unsupported: .musicAlbum
-        }
+    static func itemKind(_: LibraryKind) -> MediaKind {
+        .musicAlbum
     }
 
     private func handle(_ error: any Error) -> MixtapeError {

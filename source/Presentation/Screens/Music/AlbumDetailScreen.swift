@@ -6,16 +6,16 @@
 
 import SwiftUI
 
-public struct AlbumDetailScreen: View {
+struct AlbumDetailScreen: View {
     @Environment(\.libraryService) private var libraryService: LibraryService
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     let album: MediaItem
 
-    public init(album: MediaItem) {
+    init(album: MediaItem) {
         self.album = album
     }
 
-    public var body: some View {
+    var body: some View {
         List {
             Section {
                 VStack(spacing: 16) {

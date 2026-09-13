@@ -6,6 +6,6 @@
 
 import Foundation
 
-public nonisolated protocol ImageURLBuilderProtocol: Sendable {
+nonisolated protocol ImageURLBuilderProtocol: Sendable {
     func url(itemID: String, tag: String?, kind: ImageKind, maxHeight: Int, session: UserSession) -> URL?
 }

@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public extension MusicPlayerService {
+extension MusicPlayerService {
     static let placeholder: MusicPlayerService = {
         #if DEBUG
             return MockMusicPlayerService.idle()

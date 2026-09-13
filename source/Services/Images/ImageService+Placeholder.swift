@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public extension ImageService {
+extension ImageService {
     static let placeholder: ImageService = {
         #if DEBUG
             return MockImageService.make()

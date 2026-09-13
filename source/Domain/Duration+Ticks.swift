@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public extension Duration {
+extension Duration {
     nonisolated static let ticksPerSecond: Int64 = 10_000_000
     private nonisolated static let attosecondsPerTick: Int64 = 100_000_000_000
 

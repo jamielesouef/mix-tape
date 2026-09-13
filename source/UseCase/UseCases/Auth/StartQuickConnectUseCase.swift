@@ -4,14 +4,14 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public nonisolated struct StartQuickConnectUseCase: Sendable {
+nonisolated struct StartQuickConnectUseCase: Sendable {
     private let repository: any AuthRepositoryProtocol
 
-    public init(repository: any AuthRepositoryProtocol) {
+    init(repository: any AuthRepositoryProtocol) {
         self.repository = repository
     }
 
-    public func callAsFunction(server: ServerIdentity) async throws -> QuickConnectHandshake {
+    func callAsFunction(server: ServerIdentity) async throws -> QuickConnectHandshake {
         guard try await repository.isQuickConnectEnabled(server: server) else {
             throw MixtapeError.quickConnectUnavailable
         }

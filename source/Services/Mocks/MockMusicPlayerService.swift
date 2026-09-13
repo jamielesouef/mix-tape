@@ -6,8 +6,8 @@
 
 #if DEBUG
 
-    public enum MockMusicPlayerService {
-        public static func make(
+    enum MockMusicPlayerService {
+        static func make(
             repository: MockPlaybackRepository = MockPlaybackRepository(),
             sessionService: SessionService = MockSessionService.signedIn(),
         ) -> MusicPlayerService {
@@ -21,11 +21,11 @@
             )
         }
 
-        public static func idle() -> MusicPlayerService {
+        static func idle() -> MusicPlayerService {
             make()
         }
 
-        public static func playing() -> MusicPlayerService {
+        static func playing() -> MusicPlayerService {
             let service = make()
             Task { await service.play(album: MockMedia.albums[0], tracks: MockMedia.tracks, startingAt: 0) }
             return service

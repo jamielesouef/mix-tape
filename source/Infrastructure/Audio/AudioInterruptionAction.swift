@@ -6,13 +6,13 @@
 
 import AVFoundation
 
-public nonisolated enum AudioInterruptionAction: Equatable {
+nonisolated enum AudioInterruptionAction: Equatable {
     case pause
     case resume
     case none
 }
 
-public nonisolated func audioInterruptionAction(
+nonisolated func audioInterruptionAction(
     type: AVAudioSession.InterruptionType,
     options: AVAudioSession.InterruptionOptions,
 ) -> AudioInterruptionAction {

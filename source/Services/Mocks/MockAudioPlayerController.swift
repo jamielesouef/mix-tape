@@ -9,24 +9,24 @@ import Foundation
 #if DEBUG
     import Foundation
 
-    public final class MockAudioPlayerController: AudioPlayerControlling {
-        public var onPositionChange: ((Duration) -> Void)?
-        public var onEnded: (() -> Void)?
-        public var onFailure: ((MixtapeError) -> Void)?
-        public var onRemotePlay: (() -> Void)?
-        public var onRemotePause: (() -> Void)?
-        public var onRemoteNext: (() -> Void)?
-        public var onRemotePrevious: (() -> Void)?
-        public var onRemoteSeek: ((Duration) -> Void)?
+    final class MockAudioPlayerController: AudioPlayerControlling {
+        var onPositionChange: ((Duration) -> Void)?
+        var onEnded: (() -> Void)?
+        var onFailure: ((MixtapeError) -> Void)?
+        var onRemotePlay: (() -> Void)?
+        var onRemotePause: (() -> Void)?
+        var onRemoteNext: (() -> Void)?
+        var onRemotePrevious: (() -> Void)?
+        var onRemoteSeek: ((Duration) -> Void)?
 
-        public init() {}
+        init() {}
 
-        public func load(url _: URL) {}
-        public func play() {}
-        public func pause() {}
-        public func seek(to _: Duration) {}
-        public func stop() {}
-        public func updateNowPlaying(_: NowPlayingInfo) {}
-        public func setNextTrackEnabled(_: Bool) {}
+        func load(url _: URL) {}
+        func play() {}
+        func pause() {}
+        func seek(to _: Duration) {}
+        func stop() {}
+        func updateNowPlaying(_: NowPlayingInfo) {}
+        func setNextTrackEnabled(_: Bool) {}
     }
 #endif

@@ -6,10 +6,10 @@
 
 import SwiftUI
 
-public struct SplashScreen: View {
-    public init() {}
+struct SplashScreen: View {
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 16) {
             Text("mixtape")
                 .font(.largeTitle.bold())

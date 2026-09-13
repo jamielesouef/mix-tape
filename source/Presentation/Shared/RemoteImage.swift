@@ -43,19 +43,19 @@ struct RemoteImage: View {
 
 #if DEBUG
     #Preview("loaded") {
-        RemoteImage(source: .item(MockMedia.movies[0], .primary), maxHeight: 300)
+        RemoteImage(source: .item(MockMedia.albums[0], .primary), maxHeight: 300)
             .frame(width: 200, height: 300)
             .environment(\.imageService, MockImageService.make())
     }
 
     #Preview("empty") {
-        RemoteImage(source: .library(MockMedia.libraries[3]), maxHeight: 300, placeholder: "books.vertical")
+        RemoteImage(source: .library(MockMedia.libraries[1]), maxHeight: 300, placeholder: "books.vertical")
             .frame(width: 200, height: 200)
             .environment(\.imageService, MockImageService.make())
     }
 
     #Preview("failure") {
-        RemoteImage(source: .item(MockMedia.movies[0], .backdrop), maxHeight: 300)
+        RemoteImage(source: .item(MockMedia.albums[0], .primary), maxHeight: 300)
             .frame(width: 320, height: 180)
             .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
     }

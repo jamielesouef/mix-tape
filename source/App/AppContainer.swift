@@ -10,9 +10,7 @@ import Foundation
 struct AppContainer {
     let sessionService: SessionService
     let libraryService: LibraryService
-    let seriesService: SeriesService
     let imageService: ImageService
-    let videoPlaybackService: VideoPlaybackService
     let musicPlayerService: MusicPlayerService
 
     init() {
@@ -41,31 +39,11 @@ struct AppContainer {
             fetchLibraryItems: FetchLibraryItemsUseCase(repository: libraryRepository),
             fetchItemDetail: FetchItemDetailUseCase(repository: libraryRepository),
             fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository),
-            fetchContinueWatching: FetchContinueWatchingUseCase(repository: libraryRepository),
-            sessionService: sessionService,
-        )
-        seriesService = SeriesService(
-            fetchSeasons: FetchSeasonsUseCase(repository: libraryRepository),
-            fetchEpisodes: FetchEpisodesUseCase(repository: libraryRepository),
             sessionService: sessionService,
         )
         imageService = ImageService(builder: JellyfinImageURLBuilder(), sessionService: sessionService)
 
-        let playbackRepository = JellyfinPlaybackRepository(client: client, appVersion: appVersion, deviceProfile: Self.deviceProfile)
-        videoPlaybackService = VideoPlaybackService(
-            resolveVideo: ResolveVideoPlaybackUseCase(repository: playbackRepository),
-            reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
-            reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
-            reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
-            sessionService: sessionService,
-            makeController: { method in
-                switch method {
-                case .directAVPlayer, .transcodeHLS: AVPlayerController()
-                case .directVLC: VLCPlayerController()
-                }
-            },
-            libraryService: libraryService,
-        )
+        let playbackRepository = JellyfinPlaybackRepository(client: client, appVersion: appVersion)
 
         let imageServiceRef = imageService
         musicPlayerService = MusicPlayerService(
@@ -79,23 +57,10 @@ struct AppContainer {
         )
 
         let libraryServiceRef = libraryService
-        let seriesServiceRef = seriesService
         let musicPlayerServiceRef = musicPlayerService
-        let videoPlaybackServiceRef = videoPlaybackService
         sessionService.onSessionEnded = { session in
             libraryServiceRef.endSession()
-            seriesServiceRef.endSession()
             musicPlayerServiceRef.endSession(session)
-            videoPlaybackServiceRef.endSession(session)
         }
-    }
-
-    private static var deviceProfile: DeviceProfile {
-        #if DEBUG
-            if CommandLine.arguments.contains("-mixtape-force-transcode") {
-                return .forceTranscode
-            }
-        #endif
-        return .permissive
     }
 }

@@ -6,8 +6,8 @@
 
 #if DEBUG
 
-    public enum MockSessionService {
-        public static func make(
+    enum MockSessionService {
+        static func make(
             state: SessionService.State = .signedOut,
             serverIdentity: ServerIdentity? = nil,
             quickConnect: QuickConnectUIState = .idle,
@@ -29,35 +29,35 @@
             )
         }
 
-        public static func loading() -> SessionService {
+        static func loading() -> SessionService {
             make(state: .loading)
         }
 
-        public static func signedOut() -> SessionService {
+        static func signedOut() -> SessionService {
             make()
         }
 
-        public static func serverValidated() -> SessionService {
+        static func serverValidated() -> SessionService {
             make(serverIdentity: MockAuthRepository.sampleServer)
         }
 
-        public static func signedIn() -> SessionService {
+        static func signedIn() -> SessionService {
             make(state: .signedIn(MockAuthRepository.sampleSession), serverIdentity: MockAuthRepository.sampleServer)
         }
 
-        public static func failed(_ error: MixtapeError, serverIdentity: ServerIdentity? = nil) -> SessionService {
+        static func failed(_ error: MixtapeError, serverIdentity: ServerIdentity? = nil) -> SessionService {
             make(serverIdentity: serverIdentity, error: error)
         }
 
-        public static func signInFailed(_ error: MixtapeError) -> SessionService {
+        static func signInFailed(_ error: MixtapeError) -> SessionService {
             make(serverIdentity: MockAuthRepository.sampleServer, error: error)
         }
 
-        public static func quickConnectWaiting(code: String = "123456") -> SessionService {
+        static func quickConnectWaiting(code: String = "123456") -> SessionService {
             make(serverIdentity: MockAuthRepository.sampleServer, quickConnect: .waiting(code: code))
         }
 
-        public static func quickConnectFailed(_ error: MixtapeError) -> SessionService {
+        static func quickConnectFailed(_ error: MixtapeError) -> SessionService {
             make(serverIdentity: MockAuthRepository.sampleServer, quickConnect: .failed(error))
         }
     }

@@ -6,12 +6,12 @@
 
 import SwiftUI
 
-public struct RootScreen: View {
+struct RootScreen: View {
     @Environment(\.sessionService) private var sessionService: SessionService
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         Group {
             switch sessionService.state {
             case .loading:
@@ -19,7 +19,7 @@ public struct RootScreen: View {
             case .signedOut:
                 SignInFlow()
             case .signedIn:
-                HomeScreen()
+                RootTabScreen()
             }
         }
         .task {

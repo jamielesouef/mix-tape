@@ -14,7 +14,6 @@ nonisolated struct BaseItemDTO: Decodable {
     let runTimeTicks: Int64?
     let indexNumber: Int?
     let parentIndexNumber: Int?
-    let seriesName: String?
     let albumArtist: String?
     let albumId: String?
     let albumPrimaryImageTag: String?
@@ -33,7 +32,6 @@ nonisolated struct BaseItemDTO: Decodable {
         case runTimeTicks = "RunTimeTicks"
         case indexNumber = "IndexNumber"
         case parentIndexNumber = "ParentIndexNumber"
-        case seriesName = "SeriesName"
         case albumArtist = "AlbumArtist"
         case albumId = "AlbumId"
         case albumPrimaryImageTag = "AlbumPrimaryImageTag"

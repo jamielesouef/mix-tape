@@ -6,12 +6,12 @@
 
 import SwiftUI
 
-public struct MusicTabScreen: View {
+struct MusicTabScreen: View {
     @Environment(\.libraryService) private var libraryService: LibraryService
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         NavigationStack {
             Group {
                 switch libraryService.libraries {

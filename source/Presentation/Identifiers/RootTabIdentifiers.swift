@@ -4,11 +4,8 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public enum RootTabIdentifiers {
-    public static let homeTab = "rootTab.home"
-    public static let librariesTab = "rootTab.libraries"
-    public static let moviesTab = "rootTab.movies"
-    public static let showsTab = "rootTab.shows"
-    public static let musicTab = "rootTab.music"
-    public static let settingsTab = "rootTab.settings"
+enum RootTabIdentifiers {
+    static let librariesTab = "rootTab.libraries"
+    static let musicTab = "rootTab.music"
+    static let settingsTab = "rootTab.settings"
 }

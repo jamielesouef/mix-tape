@@ -6,12 +6,12 @@
 
 import SwiftUI
 
-public struct SettingsScreen: View {
+struct SettingsScreen: View {
     @Environment(\.sessionService) private var sessionService: SessionService
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         List {
             Section("Server") {
                 LabeledContent("Name", value: sessionService.serverIdentity?.name ?? serverHost)

@@ -6,12 +6,12 @@
 
 import SwiftUI
 
-public struct LibraryListScreen: View {
+struct LibraryListScreen: View {
     @Environment(\.libraryService) private var libraryService: LibraryService
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         NavigationStack {
             Group {
                 switch libraryService.libraries {
@@ -20,7 +20,7 @@ public struct LibraryListScreen: View {
                 case let .failed(error):
                     RetryView(error: error) { await libraryService.loadHome() }
                 case let .loaded(libraries) where libraries.isEmpty:
-                    ContentUnavailableView("No libraries", systemImage: "books.vertical", description: Text("This user has no movie, TV or music libraries."))
+                    ContentUnavailableView("No libraries", systemImage: "books.vertical", description: Text("This user has no music libraries."))
                 case let .loaded(libraries):
                     List(libraries) { library in
                         NavigationLink(value: library) {

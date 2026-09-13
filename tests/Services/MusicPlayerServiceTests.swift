@@ -377,9 +377,9 @@ struct MusicPlayerServiceTests {
     private static func track(_ id: String, index: Int) -> MediaItem {
         MediaItem(
             id: id, name: id, kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200),
-            indexNumber: index, parentIndexNumber: 1, seriesName: nil, albumArtist: "Test Artist",
+            indexNumber: index, parentIndexNumber: 1, albumArtist: "Test Artist",
             primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: nil, albumID: "album-x",
-            playback: PlaybackState(position: .zero, isWatched: false),
+            playback: PlaybackState(position: .zero),
         )
     }
 }

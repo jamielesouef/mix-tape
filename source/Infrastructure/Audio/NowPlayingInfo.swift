@@ -7,16 +7,16 @@
 import Foundation
 import UIKit
 
-public nonisolated struct NowPlayingInfo: Sendable {
-    public let title: String
-    public let artist: String
-    public let albumTitle: String
-    public let artwork: UIImage?
-    public let duration: Duration?
-    public let position: Duration
-    public let isPlaying: Bool
+nonisolated struct NowPlayingInfo: Sendable {
+    let title: String
+    let artist: String
+    let albumTitle: String
+    let artwork: UIImage?
+    let duration: Duration?
+    let position: Duration
+    let isPlaying: Bool
 
-    public init(title: String, artist: String, albumTitle: String, artwork: UIImage?, duration: Duration?, position: Duration, isPlaying: Bool) {
+    init(title: String, artist: String, albumTitle: String, artwork: UIImage?, duration: Duration?, position: Duration, isPlaying: Bool) {
         self.title = title
         self.artist = artist
         self.albumTitle = albumTitle

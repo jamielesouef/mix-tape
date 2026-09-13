@@ -6,13 +6,13 @@
 
 import SwiftUI
 
-public struct NowPlayingScreen: View {
+struct NowPlayingScreen: View {
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @State private var scrubbing: Double?
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 28) {
             if let track = music.current {
                 RemoteImage(source: .item(track, .primary), maxHeight: 900, placeholder: "music.note")

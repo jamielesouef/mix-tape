@@ -9,15 +9,15 @@ import Foundation
 import MediaPlayer
 import UIKit
 
-public final class AudioPlayerController: AudioPlayerControlling {
-    public var onPositionChange: ((Duration) -> Void)?
-    public var onEnded: (() -> Void)?
-    public var onFailure: ((MixtapeError) -> Void)?
-    public var onRemotePlay: (() -> Void)?
-    public var onRemotePause: (() -> Void)?
-    public var onRemoteNext: (() -> Void)?
-    public var onRemotePrevious: (() -> Void)?
-    public var onRemoteSeek: ((Duration) -> Void)?
+final class AudioPlayerController: AudioPlayerControlling {
+    var onPositionChange: ((Duration) -> Void)?
+    var onEnded: (() -> Void)?
+    var onFailure: ((MixtapeError) -> Void)?
+    var onRemotePlay: (() -> Void)?
+    var onRemotePause: (() -> Void)?
+    var onRemoteNext: (() -> Void)?
+    var onRemotePrevious: (() -> Void)?
+    var onRemoteSeek: ((Duration) -> Void)?
 
     private let player = AVPlayer()
     private var timeObserver: Any?
@@ -29,7 +29,7 @@ public final class AudioPlayerController: AudioPlayerControlling {
     private var didConfigureSession = false
     private var lastLoadedURL: URL?
 
-    public init() {
+    init() {
         configureRemoteCommands()
         configureSessionObservers()
     }
@@ -42,7 +42,7 @@ public final class AudioPlayerController: AudioPlayerControlling {
         }
     }
 
-    public func load(url: URL) {
+    func load(url: URL) {
         configureSessionIfNeeded()
         lastLoadedURL = url
         removeItemObservers()
@@ -68,26 +68,26 @@ public final class AudioPlayerController: AudioPlayerControlling {
         }
     }
 
-    public func play() {
+    func play() {
         player.play()
     }
 
-    public func pause() {
+    func pause() {
         player.pause()
     }
 
-    public func seek(to position: Duration) {
+    func seek(to position: Duration) {
         player.seek(to: CMTime(seconds: Double(position.components.seconds), preferredTimescale: 600))
     }
 
-    public func stop() {
+    func stop() {
         removeItemObservers()
         player.pause()
         player.replaceCurrentItem(with: nil)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
-    public func updateNowPlaying(_ info: NowPlayingInfo) {
+    func updateNowPlaying(_ info: NowPlayingInfo) {
         var now: [String: Any] = [
             MPMediaItemPropertyTitle: info.title,
             MPMediaItemPropertyArtist: info.artist,
@@ -104,13 +104,13 @@ public final class AudioPlayerController: AudioPlayerControlling {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = now
     }
 
-    public func setNextTrackEnabled(_ enabled: Bool) {
+    func setNextTrackEnabled(_ enabled: Bool) {
         MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = enabled
     }
 
     // MARK: - Private
 
-    private nonisolated static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
+    private static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
         MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
 

@@ -7,18 +7,18 @@
 import Foundation
 import Security
 
-public nonisolated struct KeychainStore: Sendable {
-    public struct Failure: Error, Equatable {
+nonisolated struct KeychainStore: Sendable {
+    struct Failure: Error, Equatable {
         let status: OSStatus
     }
 
-    public let service: String
+    let service: String
 
-    public init(service: String) {
+    init(service: String) {
         self.service = service
     }
 
-    public func data(account: String) throws -> Data? {
+    func data(account: String) throws -> Data? {
         var query = baseQuery(account: account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -31,7 +31,7 @@ public nonisolated struct KeychainStore: Sendable {
         }
     }
 
-    public func set(_ data: Data, account: String) throws {
+    func set(_ data: Data, account: String) throws {
         let attributes: [String: Any] = [
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
@@ -47,7 +47,7 @@ public nonisolated struct KeychainStore: Sendable {
         guard added == errSecSuccess else { throw Failure(status: added) }
     }
 
-    public func delete(account: String) throws {
+    func delete(account: String) throws {
         let status = SecItemDelete(baseQuery(account: account) as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else { throw Failure(status: status) }
     }

@@ -6,6 +6,6 @@
 
 import SwiftUI
 
-public extension EnvironmentValues {
+extension EnvironmentValues {
     @Entry var sessionService: SessionService = .placeholder
 }

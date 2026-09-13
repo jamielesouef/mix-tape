@@ -4,16 +4,14 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public nonisolated struct PlaybackState: Sendable, Hashable {
-    public let position: Duration
-    public let isWatched: Bool
+nonisolated struct PlaybackState: Sendable, Hashable {
+    let position: Duration
 
-    public var hasResumePoint: Bool {
+    var hasResumePoint: Bool {
         position > .seconds(0)
     }
 
-    public init(position: Duration, isWatched: Bool) {
+    init(position: Duration) {
         self.position = position
-        self.isWatched = isWatched
     }
 }

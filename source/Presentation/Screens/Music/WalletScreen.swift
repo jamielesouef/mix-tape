@@ -6,7 +6,7 @@
 
 import SwiftUI
 
-public struct WalletScreen: View {
+struct WalletScreen: View {
     @Environment(\.libraryService) private var libraryService: LibraryService
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @Environment(\.horizontalSizeClass) private var sizeClass: UserInterfaceSizeClass?
@@ -19,11 +19,11 @@ public struct WalletScreen: View {
     @State private var isVisible = false
     let library: Library
 
-    public init(library: Library) {
+    init(library: Library) {
         self.library = library
     }
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 12) {
             TabView(selection: $pageIndex) {
                 ForEach(0 ..< pageCount, id: \.self) { page in
