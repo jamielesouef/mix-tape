@@ -46,7 +46,7 @@ final class SessionService {
         initialState: State = .loading,
         serverIdentity: ServerIdentity? = nil,
         quickConnect: QuickConnectUIState = .idle,
-        error: MixtapeError? = nil,
+        error: MixtapeError? = nil
     ) {
         self.validateServer = validateServer
         self.signInWithPassword = signInWithPassword
@@ -81,7 +81,9 @@ final class SessionService {
     func validateServer(urlText: String) async {
         isBusy = true
         defer { isBusy = false }
+
         error = nil
+
         do {
             serverIdentity = try await validateServer(urlText: urlText)
         } catch {
@@ -90,12 +92,22 @@ final class SessionService {
     }
 
     func signIn(userName: String, password: String) async {
-        guard let server = serverIdentity else { return }
+        guard let server = serverIdentity else {
+            return
+        }
+
         isBusy = true
         defer { isBusy = false }
+
         error = nil
+
         do {
-            let session = try await signInWithPassword(userName: userName, password: password, server: server)
+            let session = try await signInWithPassword(
+                userName: userName,
+                password: password,
+                server: server
+            )
+
             state = .signedIn(session)
         } catch {
             handle(error)
@@ -103,11 +115,16 @@ final class SessionService {
     }
 
     func startQuickConnect() async {
-        guard let server = serverIdentity else { return }
+        guard let server = serverIdentity else {
+            return
+        }
+
         pollTask?.cancel()
         error = nil
+
         do {
             let handshake = try await startQuickConnect(server: server)
+
             quickConnect = .waiting(code: handshake.code)
             pollTask = Task { [weak self] in
                 await self?.poll(secret: handshake.secret, server: server)
@@ -120,11 +137,13 @@ final class SessionService {
     func cancelQuickConnect() {
         pollTask?.cancel()
         pollTask = nil
+
         quickConnect = .idle
     }
 
     func clearServer() {
         cancelQuickConnect()
+
         serverIdentity = nil
         error = nil
     }
@@ -132,16 +151,20 @@ final class SessionService {
     func signOut() {
         pollTask?.cancel()
         pollTask = nil
+
         let endedSession = signedInSession
+
         do {
             try signOutUseCase()
             error = nil
         } catch {
             self.error = Self.mixtapeError(error)
         }
+
         state = .signedOut
         serverIdentity = nil
         quickConnect = .idle
+
         if let endedSession {
             onSessionEnded?(endedSession)
         }
@@ -150,11 +173,15 @@ final class SessionService {
     func handleSessionExpiry() {
         pollTask?.cancel()
         pollTask = nil
+
         let endedSession = signedInSession
+
         try? signOutUseCase()
+
         state = .signedOut
         quickConnect = .idle
         error = .sessionExpired
+
         if let endedSession {
             onSessionEnded?(endedSession)
         }
@@ -162,29 +189,45 @@ final class SessionService {
 
     private func poll(secret: String, server: ServerIdentity) async {
         var elapsed: Duration = .zero
+
         while elapsed < Self.pollTimeout {
             do {
                 try await clock.sleep(for: Self.pollInterval)
             } catch {
                 return
             }
+
             elapsed += Self.pollInterval
+
             do {
-                if let session = try await pollQuickConnect(secret: secret, server: server) {
-                    guard Task.isCancelled == false else { return }
-                    state = .signedIn(session)
-                    quickConnect = .idle
+                guard
+                    let session = try await pollQuickConnect(secret: secret, server: server)
+                else {
+                    continue
+                }
+                guard Task.isCancelled == false else {
                     return
                 }
+
+                state = .signedIn(session)
+                quickConnect = .idle
+                return
             } catch is CancellationError {
                 return
             } catch {
-                guard Task.isCancelled == false else { return }
+                guard Task.isCancelled == false else {
+                    return
+                }
+
                 quickConnect = .failed(Self.mixtapeError(error))
                 return
             }
         }
-        guard Task.isCancelled == false else { return }
+
+        guard Task.isCancelled == false else {
+            return
+        }
+
         quickConnect = .failed(.quickConnectExpired)
     }
 
@@ -197,6 +240,7 @@ final class SessionService {
 
     private func handle(_ error: any Error) {
         let mapped = Self.mixtapeError(error)
+
         if mapped == .sessionExpired {
             handleSessionExpiry()
         } else {
