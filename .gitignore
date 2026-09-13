@@ -1,7 +1,29 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Swift Package Manager local artifacts (e.g. VLCKit binaries)
+.spm/
+
+# Xcode
 .build/
 DerivedData/
 **/xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+*.xcuserstate
+*.xcworkspacedata
 
 # Xcode build output — logs and .xcbuilddata attachments, not source. One of
 # these attachment files reached a commit on 2026-09-09 anyway.

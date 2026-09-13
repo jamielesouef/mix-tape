@@ -1,0 +1,126 @@
+# SwiftLint configuration for MixTape
+# Swift 6.2 / iOS 26.1 — MV architecture, one type per file.
+
+included:
+  - source
+  - tests
+  - uitest
+
+excluded:
+  - .build
+  - DerivedData
+  - archive
+  - design
+  - docs
+  - "**/xcuserdata"
+
+# Rules that overlap with SwiftFormat are disabled to avoid conflicts.
+disabled_rules:
+  - trailing_comma
+  - todo
+  - opening_brace
+
+opt_in_rules:
+  - array_init
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - discouraged_optional_boolean
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - enum_case_associated_values_count
+  - explicit_init
+  - fallthrough
+  - fatal_error_message
+  - first_where
+  - flatmap_over_map_reduce
+  - force_unwrapping
+  - identical_operands
+  - implicitly_unwrapped_optional
+  - joined_default_parameter
+  - last_where
+  - legacy_multiple
+  - literal_expression_end_indentation
+  - lower_acl_than_parent
+  - modifier_order
+  - multiline_parameters
+  - operator_usage_whitespace
+  - overridden_super_call
+  - prefer_self_type_over_type_of_self
+  - prefer_zero_over_explicit_init
+  - private_action
+  - private_outlet
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - sorted_first_last
+  - toggle_bool
+  - unavailable_function
+  - unneeded_parentheses_in_closure_argument
+  - unowned_variable_capture
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_closing_braces
+  - yoda_condition
+
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+# Enforce house style from AGENTS.md.
+type_name:
+  min_length: 3
+  max_length:
+    warning: 50
+    error: 60
+
+identifier_name:
+  min_length: 2
+  excluded:
+    - id
+    - x
+    - y
+    - to
+    - at
+    - vc
+
+line_length:
+  warning: 120
+  error: 160
+  ignores_urls: true
+  ignores_comments: true
+
+file_length:
+  warning: 400
+  error: 600
+
+type_body_length:
+  warning: 300
+  error: 400
+
+function_body_length:
+  warning: 60
+  error: 100
+
+cyclomatic_complexity:
+  warning: 12
+  error: 20
+
+nesting:
+  type_level: 2
+
+# fatalError / as! / try! require a same-line comment (AGENTS.md);
+# force_unwrapping and friends are opt-in above so they surface.
+force_cast: error
+force_try: error
+
+custom_rules:
+  no_prefix_bang:
+    name: "No prefix ! — write x == false"
+    regex: '[\s(\[,=]\!\s*[a-zA-Z_][a-zA-Z0-9_.]*'
+    message: "Avoid prefix ! — write `x == false` instead (AGENTS.md)."
+    severity: warning
+
+reporter: "xcode"
