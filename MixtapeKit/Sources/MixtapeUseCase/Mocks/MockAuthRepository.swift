@@ -18,7 +18,7 @@
 
         public static let sampleServer = ServerIdentity(
             id: "server-1", name: "mixtape", version: "10.11.11",
-            baseURL: URL(string: "http://localhost:8096")!, // constant
+            baseURL: URL(string: "http://localhost:8096")!,
         )
         public static let sampleSession = UserSession(
             serverURL: sampleServer.baseURL, userID: "user-1", userName: "jamie", accessToken: "token", deviceID: "device-1",

@@ -167,7 +167,7 @@ public final class SessionService {
             do {
                 try await clock.sleep(for: Self.pollInterval)
             } catch {
-                return // cancelled
+                return
             }
             elapsed += Self.pollInterval
             do {

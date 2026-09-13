@@ -85,7 +85,7 @@ public final class VideoPlaybackService {
         duration = item.runtime
         do {
             let plan = try await resolveVideo(itemID: item.id, startAt: startAt, session: session)
-            guard status == .preparing, generation == currentGeneration else { return } // stopped or replaced while resolving
+            guard status == .preparing, generation == currentGeneration else { return }
             self.plan = plan
             duration = plan.totalDuration ?? item.runtime
             guard let controller = makeController(plan.method) else {
@@ -115,7 +115,7 @@ public final class VideoPlaybackService {
             let startReport = report(plan: plan, position: startAt, isPaused: false)
             enqueueReport { [reportStart] in await reportStart(startReport, session: session) }
             await reportTask?.value
-            guard generation == currentGeneration else { return } // stopped while the start report was in flight
+            guard generation == currentGeneration else { return }
             startProgressReporting(generation: generation)
         } catch {
             guard generation == currentGeneration else { return }
@@ -205,7 +205,7 @@ public final class VideoPlaybackService {
                 do {
                     try await clock.sleep(for: Self.progressInterval)
                 } catch {
-                    return // cancelled
+                    return
                 }
                 guard let self, Task.isCancelled == false else { return }
                 guard status == .playing, generation == currentGeneration, let plan, let session else { continue }
