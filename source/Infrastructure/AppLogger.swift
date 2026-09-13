@@ -6,10 +6,10 @@
 
 import os
 
-public nonisolated struct AppLogger: Sendable {
-    public static let network = AppLogger(category: "network")
-    public static let playback = AppLogger(category: "playback")
-    public static let auth = AppLogger(category: "auth")
+nonisolated struct AppLogger: Sendable {
+    static let network = AppLogger(category: "network")
+    static let playback = AppLogger(category: "playback")
+    static let auth = AppLogger(category: "auth")
 
     private let logger: Logger
 
@@ -17,15 +17,15 @@ public nonisolated struct AppLogger: Sendable {
         logger = Logger(subsystem: "mobi.jamie.mixtape", category: category)
     }
 
-    public func debug(_ message: String) {
+    func debug(_ message: String) {
         logger.debug("\(message, privacy: .public)")
     }
 
-    public func info(_ message: String) {
+    func info(_ message: String) {
         logger.info("\(message, privacy: .public)")
     }
 
-    public func error(_ message: String) {
+    func error(_ message: String) {
         logger.error("\(message, privacy: .public)")
     }
 }

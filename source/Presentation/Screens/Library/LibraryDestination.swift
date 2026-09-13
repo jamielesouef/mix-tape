@@ -11,10 +11,6 @@ struct LibraryDestination: View {
 
     var body: some View {
         switch library.kind {
-        case .movies:
-            MovieLibraryGrid(library: library)
-        case .tvShows:
-            SeriesLibraryGrid(library: library)
         case .music:
             WalletScreen(library: library)
         case .unsupported:

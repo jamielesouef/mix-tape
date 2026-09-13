@@ -11,13 +11,9 @@ struct MediaItemDestination: View {
 
     var body: some View {
         switch item.kind {
-        case .movie, .episode:
-            MovieDetailScreen(item: item)
-        case .series:
-            SeriesDetailScreen(series: item)
         case .musicAlbum:
             AlbumDetailScreen(album: item)
-        case .season, .audio:
+        case .audio:
             ContentUnavailableView(item.displayTitle, systemImage: "questionmark.square.dashed")
         }
     }
@@ -26,7 +22,7 @@ struct MediaItemDestination: View {
 #if DEBUG
     #Preview("loaded") {
         NavigationStack {
-            MediaItemDestination(item: MockMedia.movies[1])
+            MediaItemDestination(item: MockMedia.albums[0])
         }
         .environment(\.libraryService, MockLibraryService.loaded())
     }
@@ -39,8 +35,8 @@ struct MediaItemDestination: View {
 
     #Preview("failure") {
         NavigationStack {
-            MediaItemDestination(item: MockMedia.series)
+            MediaItemDestination(item: MockMedia.albums[1])
         }
-        .environment(\.seriesService, MockSeriesService.failed())
+        .environment(\.libraryService, MockLibraryService.failed())
     }
 #endif

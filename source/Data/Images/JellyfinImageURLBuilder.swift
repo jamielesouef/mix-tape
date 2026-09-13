@@ -6,10 +6,10 @@
 
 import Foundation
 
-public nonisolated struct JellyfinImageURLBuilder: ImageURLBuilderProtocol {
-    public init() {}
+nonisolated struct JellyfinImageURLBuilder: ImageURLBuilderProtocol {
+    init() {}
 
-    public func url(itemID: String, tag: String?, kind: ImageKind, maxHeight: Int, session: UserSession) -> URL? {
+    func url(itemID: String, tag: String?, kind: ImageKind, maxHeight: Int, session: UserSession) -> URL? {
         guard let tag else { return nil }
         let path = switch kind {
         case .primary: "/Items/\(itemID)/Images/Primary"

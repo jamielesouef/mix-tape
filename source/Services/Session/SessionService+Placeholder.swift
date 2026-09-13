@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public extension SessionService {
+extension SessionService {
     static let placeholder: SessionService = {
         #if DEBUG
             return MockSessionService.signedOut()

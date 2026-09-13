@@ -11,7 +11,7 @@ import Testing
 @Suite(.tags(.service))
 @MainActor
 struct LibraryServiceTests {
-    private let movies = MockLibraryRepository.sampleLibraries[0]
+    private let library = MockLibraryRepository.sampleLibraries[0]
 
     private func makeService(repository: MockLibraryRepository = MockLibraryRepository(), sessionService: SessionService = MockSessionService.signedIn()) -> LibraryService {
         MockLibraryService.make(repository: repository, sessionService: sessionService)
@@ -23,31 +23,29 @@ struct LibraryServiceTests {
             let call = calls.next()
             recorder.append("\(page.startIndex)/\(page.limit)")
             let count = call < pageSizes.count ? pageSizes[call] : 0
-            let items = (0 ..< count).map { offset in Self.movie("m\(page.startIndex + offset)") }
+            let items = (0 ..< count).map { offset in Self.album("m\(page.startIndex + offset)") }
             return Page(items: items, totalCount: total, startIndex: page.startIndex)
         })
     }
 
-    @Test func `load home loads libraries and continue watching`() async {
+    @Test func `load home loads libraries`() async {
         let service = makeService()
         await service.loadHome()
         #expect(service.libraries == .loaded(MockLibraryRepository.sampleLibraries.filter { $0.kind != .unsupported }))
-        #expect(service.continueWatching == .loaded(MockLibraryRepository.sampleContinueWatching))
     }
 
     @Test func `load home failure lands in failed`() async {
-        let service = makeService(repository: MockLibraryRepository(continueWatchingResult: { _ in throw MixtapeError.serverUnreachable }))
+        let service = makeService(repository: MockLibraryRepository(librariesResult: { _ in throw MixtapeError.serverUnreachable }))
         await service.loadHome()
-        #expect(service.libraries.isLoaded)
-        #expect(service.continueWatching == .failed(.serverUnreachable))
+        #expect(service.libraries == .failed(.serverUnreachable))
     }
 
     @Test func `load library requests the first page of sixty`() async {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60], total: 120, recorder: recorder))
-        await service.loadLibrary(id: movies.id)
+        await service.loadLibrary(id: library.id)
         #expect(recorder.urls == ["0/60"])
-        guard case let .loaded(page) = service.pages[movies.id] else { Issue.record("not loaded"); return }
+        guard case let .loaded(page) = service.pages[library.id] else { Issue.record("not loaded"); return }
         #expect(page.items.count == 60)
         #expect(page.totalCount == 120)
     }
@@ -55,10 +53,10 @@ struct LibraryServiceTests {
     @Test func `load more advances start index by the returned count and appends`() async {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60, 60], total: 120, recorder: recorder))
-        await service.loadLibrary(id: movies.id)
-        await service.loadMore(libraryID: movies.id)
+        await service.loadLibrary(id: library.id)
+        await service.loadMore(libraryID: library.id)
         #expect(recorder.urls == ["0/60", "60/60"])
-        guard case let .loaded(page) = service.pages[movies.id] else { Issue.record("not loaded"); return }
+        guard case let .loaded(page) = service.pages[library.id] else { Issue.record("not loaded"); return }
         #expect(page.items.count == 120)
         #expect(page.items.last?.id == "m119")
         #expect(page.startIndex == 0)
@@ -67,20 +65,20 @@ struct LibraryServiceTests {
     @Test func `a short page stops further loading`() async {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60, 12], total: 72, recorder: recorder))
-        await service.loadLibrary(id: movies.id)
-        await service.loadMore(libraryID: movies.id)
-        await service.loadMore(libraryID: movies.id)
-        await service.loadMore(libraryID: movies.id)
+        await service.loadLibrary(id: library.id)
+        await service.loadMore(libraryID: library.id)
+        await service.loadMore(libraryID: library.id)
+        await service.loadMore(libraryID: library.id)
         #expect(recorder.urls == ["0/60", "60/60"])
-        guard case let .loaded(page) = service.pages[movies.id] else { Issue.record("not loaded"); return }
+        guard case let .loaded(page) = service.pages[library.id] else { Issue.record("not loaded"); return }
         #expect(page.items.count == 72)
     }
 
     @Test func `a full first page that is the whole library stops loading`() async {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60], total: 60, recorder: recorder))
-        await service.loadLibrary(id: movies.id)
-        await service.loadMore(libraryID: movies.id)
+        await service.loadLibrary(id: library.id)
+        await service.loadMore(libraryID: library.id)
         #expect(recorder.urls == ["0/60"])
     }
 
@@ -90,14 +88,14 @@ struct LibraryServiceTests {
         let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
             recorder.append("\(page.startIndex)")
             await gate.wait()
-            return Page(items: (0 ..< 60).map { Self.movie("m\($0 + page.startIndex)") }, totalCount: 600, startIndex: page.startIndex)
+            return Page(items: (0 ..< 60).map { Self.album("m\($0 + page.startIndex)") }, totalCount: 600, startIndex: page.startIndex)
         })
         let service = makeService(repository: repository)
-        await service.loadLibrary(id: movies.id)
+        await service.loadLibrary(id: library.id)
         gate.close()
-        let first = Task { await service.loadMore(libraryID: movies.id) }
+        let first = Task { await service.loadMore(libraryID: library.id) }
         await Task.yield()
-        await service.loadMore(libraryID: movies.id)
+        await service.loadMore(libraryID: library.id)
         gate.open()
         await first.value
         #expect(recorder.urls == ["0", "60"])
@@ -106,8 +104,8 @@ struct LibraryServiceTests {
     @Test func `load library is a no-op when the page is already loaded`() async {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60, 60], total: 120, recorder: recorder))
-        await service.loadLibrary(id: movies.id)
-        await service.loadLibrary(id: movies.id)
+        await service.loadLibrary(id: library.id)
+        await service.loadLibrary(id: library.id)
         #expect(recorder.urls == ["0/60"])
     }
 
@@ -117,13 +115,13 @@ struct LibraryServiceTests {
             if attempts.next() == 0 {
                 throw MixtapeError.serverUnreachable
             }
-            return Page(items: [Self.movie("m0")], totalCount: 1, startIndex: page.startIndex)
+            return Page(items: [Self.album("m0")], totalCount: 1, startIndex: page.startIndex)
         })
         let service = makeService(repository: repository)
-        await service.loadLibrary(id: movies.id)
-        #expect(service.pages[movies.id] == .failed(.serverUnreachable))
-        await service.loadLibrary(id: movies.id)
-        #expect(service.pages[movies.id]?.isLoaded == true)
+        await service.loadLibrary(id: library.id)
+        #expect(service.pages[library.id] == .failed(.serverUnreachable))
+        await service.loadLibrary(id: library.id)
+        #expect(service.pages[library.id]?.isLoaded == true)
     }
 
     @Test func `session expiry is handed to the session service`() async {
@@ -140,7 +138,7 @@ struct LibraryServiceTests {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60], total: 60, recorder: recorder), sessionService: MockSessionService.signedOut())
         await service.loadHome()
-        await service.loadLibrary(id: movies.id)
+        await service.loadLibrary(id: library.id)
         #expect(service.libraries == .idle)
         #expect(recorder.urls.isEmpty)
     }
@@ -148,11 +146,10 @@ struct LibraryServiceTests {
     @Test func `refresh drops the page cache and reloads home`() async {
         let recorder = Recorder()
         let service = makeService(repository: pagingRepository(pageSizes: [60, 60], total: 120, recorder: recorder))
-        await service.loadLibrary(id: movies.id)
+        await service.loadLibrary(id: library.id)
         await service.refresh()
         #expect(service.pages.isEmpty)
         #expect(service.libraries.isLoaded)
-        #expect(service.continueWatching.isLoaded)
     }
 
     @Test func `tracks and detail are cached per id`() async {
@@ -160,7 +157,7 @@ struct LibraryServiceTests {
         let repository = MockLibraryRepository(
             itemResult: { id, _ in
                 recorder.append("detail \(id)")
-                return MockLibraryRepository.sampleMovies[1]
+                return MockLibraryRepository.sampleAlbums[1]
             },
             tracksResult: { id, _ in
                 recorder.append("tracks \(id)")
@@ -170,10 +167,10 @@ struct LibraryServiceTests {
         let service = makeService(repository: repository)
         await service.loadTracks(albumID: "album-1")
         await service.loadTracks(albumID: "album-1")
-        await service.loadDetail(id: "movie-2")
+        await service.loadDetail(id: "album-2")
         #expect(service.tracks["album-1"] == .loaded(MockLibraryRepository.sampleTracks))
-        #expect(service.details["movie-2"] == .loaded(MockLibraryRepository.sampleMovies[1]))
-        #expect(recorder.urls == ["tracks album-1", "detail movie-2"])
+        #expect(service.details["album-2"] == .loaded(MockLibraryRepository.sampleAlbums[1]))
+        #expect(recorder.urls == ["tracks album-1", "detail album-2"])
     }
 
     // MARK: Slice 020 — session-owned teardown
@@ -202,8 +199,8 @@ struct LibraryServiceTests {
         sessionService.onSessionEnded = { _ in service.endSession() }
 
         await sessionService.signIn(userName: "jamie", password: "pw")
-        await service.loadLibrary(id: movies.id)
-        #expect(service.pages[movies.id]?.isLoaded == true)
+        await service.loadLibrary(id: library.id)
+        #expect(service.pages[library.id]?.isLoaded == true)
 
         sessionService.signOut()
         #expect(service.pages.isEmpty)
@@ -223,17 +220,17 @@ struct LibraryServiceTests {
         let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
             started.append("started")
             await gate.wait()
-            return Page(items: [Self.movie("m0")], totalCount: 1, startIndex: page.startIndex)
+            return Page(items: [Self.album("m0")], totalCount: 1, startIndex: page.startIndex)
         })
         let sessionService = MockSessionService.signedIn()
         let service = makeService(repository: repository, sessionService: sessionService)
         sessionService.onSessionEnded = { _ in service.endSession() }
-        let load = Task { await service.loadLibrary(id: movies.id) }
+        let load = Task { await service.loadLibrary(id: library.id) }
         #expect(await eventually { started.urls == ["started"] })
         sessionService.signOut()
         gate.open()
         await load.value
-        #expect(service.pages[movies.id] == nil)
+        #expect(service.pages[library.id] == nil)
     }
 
     @Test func `a session-expiry thrown from the fetch itself never repopulates the cleared cache`() async {
@@ -241,8 +238,8 @@ struct LibraryServiceTests {
         let repository = MockLibraryRepository(itemsResult: { _, _, _, _ in throw MixtapeError.sessionExpired })
         let service = makeService(repository: repository, sessionService: sessionService)
         sessionService.onSessionEnded = { _ in service.endSession() }
-        await service.loadLibrary(id: movies.id)
-        #expect(service.pages[movies.id] == nil)
+        await service.loadLibrary(id: library.id)
+        #expect(service.pages[library.id] == nil)
         #expect(sessionService.state == .signedOut)
     }
 
@@ -252,16 +249,16 @@ struct LibraryServiceTests {
         let attempts = Counter()
         let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
             if attempts.next() == 0 {
-                return Page(items: (0 ..< 60).map { Self.movie("m\($0)") }, totalCount: 120, startIndex: page.startIndex)
+                return Page(items: (0 ..< 60).map { Self.album("m\($0)") }, totalCount: 120, startIndex: page.startIndex)
             }
             throw MixtapeError.serverUnreachable
         })
         let service = makeService(repository: repository)
-        await service.loadLibrary(id: movies.id)
-        await service.loadMore(libraryID: movies.id)
-        guard case let .loaded(page) = service.pages[movies.id] else { Issue.record("not loaded"); return }
+        await service.loadLibrary(id: library.id)
+        await service.loadMore(libraryID: library.id)
+        guard case let .loaded(page) = service.pages[library.id] else { Issue.record("not loaded"); return }
         #expect(page.items.count == 60)
-        #expect(service.pageLoadError[movies.id] == .serverUnreachable)
+        #expect(service.pageLoadError[library.id] == .serverUnreachable)
     }
 
     @Test func `refresh while loadLibrary is in flight does not let the stale response repopulate the cleared cache`() async {
@@ -271,15 +268,15 @@ struct LibraryServiceTests {
         let repository = MockLibraryRepository(itemsResult: { _, _, page, _ in
             started.append("started")
             await gate.wait()
-            return Page(items: [Self.movie("m0")], totalCount: 1, startIndex: page.startIndex)
+            return Page(items: [Self.album("m0")], totalCount: 1, startIndex: page.startIndex)
         })
         let service = makeService(repository: repository)
-        let load = Task { await service.loadLibrary(id: movies.id) }
+        let load = Task { await service.loadLibrary(id: library.id) }
         #expect(await eventually { started.urls == ["started"] })
         await service.refresh()
         gate.open()
         await load.value
-        #expect(service.pages[movies.id] == nil)
+        #expect(service.pages[library.id] == nil)
     }
 
     @Test func `concurrent loadTracks requests for the same album fire one network call`() async {
@@ -300,11 +297,11 @@ struct LibraryServiceTests {
         #expect(recorder.urls == ["album-1"])
     }
 
-    private nonisolated static func movie(_ id: String) -> MediaItem {
+    private nonisolated static func album(_ id: String) -> MediaItem {
         MediaItem(
-            id: id, name: id, kind: .movie, overview: nil, productionYear: nil, runtime: nil, indexNumber: nil, parentIndexNumber: nil,
-            seriesName: nil, albumArtist: nil, primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: nil,
-            playback: PlaybackState(position: .zero, isWatched: false),
+            id: id, name: id, kind: .musicAlbum, overview: nil, productionYear: nil, runtime: nil, indexNumber: nil, parentIndexNumber: nil,
+            albumArtist: nil, primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: nil,
+            playback: PlaybackState(position: .zero),
         )
     }
 }

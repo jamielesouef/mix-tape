@@ -4,25 +4,29 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
-    public let id: String
-    public let name: String
-    public let kind: MediaKind
-    public let overview: String?
-    public let productionYear: Int?
-    public let runtime: Duration?
-    public let indexNumber: Int?
-    public let parentIndexNumber: Int?
-    public let seriesName: String?
-    public let albumArtist: String?
-    public let primaryImageTag: String?
-    public let backdropImageTag: String?
-    public let parentPrimaryImageTag: String?
-    public let albumID: String?
-    public let container: String?
-    public let playback: PlaybackState
+nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let kind: MediaKind
+    let overview: String?
+    let productionYear: Int?
+    let runtime: Duration?
+    let indexNumber: Int?
+    let parentIndexNumber: Int?
+    let albumArtist: String?
+    let primaryImageTag: String?
+    let backdropImageTag: String?
+    let parentPrimaryImageTag: String?
+    let albumID: String?
+    let container: String?
+    let playback: PlaybackState
 
-    public init(id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?, indexNumber: Int?, parentIndexNumber: Int?, seriesName: String?, albumArtist: String?, primaryImageTag: String?, backdropImageTag: String?, parentPrimaryImageTag: String?, albumID: String? = nil, container: String? = nil, playback: PlaybackState) {
+    init(
+        id: String, name: String, kind: MediaKind, overview: String?, productionYear: Int?, runtime: Duration?,
+        indexNumber: Int?, parentIndexNumber: Int?, albumArtist: String?, primaryImageTag: String?,
+        backdropImageTag: String?, parentPrimaryImageTag: String?, albumID: String? = nil, container: String? = nil,
+        playback: PlaybackState,
+    ) {
         self.id = id
         self.name = name
         self.kind = kind
@@ -31,7 +35,6 @@ public nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
         self.runtime = runtime
         self.indexNumber = indexNumber
         self.parentIndexNumber = parentIndexNumber
-        self.seriesName = seriesName
         self.albumArtist = albumArtist
         self.primaryImageTag = primaryImageTag
         self.backdropImageTag = backdropImageTag

@@ -6,17 +6,17 @@
 
 import SwiftUI
 
-public struct QuickConnectScreen: View {
+struct QuickConnectScreen: View {
     @Environment(\.sessionService) private var sessionService: SessionService
     let onCancel: () -> Void
     let onUsePassword: (() -> Void)?
 
-    public init(onCancel: @escaping () -> Void, onUsePassword: (() -> Void)? = nil) {
+    init(onCancel: @escaping () -> Void, onUsePassword: (() -> Void)? = nil) {
         self.onCancel = onCancel
         self.onUsePassword = onUsePassword
     }
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 24) {
             Text("Quick Connect")
                 .font(.largeTitle.bold())

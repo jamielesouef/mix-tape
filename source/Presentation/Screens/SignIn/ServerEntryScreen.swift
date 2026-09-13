@@ -6,13 +6,13 @@
 
 import SwiftUI
 
-public struct ServerEntryScreen: View {
+struct ServerEntryScreen: View {
     @Environment(\.sessionService) private var sessionService: SessionService
     @State private var urlText = ""
 
-    public init() {}
+    init() {}
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 20) {
             Text("mixtape")
                 .font(.largeTitle.bold())

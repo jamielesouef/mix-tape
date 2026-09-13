@@ -6,10 +6,8 @@
 
 nonisolated struct UserItemDataDTO: Decodable {
     let playbackPositionTicks: Int64?
-    let played: Bool?
 
     enum CodingKeys: String, CodingKey {
         case playbackPositionTicks = "PlaybackPositionTicks"
-        case played = "Played"
     }
 }

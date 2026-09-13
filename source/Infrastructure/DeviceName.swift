@@ -6,8 +6,8 @@
 
 import UIKit
 
-public nonisolated enum DeviceName {
-    @MainActor public static var current: String {
+enum DeviceName {
+    @MainActor static var current: String {
         UIDevice.current.name
     }
 }

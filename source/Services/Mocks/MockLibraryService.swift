@@ -6,12 +6,11 @@
 
 #if DEBUG
 
-    public enum MockLibraryService {
-        public static func make(
+    enum MockLibraryService {
+        static func make(
             repository: MockLibraryRepository = MockLibraryRepository(),
             sessionService: SessionService = MockSessionService.signedIn(),
             libraries: LoadState<[Library]> = .idle,
-            continueWatching: LoadState<[MediaItem]> = .idle,
             pages: [String: LoadState<Page<MediaItem>>] = [:],
             details: [String: LoadState<MediaItem>] = [:],
             tracks: [String: LoadState<[MediaItem]>] = [:],
@@ -21,61 +20,53 @@
                 fetchLibraryItems: FetchLibraryItemsUseCase(repository: repository),
                 fetchItemDetail: FetchItemDetailUseCase(repository: repository),
                 fetchAlbumTracks: FetchAlbumTracksUseCase(repository: repository),
-                fetchContinueWatching: FetchContinueWatchingUseCase(repository: repository),
                 sessionService: sessionService,
                 libraries: libraries,
-                continueWatching: continueWatching,
                 pages: pages,
                 details: details,
                 tracks: tracks,
             )
         }
 
-        public static func idle() -> LibraryService {
+        static func idle() -> LibraryService {
             make()
         }
 
-        public static func loading() -> LibraryService {
-            make(libraries: .loading, continueWatching: .loading, pages: ["lib-movies": .loading, "lib-shows": .loading, "lib-music": .loading])
+        static func loading() -> LibraryService {
+            make(libraries: .loading, pages: ["lib-music": .loading])
         }
 
-        public static func loaded() -> LibraryService {
+        static func loaded() -> LibraryService {
             let libraries = MockLibraryRepository.sampleLibraries.filter { $0.kind != .unsupported }
             return make(
                 libraries: .loaded(libraries),
-                continueWatching: .loaded(MockLibraryRepository.sampleContinueWatching),
                 pages: [
-                    "lib-movies": .loaded(page(MockLibraryRepository.sampleMovies)),
-                    "lib-shows": .loaded(page([MockLibraryRepository.sampleSeries])),
                     "lib-music": .loaded(page(MockLibraryRepository.sampleAlbums)),
                 ],
-                details: ["movie-2": .loaded(MockLibraryRepository.sampleMovies[1])],
+                details: ["album-1": .loaded(MockLibraryRepository.sampleAlbums[0])],
                 tracks: ["album-1": .loaded(MockLibraryRepository.sampleTracks)],
             )
         }
 
-        public static func empty() -> LibraryService {
+        static func empty() -> LibraryService {
             make(
                 libraries: .loaded([]),
-                continueWatching: .loaded([]),
-                pages: ["lib-movies": .loaded(page([])), "lib-shows": .loaded(page([])), "lib-music": .loaded(page([]))],
+                pages: ["lib-music": .loaded(page([]))],
                 tracks: ["album-1": .loaded([])],
             )
         }
 
-        public static func failed(_ error: MixtapeError = .serverUnreachable) -> LibraryService {
+        static func failed(_ error: MixtapeError = .serverUnreachable) -> LibraryService {
             make(
                 repository: MockLibraryRepository(
                     librariesResult: { _ in throw error },
                     itemsResult: { _, _, _, _ in throw error },
                     itemResult: { _, _ in throw error },
                     tracksResult: { _, _ in throw error },
-                    continueWatchingResult: { _ in throw error },
                 ),
                 libraries: .failed(error),
-                continueWatching: .failed(error),
-                pages: ["lib-movies": .failed(error), "lib-shows": .failed(error), "lib-music": .failed(error)],
-                details: ["movie-2": .failed(error)],
+                pages: ["lib-music": .failed(error)],
+                details: ["album-1": .failed(error)],
                 tracks: ["album-1": .failed(error)],
             )
         }

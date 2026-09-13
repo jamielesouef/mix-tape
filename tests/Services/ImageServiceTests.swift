@@ -21,16 +21,16 @@ struct ImageServiceTests {
     }
 
     @Test func `an item without a tag has no url and no image`() async {
-        let movie = MockLibraryRepository.sampleMovies[0]
-        #expect(service.imageURL(for: movie, kind: .backdrop, maxHeight: 300) != nil)
-        let untagged = MockLibraryRepository.sampleLibraries[3]
+        let album = MockLibraryRepository.sampleAlbums[0]
+        #expect(service.imageURL(for: album, kind: .primary, maxHeight: 300) != nil)
+        let untagged = MockLibraryRepository.sampleLibraries[1]
         #expect(service.imageURL(for: untagged, maxHeight: 300) == nil)
         #expect(await service.image(for: untagged, maxHeight: 300) == nil)
     }
 
     @Test func `no session means no url`() {
         let signedOut = MockImageService.make(sessionService: MockSessionService.signedOut())
-        #expect(signedOut.imageURL(for: MockLibraryRepository.sampleMovies[0], kind: .primary, maxHeight: 300) == nil)
+        #expect(signedOut.imageURL(for: MockLibraryRepository.sampleAlbums[0], kind: .primary, maxHeight: 300) == nil)
     }
 
     // MARK: Slice 023 — ImageService hardening (AC23c)

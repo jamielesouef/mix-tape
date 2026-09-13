@@ -6,13 +6,9 @@
 
 #if DEBUG
 
-    public enum MockMedia {
-        public static let libraries = MockLibraryRepository.sampleLibraries
-        public static let movies = MockLibraryRepository.sampleMovies
-        public static let series = MockLibraryRepository.sampleSeries
-        public static let seasons = MockLibraryRepository.sampleSeasons
-        public static let episodes = MockLibraryRepository.sampleEpisodes
-        public static let albums = MockLibraryRepository.sampleAlbums
-        public static let tracks = MockLibraryRepository.sampleTracks
+    enum MockMedia {
+        static let libraries = MockLibraryRepository.sampleLibraries
+        static let albums = MockLibraryRepository.sampleAlbums
+        static let tracks = MockLibraryRepository.sampleTracks
     }
 #endif

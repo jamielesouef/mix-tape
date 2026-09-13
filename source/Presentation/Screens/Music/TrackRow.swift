@@ -33,7 +33,7 @@ struct TrackRow: View {
 
     #Preview("empty") {
         List {
-            TrackRow(track: MockMedia.movies[0])
+            TrackRow(track: MockMedia.tracks[1])
         }
     }
 

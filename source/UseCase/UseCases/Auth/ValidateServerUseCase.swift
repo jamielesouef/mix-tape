@@ -6,14 +6,14 @@
 
 import Foundation
 
-public nonisolated struct ValidateServerUseCase: Sendable {
+nonisolated struct ValidateServerUseCase: Sendable {
     private let repository: any AuthRepositoryProtocol
 
-    public init(repository: any AuthRepositoryProtocol) {
+    init(repository: any AuthRepositoryProtocol) {
         self.repository = repository
     }
 
-    public func callAsFunction(urlText: String) async throws -> ServerIdentity {
+    func callAsFunction(urlText: String) async throws -> ServerIdentity {
         let text = Self.normalised(urlText)
         guard text.isEmpty == false else { throw MixtapeError.serverUnreachable }
         if text.contains("://") {

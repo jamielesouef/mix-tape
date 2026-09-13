@@ -17,19 +17,7 @@ nonisolated struct PlaceholderLibraryRepository: LibraryRepositoryProtocol {
         throw MixtapeError.serverUnreachable
     }
 
-    func seasons(seriesID _: String, session _: UserSession) async throws -> [MediaItem] {
-        throw MixtapeError.serverUnreachable
-    }
-
-    func episodes(seriesID _: String, seasonID _: String, session _: UserSession) async throws -> [MediaItem] {
-        throw MixtapeError.serverUnreachable
-    }
-
     func tracks(albumID _: String, session _: UserSession) async throws -> [MediaItem] {
-        throw MixtapeError.serverUnreachable
-    }
-
-    func continueWatching(session _: UserSession) async throws -> [MediaItem] {
         throw MixtapeError.serverUnreachable
     }
 }

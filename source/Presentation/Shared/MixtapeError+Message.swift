@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-public extension MixtapeError {
+extension MixtapeError {
     nonisolated var message: String {
         switch self {
         case .serverUnreachable: "Couldn't reach the server. Check the address and that it's running."

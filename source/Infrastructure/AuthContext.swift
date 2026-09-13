@@ -6,13 +6,13 @@
 
 import Foundation
 
-public nonisolated struct AuthContext: Sendable, Equatable {
-    public let baseURL: URL
-    public let deviceID: String
-    public let appVersion: String
-    public let token: String?
+nonisolated struct AuthContext: Sendable, Equatable {
+    let baseURL: URL
+    let deviceID: String
+    let appVersion: String
+    let token: String?
 
-    public init(baseURL: URL, deviceID: String, appVersion: String, token: String?) {
+    init(baseURL: URL, deviceID: String, appVersion: String, token: String?) {
         self.baseURL = baseURL
         self.deviceID = deviceID
         self.appVersion = appVersion

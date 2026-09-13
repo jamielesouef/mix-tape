@@ -6,28 +6,16 @@
 
 import Foundation
 
-public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
+nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
     private let client: JellyfinHTTPClient
     private let appVersion: String
-    private let deviceProfile: DeviceProfile
 
-    public init(client: JellyfinHTTPClient, appVersion: String, deviceProfile: DeviceProfile) {
+    init(client: JellyfinHTTPClient, appVersion: String) {
         self.client = client
         self.appVersion = appVersion
-        self.deviceProfile = deviceProfile
     }
 
-    public func resolveVideo(itemID: String, startAt: Duration, session: UserSession) async throws -> VideoSourceResolution {
-        let dto: PlaybackInfoResponseDTO = try await client.post(
-            "/Items/\(itemID)/PlaybackInfo",
-            body: PlaybackInfoBody(deviceProfile: deviceProfile, startTimeTicks: startAt.ticks),
-            query: [URLQueryItem(name: "userId", value: session.userID)],
-            auth: context(session),
-        )
-        return try PlaybackMapper.resolution(from: dto)
-    }
-
-    public func audioStream(track: MediaItem, session: UserSession, playSessionID: String) -> AudioStream {
+    func audioStream(track: MediaItem, session: UserSession, playSessionID: String) -> AudioStream {
         guard isNativeAudioContainer(track.container) else {
             AppLogger.playback.info("audio HLS fallback fired for track \(track.id) (container \(track.container ?? "?"))")
             return AudioStream(url: hlsFallbackURL(track: track, session: session, playSessionID: playSessionID), playMethod: .transcode)
@@ -59,15 +47,15 @@ public nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol
         return components?.url ?? session.serverURL
     }
 
-    public func reportStart(_ report: PlaybackReport, session: UserSession) async throws {
+    func reportStart(_ report: PlaybackReport, session: UserSession) async throws {
         try await post("/Sessions/Playing", report, session, "start")
     }
 
-    public func reportProgress(_ report: PlaybackReport, session: UserSession) async throws {
+    func reportProgress(_ report: PlaybackReport, session: UserSession) async throws {
         try await post("/Sessions/Playing/Progress", report, session, "progress")
     }
 
-    public func reportStopped(_ report: PlaybackReport, session: UserSession) async throws {
+    func reportStopped(_ report: PlaybackReport, session: UserSession) async throws {
         try await post("/Sessions/Playing/Stopped", report, session, "stopped")
     }
 

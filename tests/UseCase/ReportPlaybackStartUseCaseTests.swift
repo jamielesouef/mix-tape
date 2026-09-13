@@ -11,7 +11,7 @@ import Testing
 struct ReportPlaybackStartUseCaseTests {
     private let session = MockAuthRepository.sampleSession
     private let report = PlaybackReport(
-        itemID: "item-1", mediaSourceID: "src", playSessionID: "psid", position: .seconds(5), isPaused: false, method: .directAVPlayer, playMethod: .directPlay,
+        itemID: "item-1", mediaSourceID: "src", playSessionID: "psid", position: .seconds(5), isPaused: false, playMethod: .directPlay,
     )
 
     @Test func `the report reaches the repository`() async {

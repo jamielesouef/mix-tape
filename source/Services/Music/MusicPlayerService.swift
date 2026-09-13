@@ -9,24 +9,24 @@ import Observation
 import UIKit
 
 @Observable
-public final class MusicPlayerService {
-    public static let progressInterval: Duration = .seconds(10)
-    public static let nowPlayingInterval: Duration = .seconds(5)
-    public static let stallTickThreshold = 3
+final class MusicPlayerService {
+    static let progressInterval: Duration = .seconds(10)
+    static let nowPlayingInterval: Duration = .seconds(5)
+    static let stallTickThreshold = 3
 
-    public private(set) var album: MediaItem?
-    public private(set) var queue: [MediaItem] = []
-    public private(set) var currentIndex: Int?
-    public private(set) var status: PlayerStatus = .idle
-    public private(set) var position: Duration = .zero
-    public private(set) var finishedAlbumID: String?
+    private(set) var album: MediaItem?
+    private(set) var queue: [MediaItem] = []
+    private(set) var currentIndex: Int?
+    private(set) var status: PlayerStatus = .idle
+    private(set) var position: Duration = .zero
+    private(set) var finishedAlbumID: String?
 
-    public var current: MediaItem? {
+    var current: MediaItem? {
         guard let currentIndex, queue.indices.contains(currentIndex) else { return nil }
         return queue[currentIndex]
     }
 
-    public var hasNextTrack: Bool {
+    var hasNextTrack: Bool {
         guard let currentIndex else { return false }
         return currentIndex + 1 < queue.count
     }
@@ -46,7 +46,7 @@ public final class MusicPlayerService {
     private let clock: any Clock<Duration>
     private let artworkProvider: (@Sendable (MediaItem) async -> UIImage?)?
 
-    public init(
+    init(
         controller: any AudioPlayerControlling,
         buildAudioStreamURL: BuildAudioStreamURLUseCase,
         reportStart: ReportPlaybackStartUseCase,
@@ -78,11 +78,11 @@ public final class MusicPlayerService {
         progressTask?.cancel()
     }
 
-    public var isActive: Bool {
+    var isActive: Bool {
         status != .idle
     }
 
-    public func play(album: MediaItem, tracks: [MediaItem], startingAt index: Int) async {
+    func play(album: MediaItem, tracks: [MediaItem], startingAt index: Int) async {
         guard tracks.isEmpty == false, tracks.indices.contains(index) else { return }
         enqueueStoppedReportForCurrent()
         self.album = album
@@ -92,7 +92,7 @@ public final class MusicPlayerService {
         await start(index: index)
     }
 
-    public func togglePlayPause() {
+    func togglePlayPause() {
         switch status {
         case .playing: pause()
         case .paused: resume()
@@ -100,7 +100,7 @@ public final class MusicPlayerService {
         }
     }
 
-    public func next() async {
+    func next() async {
         guard let currentIndex else { return }
         enqueueStoppedReportForCurrent()
         if currentIndex + 1 < queue.count {
@@ -110,7 +110,7 @@ public final class MusicPlayerService {
         }
     }
 
-    public func previous() async {
+    func previous() async {
         guard let currentIndex else { return }
         if position > .seconds(3) {
             seek(to: .zero)
@@ -124,7 +124,7 @@ public final class MusicPlayerService {
         await start(index: currentIndex - 1)
     }
 
-    public func seek(to requested: Duration) {
+    func seek(to requested: Duration) {
         let target = max(.zero, requested)
         controller.seek(to: target)
         position = target
@@ -132,23 +132,23 @@ public final class MusicPlayerService {
         refreshNowPlaying()
     }
 
-    public func stop() async {
+    func stop() async {
         tearDown(reportingTo: session)
         await reportTask?.value
     }
 
-    public func claimFinish(albumID: String) -> Bool {
+    func claimFinish(albumID: String) -> Bool {
         guard finishedAlbumID == albumID, claimedFinishID == nil else { return false }
         claimedFinishID = albumID
         return true
     }
 
-    public func acknowledgeFinish() {
+    func acknowledgeFinish() {
         finishedAlbumID = nil
         claimedFinishID = nil
     }
 
-    public func endSession(_ endedSession: UserSession) {
+    func endSession(_ endedSession: UserSession) {
         tearDown(reportingTo: endedSession)
     }
 
@@ -301,7 +301,7 @@ public final class MusicPlayerService {
     private func report(for track: MediaItem, position: Duration, isPaused: Bool, stream: AudioStream) -> PlaybackReport {
         PlaybackReport(
             itemID: track.id, mediaSourceID: track.id, playSessionID: playSessionID,
-            position: position, isPaused: isPaused, method: .directAVPlayer, playMethod: stream.playMethod,
+            position: position, isPaused: isPaused, playMethod: stream.playMethod,
         )
     }
 

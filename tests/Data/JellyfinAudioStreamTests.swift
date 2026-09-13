@@ -16,14 +16,14 @@ struct JellyfinAudioStreamTests {
     )
 
     private func repository() -> JellyfinPlaybackRepository {
-        JellyfinPlaybackRepository(client: JellyfinHTTPClient(session: StubServer().session, deviceName: "Test iPhone"), appVersion: "1.0", deviceProfile: .permissive)
+        JellyfinPlaybackRepository(client: JellyfinHTTPClient(session: StubServer().session, deviceName: "Test iPhone"), appVersion: "1.0")
     }
 
     private func track(id: String, container: String?) -> MediaItem {
         MediaItem(
             id: id, name: "Song", kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200), indexNumber: 1, parentIndexNumber: 1,
-            seriesName: nil, albumArtist: "Artist", primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: "a1", albumID: "album-1", container: container,
-            playback: PlaybackState(position: .zero, isWatched: false),
+            albumArtist: "Artist", primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: "a1", albumID: "album-1", container: container,
+            playback: PlaybackState(position: .zero),
         )
     }
 

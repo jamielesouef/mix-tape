@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AD00000000000000000301 /* VLCKitSPM in Frameworks */ = {isa = PBXBuildFile; productRef = AD00000000000000000101 /* VLCKitSPM */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,7 +69,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AD00000000000000000301 /* VLCKitSPM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,9 +130,6 @@
 				AD00000000000000000001 /* source */,
 			);
 			name = Mixtape;
-			packageProductDependencies = (
-				AD00000000000000000101 /* VLCKitSPM */,
-			);
 			productName = Mixtape;
 			productReference = 000000000000000000000120 /* Mixtape.app */;
 			productType = "com.apple.product-type.application";
@@ -213,9 +208,6 @@
 			);
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				AD00000000000000000010 /* XCRemoteSwiftPackageReference "vlckit-spm" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -650,25 +642,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		AD00000000000000000010 /* XCRemoteSwiftPackageReference "vlckit-spm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/tylerjonesio/vlckit-spm.git";
-			requirement = {
-				kind = exactVersion;
-				version = 3.6.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		AD00000000000000000101 /* VLCKitSPM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AD00000000000000000010 /* XCRemoteSwiftPackageReference "vlckit-spm" */;
-			productName = VLCKitSPM;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }

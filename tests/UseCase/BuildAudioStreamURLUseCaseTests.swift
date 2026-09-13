@@ -15,8 +15,8 @@ struct BuildAudioStreamURLUseCaseTests {
     private func track(container: String?) -> MediaItem {
         MediaItem(
             id: "track-1", name: "Song", kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200), indexNumber: 1, parentIndexNumber: 1,
-            seriesName: nil, albumArtist: "Artist", primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: "a1", albumID: "album-1", container: container,
-            playback: PlaybackState(position: .zero, isWatched: false),
+            albumArtist: "Artist", primaryImageTag: nil, backdropImageTag: nil, parentPrimaryImageTag: "a1", albumID: "album-1", container: container,
+            playback: PlaybackState(position: .zero),
         )
     }
 

@@ -6,17 +6,17 @@
 
 import SwiftUI
 
-public struct SignInScreen: View {
+struct SignInScreen: View {
     @Environment(\.sessionService) private var sessionService: SessionService
     @State private var userName = ""
     @State private var password = ""
     let onUseQuickConnect: () -> Void
 
-    public init(onUseQuickConnect: @escaping () -> Void) {
+    init(onUseQuickConnect: @escaping () -> Void) {
         self.onUseQuickConnect = onUseQuickConnect
     }
 
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 20) {
             Text(sessionService.serverIdentity?.name ?? "Sign in")
                 .font(.largeTitle.bold())
