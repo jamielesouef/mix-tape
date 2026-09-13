@@ -6,11 +6,18 @@
 
 nonisolated enum LibraryMapper {
     static func library(from dto: BaseItemDTO) -> Library {
-        let kind: LibraryKind = switch dto.collectionType {
-        case "music": .music
-        default: .unsupported
-        }
-        return Library(id: dto.id, name: dto.name ?? "", kind: kind, imageTag: dto.imageTags?["Primary"])
+        let kind: LibraryKind =
+            switch dto.collectionType {
+            case "music": .music
+            default: .unsupported
+            }
+
+        return Library(
+            id: dto.id,
+            name: dto.name ?? "",
+            kind: kind,
+            imageTag: dto.imageTags?["Primary"]
+        )
     }
 
     static func items(from dto: ItemsResultDTO) -> [MediaItem] {
@@ -19,17 +26,29 @@ nonisolated enum LibraryMapper {
 
     static func page(from dto: ItemsResultDTO, requested: PageRequest) -> Page<MediaItem> {
         let items = items(from: dto)
-        return Page(items: items, totalCount: dto.totalRecordCount ?? items.count, startIndex: dto.startIndex ?? requested.startIndex)
+
+        return Page(
+            items: items,
+            totalCount: dto.totalRecordCount ?? items.count,
+            startIndex: dto.startIndex ?? requested.startIndex
+        )
     }
 
     static func detail(from dto: BaseItemDTO) throws -> MediaItem {
-        guard let item = mediaItem(from: dto) else { throw MixtapeError.decoding }
+        guard let item = mediaItem(from: dto) else {
+            throw MixtapeError.decoding
+        }
+
         return item
     }
 
     static func mediaItem(from dto: BaseItemDTO) -> MediaItem? {
-        guard let kind = kind(dto.type) else { return nil }
+        guard let kind = kind(dto.type) else {
+            return nil
+        }
+
         let position = dto.userData?.playbackPositionTicks.map { Duration(ticks: $0) } ?? .zero
+
         return MediaItem(
             id: dto.id,
             name: dto.name ?? "",
@@ -45,7 +64,7 @@ nonisolated enum LibraryMapper {
             parentPrimaryImageTag: dto.albumPrimaryImageTag,
             albumID: dto.albumId,
             container: dto.container,
-            playback: PlaybackState(position: position),
+            playback: PlaybackState(position: position)
         )
     }
 

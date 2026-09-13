@@ -12,7 +12,7 @@ nonisolated enum PlaybackMapper {
             playSessionId: report.playSessionID,
             positionTicks: report.position.ticks,
             isPaused: report.isPaused,
-            playMethod: wireName(report.playMethod),
+            playMethod: wireName(report.playMethod)
         )
     }
 

@@ -18,11 +18,20 @@ nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
     }
 
     func libraries(session: UserSession) async throws -> [Library] {
-        let dto: ItemsResultDTO = try await client.get("/UserViews", query: [user(session)], auth: context(session))
+        let dto: ItemsResultDTO = try await client.get(
+            "/UserViews",
+            query: [user(session)],
+            auth: context(session)
+        )
         return (dto.items ?? []).map(LibraryMapper.library)
     }
 
-    func items(in libraryID: String, kind: MediaKind, page: PageRequest, session: UserSession) async throws -> Page<MediaItem> {
+    func items(
+        in libraryID: String,
+        kind: MediaKind,
+        page: PageRequest,
+        session: UserSession
+    ) async throws -> Page<MediaItem> {
         let dto: ItemsResultDTO = try await client.get(
             "/Items",
             query: [
@@ -36,16 +45,18 @@ nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
                 URLQueryItem(name: "imageTypeLimit", value: "1"),
                 URLQueryItem(name: "enableImageTypes", value: "Primary,Backdrop"),
                 URLQueryItem(name: "startIndex", value: String(page.startIndex)),
-                URLQueryItem(name: "limit", value: String(page.limit)),
+                URLQueryItem(name: "limit", value: String(page.limit))
             ],
-            auth: context(session),
+            auth: context(session)
         )
         return LibraryMapper.page(from: dto, requested: page)
     }
 
     func item(id: String, session: UserSession) async throws -> MediaItem {
         let dto: BaseItemDTO = try await client.get(
-            "/Items/\(id)", query: [user(session), URLQueryItem(name: "fields", value: "Overview,MediaSources")], auth: context(session),
+            "/Items/\(id)",
+            query: [user(session), URLQueryItem(name: "fields", value: "Overview,MediaSources")],
+            auth: context(session)
         )
         return try LibraryMapper.detail(from: dto)
     }
@@ -57,9 +68,9 @@ nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
                 user(session),
                 URLQueryItem(name: "parentId", value: albumID),
                 URLQueryItem(name: "includeItemTypes", value: "Audio"),
-                URLQueryItem(name: "sortBy", value: "ParentIndexNumber,IndexNumber,SortName"),
+                URLQueryItem(name: "sortBy", value: "ParentIndexNumber,IndexNumber,SortName")
             ],
-            auth: context(session),
+            auth: context(session)
         )
         return LibraryMapper.items(from: dto)
     }
@@ -76,6 +87,11 @@ nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
     }
 
     private func context(_ session: UserSession) -> AuthContext {
-        AuthContext(baseURL: session.serverURL, deviceID: session.deviceID, appVersion: appVersion, token: session.accessToken)
+        AuthContext(
+            baseURL: session.serverURL,
+            deviceID: session.deviceID,
+            appVersion: appVersion,
+            token: session.accessToken
+        )
     }
 }

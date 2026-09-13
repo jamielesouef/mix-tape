@@ -17,7 +17,10 @@ nonisolated struct KeychainSessionStore: SessionStoreProtocol {
     }
 
     func load() throws -> UserSession? {
-        guard let data = try store.data(account: Self.sessionAccount) else { return nil }
+        guard let data = try store.data(account: Self.sessionAccount) else {
+            return nil
+        }
+
         return try JSONDecoder().decode(StoredSessionDTO.self, from: data).session
     }
 
@@ -30,11 +33,16 @@ nonisolated struct KeychainSessionStore: SessionStoreProtocol {
     }
 
     func deviceID() throws -> String {
-        if let data = try store.data(account: Self.deviceIDAccount), let existing = String(data: data, encoding: .utf8) {
+        if
+            let data = try store.data(account: Self.deviceIDAccount),
+            let existing = String(data: data, encoding: .utf8) {
             return existing
         }
+
         let fresh = UUID().uuidString
+
         try store.set(Data(fresh.utf8), account: Self.deviceIDAccount)
+
         return fresh
     }
 }

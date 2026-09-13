@@ -18,15 +18,22 @@ nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
     }
 
     func serverIdentity(at url: URL) async throws -> ServerIdentity {
-        let dto: PublicSystemInfoDTO = try await client.get("/System/Info/Public", auth: context(baseURL: url))
+        let dto: PublicSystemInfoDTO = try await client.get(
+            "/System/Info/Public",
+            auth: context(baseURL: url)
+        )
         return try AuthMapper.serverIdentity(from: dto, baseURL: url)
     }
 
-    func authenticate(userName: String, password: String, server: ServerIdentity) async throws -> UserSession {
+    func authenticate(
+        userName: String,
+        password: String,
+        server: ServerIdentity
+    ) async throws -> UserSession {
         let dto: AuthenticationResultDTO = try await client.post(
             "/Users/AuthenticateByName",
             body: AuthenticateUserByNameBody(username: userName, pw: password),
-            auth: context(baseURL: server.baseURL),
+            auth: context(baseURL: server.baseURL)
         )
         return try AuthMapper.userSession(from: dto, serverURL: server.baseURL, deviceID: deviceID)
     }
@@ -37,7 +44,9 @@ nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
 
     func initiateQuickConnect(server: ServerIdentity) async throws -> QuickConnectHandshake {
         let dto: QuickConnectResultDTO = try await client.post(
-            "/QuickConnect/Initiate", body: EmptyBody(), auth: context(baseURL: server.baseURL),
+            "/QuickConnect/Initiate",
+            body: EmptyBody(),
+            auth: context(baseURL: server.baseURL)
         )
         return try AuthMapper.handshake(from: dto)
     }
@@ -46,16 +55,19 @@ nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
         let dto: QuickConnectResultDTO = try await client.get(
             "/QuickConnect/Connect",
             query: [URLQueryItem(name: "secret", value: secret)],
-            auth: context(baseURL: server.baseURL),
+            auth: context(baseURL: server.baseURL)
         )
         return dto.authenticated ?? false
     }
 
-    func authenticateWithQuickConnect(secret: String, server: ServerIdentity) async throws -> UserSession {
+    func authenticateWithQuickConnect(
+        secret: String,
+        server: ServerIdentity
+    ) async throws -> UserSession {
         let dto: AuthenticationResultDTO = try await client.post(
             "/Users/AuthenticateWithQuickConnect",
             body: QuickConnectSecretBody(secret: secret),
-            auth: context(baseURL: server.baseURL),
+            auth: context(baseURL: server.baseURL)
         )
         return try AuthMapper.userSession(from: dto, serverURL: server.baseURL, deviceID: deviceID)
     }

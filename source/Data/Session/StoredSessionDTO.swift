@@ -22,6 +22,12 @@ nonisolated struct StoredSessionDTO: Codable {
     }
 
     var session: UserSession {
-        UserSession(serverURL: serverURL, userID: userID, userName: userName, accessToken: accessToken, deviceID: deviceID)
+        UserSession(
+            serverURL: serverURL,
+            userID: userID,
+            userName: userName,
+            accessToken: accessToken,
+            deviceID: deviceID
+        )
     }
 }
