@@ -12,7 +12,9 @@ nonisolated enum ContentPhase<Value: Sendable>: Sendable {
 
     init(_ state: LoadState<Value>?, isEmpty: (Value) -> Bool) {
         switch state {
-        case .none, .idle, .loading:
+        case .none,
+             .idle,
+             .loading:
             self = .loading
         case let .failed(error):
             self = .failed(error)

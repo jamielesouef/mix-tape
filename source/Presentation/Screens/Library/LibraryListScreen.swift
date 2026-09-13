@@ -15,19 +15,28 @@ struct LibraryListScreen: View {
         NavigationStack {
             Group {
                 switch libraryService.libraries {
-                case .idle, .loading:
+                case .idle,
+                     .loading:
                     ProgressView()
                 case let .failed(error):
                     RetryView(error: error) { await libraryService.loadHome() }
                 case let .loaded(libraries) where libraries.isEmpty:
-                    ContentUnavailableView("No libraries", systemImage: "books.vertical", description: Text("This user has no music libraries."))
+                    ContentUnavailableView(
+                        "No libraries",
+                        systemImage: "books.vertical",
+                        description: Text("This user has no music libraries.")
+                    )
                 case let .loaded(libraries):
                     List(libraries) { library in
                         NavigationLink(value: library) {
                             HStack(spacing: 16) {
-                                RemoteImage(source: .library(library), maxHeight: 120, placeholder: "books.vertical")
-                                    .frame(width: 96, height: 54)
-                                    .clipShape(.rect(cornerRadius: 6))
+                                RemoteImage(
+                                    source: .library(library),
+                                    maxHeight: 120,
+                                    placeholder: "books.vertical"
+                                )
+                                .frame(width: 96, height: 54)
+                                .clipShape(.rect(cornerRadius: 6))
                                 Text(library.name)
                                     .font(.headline)
                             }

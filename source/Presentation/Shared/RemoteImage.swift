@@ -33,10 +33,16 @@ struct RemoteImage: View {
         }
         .clipped()
         .task(id: source) {
-            image = switch source {
-            case let .item(item, kind): await imageService.image(for: item, kind: kind, maxHeight: maxHeight)
-            case let .library(library): await imageService.image(for: library, maxHeight: maxHeight)
-            }
+            image = await loadImage()
+        }
+    }
+
+    private func loadImage() async -> UIImage? {
+        switch source {
+        case let .item(item, kind):
+            await imageService.image(for: item, kind: kind, maxHeight: maxHeight)
+        case let .library(library):
+            await imageService.image(for: library, maxHeight: maxHeight)
         }
     }
 }
@@ -49,14 +55,21 @@ struct RemoteImage: View {
     }
 
     #Preview("empty") {
-        RemoteImage(source: .library(MockMedia.libraries[1]), maxHeight: 300, placeholder: "books.vertical")
-            .frame(width: 200, height: 200)
-            .environment(\.imageService, MockImageService.make())
+        RemoteImage(
+            source: .library(MockMedia.libraries[1]),
+            maxHeight: 300,
+            placeholder: "books.vertical"
+        )
+        .frame(width: 200, height: 200)
+        .environment(\.imageService, MockImageService.make())
     }
 
     #Preview("failure") {
         RemoteImage(source: .item(MockMedia.albums[0], .primary), maxHeight: 300)
             .frame(width: 320, height: 180)
-            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+            .environment(
+                \.imageService,
+                MockImageService.make(sessionService: MockSessionService.signedOut())
+            )
     }
 #endif

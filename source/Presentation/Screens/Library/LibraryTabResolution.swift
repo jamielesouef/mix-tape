@@ -11,6 +11,7 @@ nonisolated enum LibraryTabResolution: Equatable {
 
     init(kind: LibraryKind, in libraries: [Library]) {
         let matching = libraries.filter { $0.kind == kind }
+
         switch matching.count {
         case 0: self = .none
         case 1: self = .one(matching[0])
