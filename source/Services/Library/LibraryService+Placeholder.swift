@@ -15,7 +15,7 @@ extension LibraryService {
                 fetchLibraryItems: FetchLibraryItemsUseCase(repository: repository),
                 fetchItemDetail: FetchItemDetailUseCase(repository: repository),
                 fetchAlbumTracks: FetchAlbumTracksUseCase(repository: repository),
-                sessionService: .placeholder,
+                sessionService: .placeholder
             )
         #endif
     }()
