@@ -51,17 +51,17 @@ struct ImageServiceTests {
         let networked = ImageService(builder: MockImageURLBuilder(), sessionService: MockSessionService.signedIn(), urlSession: StubImageURLProtocol.session)
         async let first = networked.image(at: url)
         async let second = networked.image(at: url)
-        await log.waitForCount(1) // both calls arrived before either fetch is allowed to finish
+        await log.waitForCount(1)
         gate.open()
         let (a, b) = await (first, second)
         #expect(a != nil)
-        #expect(a === b) // the second caller awaited the first's in-flight task, not a fetch of its own
+        #expect(a === b)
         #expect(log.entries.count == 1)
     }
 
     @Test func `AC23c a non-2xx response yields nil instead of decoding the body`() async throws {
         let url = try #require(URL(string: "https://\(UUID()).stub/missing.png"))
-        let imageData = Self.fixturePNGData() // valid image bytes: proves the nil comes from the status check, not a decode failure
+        let imageData = Self.fixturePNGData()
         StubImageURLProtocol.register(url) { (404, imageData) }
         let networked = ImageService(builder: MockImageURLBuilder(), sessionService: MockSessionService.signedIn(), urlSession: StubImageURLProtocol.session)
         let image = await networked.image(at: url)

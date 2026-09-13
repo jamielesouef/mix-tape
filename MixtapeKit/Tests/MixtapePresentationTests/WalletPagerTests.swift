@@ -9,8 +9,6 @@ import MixtapeDomain
 import MixtapeServices
 import Testing
 
-/// Page resolution over what `LibraryService` has loaded — the seam `WalletScreen` reads and the
-/// return-to-sleeve sequence resolves through. Five sample albums in the mock music library.
 @Suite(.tags(.presentation))
 @MainActor
 struct WalletPagerTests {

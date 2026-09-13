@@ -15,7 +15,7 @@ struct DurationTicksTests {
     }
 
     @Test func `sub second positions round trip`() {
-        let ticks: Int64 = 484_123_456 // 48.4123456 s
+        let ticks: Int64 = 484_123_456
         #expect(Duration(ticks: ticks).ticks == ticks)
         #expect(Duration.milliseconds(1500).ticks == 15_000_000)
     }

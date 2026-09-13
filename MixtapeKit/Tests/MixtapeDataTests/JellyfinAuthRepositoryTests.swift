@@ -21,7 +21,7 @@ struct JellyfinAuthRepositoryTests {
         )
     }
 
-    private let baseURL = URL(string: "http://localhost:8096")! // test constant
+    private let baseURL = URL(string: "http://localhost:8096")!
     private var server: ServerIdentity {
         ServerIdentity(id: "srv", name: "mixtape", version: "10.11.11", baseURL: baseURL)
     }

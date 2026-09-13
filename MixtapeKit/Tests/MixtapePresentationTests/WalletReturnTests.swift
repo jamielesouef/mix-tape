@@ -9,8 +9,6 @@ import MixtapeDomain
 import MixtapeServices
 import Testing
 
-/// What a wallet can do for a finished album (§9.1 "putting it back", slice 015): honour it on the
-/// page the album sits on, or page in further and leave the event unacknowledged.
 @Suite(.tags(.presentation))
 @MainActor
 struct WalletReturnTests {

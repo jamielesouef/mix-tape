@@ -6,7 +6,6 @@
 
 import Foundation
 
-/// Thread-safe call counter: `next()` returns 0, 1, 2, …
 final class Counter: @unchecked Sendable {
     private let lock = NSLock()
     private var value = 0

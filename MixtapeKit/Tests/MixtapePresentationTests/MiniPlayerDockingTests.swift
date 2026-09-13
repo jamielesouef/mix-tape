@@ -9,8 +9,6 @@ import MixtapeDomain
 import MixtapeServices
 import Testing
 
-/// When the docked mini player is on screen at all. The end of an album is the case that
-/// matters: the service is idle but still holds the album, and the dock must be gone.
 @Suite(.tags(.presentation))
 @MainActor
 struct MiniPlayerDockingTests {

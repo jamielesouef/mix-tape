@@ -8,7 +8,6 @@ import Foundation
 import MixtapeDomain
 import MixtapeInfrastructure
 
-/// Records calls and lets a test fire the player and remote callbacks.
 @MainActor
 final class StubAudioPlayerController: AudioPlayerControlling {
     var onPositionChange: ((Duration) -> Void)?
@@ -48,7 +47,6 @@ final class StubAudioPlayerController: AudioPlayerControlling {
         nextEnabledHistory.append(enabled)
     }
 
-    /// Simulate the current track finishing.
     func finishTrack() {
         onEnded?()
     }

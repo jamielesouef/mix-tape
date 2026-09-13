@@ -6,7 +6,6 @@
 
 import Foundation
 
-/// Thread-safe ordered log of report descriptions for the reporting-cadence tests.
 final class ReportLog: @unchecked Sendable {
     private let lock = NSLock()
     private var values: [String] = []
@@ -28,9 +27,6 @@ final class ReportLog: @unchecked Sendable {
         lock.withLock { values }
     }
 
-    /// Suspends until `entries.count` reaches `count`, resumed by `append` itself the moment the
-    /// production code's report actually lands — no polling window to lose (Triage 25, slice 021
-    /// decision log).
     func waitForCount(_ count: Int) async {
         let alreadyThere: Bool = lock.withLock { values.count >= count }
         if alreadyThere {

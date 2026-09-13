@@ -18,12 +18,12 @@ struct JellyfinLibraryRepositoryTests {
     }
 
     private let session = UserSession(
-        serverURL: URL(string: "http://localhost:8096")!, // test constant
+        serverURL: URL(string: "http://localhost:8096")!,
         userID: "user-1", userName: "jamie", accessToken: "tok-1", deviceID: "device-1",
     )
 
     private var query: [String: String] {
-        let items = URLComponents(url: stub.lastRequest!.url!, resolvingAgainstBaseURL: false)!.queryItems ?? [] // recorded by the stub
+        let items = URLComponents(url: stub.lastRequest!.url!, resolvingAgainstBaseURL: false)!.queryItems ?? []
         return Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
     }
 

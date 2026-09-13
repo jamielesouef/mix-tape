@@ -6,8 +6,6 @@
 
 import Foundation
 
-/// Routes each request to the `StubServer` whose id the session stamped into a header, so
-/// suites can run in parallel without sharing a handler.
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     static let headerName = "X-Stub-Server"
 

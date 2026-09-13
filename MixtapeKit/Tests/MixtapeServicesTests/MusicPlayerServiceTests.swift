@@ -15,7 +15,7 @@ import UIKit
 @MainActor
 struct MusicPlayerServiceTests {
     private let album = MockLibraryRepository.sampleAlbums[0]
-    private let tracks = MockLibraryRepository.sampleTracks // two tracks
+    private let tracks = MockLibraryRepository.sampleTracks
 
     private func makeService(reports: ReportLog = ReportLog(), controller: StubAudioPlayerController, clock: any Clock<Duration> = ContinuousClock(), artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil) -> MusicPlayerService {
         let repository = MockPlaybackRepository(
@@ -57,12 +57,11 @@ struct MusicPlayerServiceTests {
 
     @Test func `next past the final track stops rather than advancing`() async {
         let service = makeService(controller: StubAudioPlayerController())
-        await service.play(album: album, tracks: tracks, startingAt: 1) // last of two
+        await service.play(album: album, tracks: tracks, startingAt: 1)
         await service.next()
         #expect(service.status == .idle)
         #expect(service.finishedAlbumID == album.id)
         #expect(service.currentIndex == nil)
-        // The album and queue stay so the wallet can return to the sleeve.
         #expect(service.queue == tracks)
     }
 
@@ -70,11 +69,11 @@ struct MusicPlayerServiceTests {
         let controller = StubAudioPlayerController()
         let service = makeService(controller: controller)
         await service.play(album: album, tracks: tracks, startingAt: 0)
-        controller.finishTrack() // track 1 ends -> advance to track 2
+        controller.finishTrack()
         await settle()
         #expect(service.currentIndex == 1)
         #expect(service.finishedAlbumID == nil)
-        controller.finishTrack() // track 2 ends -> album finished
+        controller.finishTrack()
         await settle()
         #expect(service.finishedAlbumID == album.id)
         service.acknowledgeFinish()
@@ -86,10 +85,10 @@ struct MusicPlayerServiceTests {
         let service = makeService(controller: controller)
         await service.play(album: album, tracks: tracks, startingAt: 1)
         controller.onPositionChange?(.seconds(5))
-        await service.previous() // > 3 s -> restart, stays on track 2
+        await service.previous()
         #expect(service.currentIndex == 1)
         controller.onPositionChange?(.seconds(1))
-        await service.previous() // < 3 s -> step back to track 1
+        await service.previous()
         #expect(service.currentIndex == 0)
     }
 
@@ -97,10 +96,10 @@ struct MusicPlayerServiceTests {
         let controller = StubAudioPlayerController()
         let service = makeService(controller: controller)
         await service.play(album: album, tracks: tracks, startingAt: 0)
-        #expect(controller.nextEnabledHistory.last == true) // first of two
+        #expect(controller.nextEnabledHistory.last == true)
         controller.finishTrack()
         await settle()
-        #expect(controller.nextEnabledHistory.last == false) // last of two
+        #expect(controller.nextEnabledHistory.last == false)
     }
 
     // MARK: decision 34 reporting
@@ -110,9 +109,9 @@ struct MusicPlayerServiceTests {
         let controller = StubAudioPlayerController()
         let service = makeService(reports: reports, controller: controller)
         await service.play(album: album, tracks: tracks, startingAt: 0)
-        controller.finishTrack() // -> track 2
+        controller.finishTrack()
         await settle()
-        controller.finishTrack() // -> finished
+        controller.finishTrack()
         await settle()
         #expect(reports.entries == [
             "start \(tracks[0].id)",
@@ -120,14 +119,12 @@ struct MusicPlayerServiceTests {
             "start \(tracks[1].id)",
             "stopped \(tracks[1].id)",
         ])
-        // The queue is still exactly one album after a full play.
         #expect(service.queue == tracks)
     }
 
     @Test func `no report fires for a track that was never played`() async {
         let reports = ReportLog()
         let service = makeService(reports: reports, controller: StubAudioPlayerController())
-        // never called play
         #expect(reports.entries.isEmpty)
         await service.stop()
         #expect(reports.entries.isEmpty)
@@ -155,17 +152,17 @@ struct MusicPlayerServiceTests {
 
     @Test func `a finish is claimed once, only by its live album id, and a later finish can be claimed again`() async {
         let service = makeService(controller: StubAudioPlayerController())
-        #expect(service.claimFinish(albumID: album.id) == false) // nothing has finished
-        await service.play(album: album, tracks: tracks, startingAt: tracks.count - 1)
-        await service.next() // finished
-        #expect(service.claimFinish(albumID: "some-other-album") == false)
-        #expect(service.claimFinish(albumID: album.id) == true)
-        #expect(service.claimFinish(albumID: album.id) == false) // the second wallet
-        service.acknowledgeFinish()
-        #expect(service.claimFinish(albumID: album.id) == false) // no live finish any more
+        #expect(service.claimFinish(albumID: album.id) == false)
         await service.play(album: album, tracks: tracks, startingAt: tracks.count - 1)
         await service.next()
-        #expect(service.claimFinish(albumID: album.id) == true) // a fresh finish, a fresh claim
+        #expect(service.claimFinish(albumID: "some-other-album") == false)
+        #expect(service.claimFinish(albumID: album.id) == true)
+        #expect(service.claimFinish(albumID: album.id) == false)
+        service.acknowledgeFinish()
+        #expect(service.claimFinish(albumID: album.id) == false)
+        await service.play(album: album, tracks: tracks, startingAt: tracks.count - 1)
+        await service.next()
+        #expect(service.claimFinish(albumID: album.id) == true)
     }
 
     @Test func `next has somewhere to go before the final track and nowhere on it`() async {
@@ -176,7 +173,7 @@ struct MusicPlayerServiceTests {
         await service.next()
         #expect(service.currentIndex == tracks.count - 1)
         #expect(service.hasNextTrack == false)
-        await service.next() // ends the album rather than advancing (§1.1)
+        await service.next()
         #expect(service.hasNextTrack == false)
         #expect(service.queue == tracks)
     }
@@ -186,10 +183,10 @@ struct MusicPlayerServiceTests {
         let service = makeService(controller: controller)
         await service.play(album: album, tracks: tracks, startingAt: 0)
         let runtime = tracks[0].runtime ?? .zero
-        service.seek(to: runtime) // the scrubber dragged to its maximum (Triage 7 v2, slice 018)
+        service.seek(to: runtime)
         #expect(controller.seeks.last == runtime)
         #expect(service.position == runtime)
-        service.seek(to: .seconds(12)) // an ordinary seek is untouched
+        service.seek(to: .seconds(12))
         #expect(controller.seeks.last == .seconds(12))
         service.seek(to: .seconds(-5))
         #expect(controller.seeks.last == .zero)
@@ -219,8 +216,6 @@ struct MusicPlayerServiceTests {
         await service.play(album: album, tracks: tracks, startingAt: 0)
         #expect(service.status == .playing)
         sessionService.signOut()
-        // Synchronous, right after signOut() returns: the controller has already stopped and the
-        // service is idle, while the stopped report is still held behind the gate.
         #expect(service.status == .idle)
         #expect(service.album == nil)
         #expect(service.queue.isEmpty)
@@ -253,14 +248,12 @@ struct MusicPlayerServiceTests {
         await service.play(album: album, tracks: threeTracks, startingAt: 0)
         await service.next()
         await service.next()
-        // The local transition already sits on track 2, with every report for the trip still held
-        // behind the gate.
         #expect(service.current?.id == "t2")
         #expect(reports.entries.isEmpty)
         gate.open()
         await reports.waitForCount(5)
         #expect(reports.entries == ["start t0", "stopped t0", "start t1", "stopped t1", "start t2"])
-        #expect(service.current?.id == "t2") // never reverts to an earlier track once a later report drains
+        #expect(service.current?.id == "t2")
     }
 
     @Test func `AC21d next completes the local transition before its stopped report lands`() async {
@@ -284,8 +277,8 @@ struct MusicPlayerServiceTests {
         await service.next()
         #expect(service.currentIndex == 1)
         #expect(service.status == .playing)
-        #expect(controller.loadedURLs.count == 2) // track 0 then track 1, both loaded already
-        #expect(reports.entries.isEmpty) // track 0's stopped report is still behind the gate
+        #expect(controller.loadedURLs.count == 2)
+        #expect(reports.entries.isEmpty)
         gate.open()
         await reports.waitForCount(1)
         #expect(reports.entries == ["stopped \(tracks[0].id)"])
@@ -295,9 +288,9 @@ struct MusicPlayerServiceTests {
         let reports = ReportLog()
         let controller = StubAudioPlayerController()
         let service = makeService(reports: reports, controller: controller)
-        await service.play(album: album, tracks: tracks, startingAt: 0) // album Y
+        await service.play(album: album, tracks: tracks, startingAt: 0)
         let otherAlbum = MockLibraryRepository.sampleAlbums[1]
-        await service.play(album: otherAlbum, tracks: [Self.track("x0", index: 0)], startingAt: 0) // album X
+        await service.play(album: otherAlbum, tracks: [Self.track("x0", index: 0)], startingAt: 0)
         await reports.waitForCount(3)
         #expect(reports.entries == [
             "start \(tracks[0].id)",
@@ -317,12 +310,12 @@ struct MusicPlayerServiceTests {
         await service.play(album: album, tracks: tracks, startingAt: 0)
         let refreshesAtStart = controller.nowPlayingHistory.count
         #expect(controller.nowPlayingHistory.last?.artwork === cover)
-        await clock.tick() // 5 s
+        await clock.tick()
         #expect(await eventually { controller.nowPlayingHistory.count == refreshesAtStart + 1 })
-        #expect(controller.nowPlayingHistory.last?.artwork === cover) // retained across the refresh (slice 019)
-        #expect(await eventually { clock.sleeperCount == 1 }) // back asleep without a report
+        #expect(controller.nowPlayingHistory.last?.artwork === cover)
+        #expect(await eventually { clock.sleeperCount == 1 })
         #expect(reports.entries == ["start \(tracks[0].id)"])
-        await clock.tick() // 10 s
+        await clock.tick()
         #expect(await eventually { reports.entries.count == 2 })
         #expect(controller.nowPlayingHistory.count == refreshesAtStart + 2)
         #expect(reports.entries == ["start \(tracks[0].id)", "progress \(tracks[0].id) paused=false"])
@@ -338,8 +331,7 @@ struct MusicPlayerServiceTests {
         let clock = ManualClock()
         let service = makeService(controller: controller, clock: clock)
         await service.play(album: album, tracks: tracks, startingAt: 0)
-        controller.onPositionChange?(.seconds(5)) // arms the watchdog: position has advanced past zero
-        // One tick to arm, then `stallTickThreshold` more with no further advancement.
+        controller.onPositionChange?(.seconds(5))
         for _ in 0 ... MusicPlayerService.stallTickThreshold {
             await clock.tick()
         }
@@ -357,11 +349,10 @@ struct MusicPlayerServiceTests {
         let clock = ManualClock()
         let service = makeService(controller: controller, clock: clock)
         await service.play(album: album, tracks: tracks, startingAt: 0)
-        // Never call onPositionChange: position stays zero throughout, as it would during buffering.
         for _ in 0 ... MusicPlayerService.stallTickThreshold {
             await clock.tick()
         }
-        #expect(await eventually { clock.sleeperCount == 1 }) // still ticking, never armed
+        #expect(await eventually { clock.sleeperCount == 1 })
         #expect(service.status == .playing)
     }
 
@@ -371,10 +362,10 @@ struct MusicPlayerServiceTests {
         let threeTracks = [Self.track("n0", index: 0), Self.track("n1", index: 1), Self.track("n2", index: 2)]
         let service = makeService(reports: reports, controller: controller)
         await service.play(album: album, tracks: threeTracks, startingAt: 0)
-        controller.finishTrack() // fires onEnded for n0; its Task is queued but has not run yet
-        await service.next() // races ahead of that Task, landing on n1 before it gets a turn
-        await settle() // let the stale onEnded Task finally run
-        #expect(service.currentIndex == 1) // n1, not n2 — the stale task saw a superseded generation
+        controller.finishTrack()
+        await service.next()
+        await settle()
+        #expect(service.currentIndex == 1)
         await reports.waitForCount(3)
         #expect(reports.entries == ["start n0", "stopped n0", "start n1"])
     }
@@ -385,8 +376,6 @@ struct MusicPlayerServiceTests {
         }
     }
 
-    /// A standalone track for the slice 021 generation tests, which need more distinct tracks than
-    /// `MockLibraryRepository.sampleTracks` (two, both on `album-1`) provides.
     private static func track(_ id: String, index: Int) -> MediaItem {
         MediaItem(
             id: id, name: id, kind: .audio, overview: nil, productionYear: nil, runtime: .seconds(200),

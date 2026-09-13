@@ -6,8 +6,6 @@
 
 import Foundation
 
-/// A virtual clock: `sleep(until:)` advances `now` to the deadline and returns at once, so a
-/// 5-minute poll loop runs in microseconds and every sleep is recorded for assertion.
 final class StubClock: Clock, @unchecked Sendable {
     struct Instant: InstantProtocol {
         var offset: Duration

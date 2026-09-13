@@ -6,7 +6,6 @@
 
 import Foundation
 
-/// One fake server per test: owns a `URLSession` that answers through `StubURLProtocol`.
 final class StubServer: @unchecked Sendable {
     final class Registry: @unchecked Sendable {
         private let lock = NSLock()
@@ -45,7 +44,7 @@ final class StubServer: @unchecked Sendable {
     func respond(status: Int, body: Data = Data()) {
         lock.withLock {
             handler = { request in
-                let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)! // stub: URL and status are test constants
+                let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
                 return (response, body)
             }
         }
@@ -59,7 +58,6 @@ final class StubServer: @unchecked Sendable {
         lock.withLock { handler = { _ in throw URLError(code) } }
     }
 
-    /// Called from `startLoading`, while the body stream is still readable.
     func record(_ request: URLRequest) {
         let body = Self.readBody(of: request)
         lock.withLock {
@@ -73,7 +71,6 @@ final class StubServer: @unchecked Sendable {
         return try handler(request)
     }
 
-    /// The body as sent, captured when the request reached the stub.
     func lastBody() -> String? {
         lock.withLock { recordedBody }
     }

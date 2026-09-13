@@ -19,7 +19,6 @@ struct LibraryServiceTests {
         MockLibraryService.make(repository: repository, sessionService: sessionService)
     }
 
-    /// A repository whose items call returns `count` synthetic movies per page and records each request.
     private func pagingRepository(pageSizes: [Int], total: Int, recorder: Recorder) -> MockLibraryRepository {
         let calls = Counter()
         return MockLibraryRepository(itemsResult: { _, _, page, _ in
@@ -100,7 +99,7 @@ struct LibraryServiceTests {
         gate.close()
         let first = Task { await service.loadMore(libraryID: movies.id) }
         await Task.yield()
-        await service.loadMore(libraryID: movies.id) // returns at once: the first is still in flight
+        await service.loadMore(libraryID: movies.id)
         gate.open()
         await first.value
         #expect(recorder.urls == ["0", "60"])
@@ -132,9 +131,6 @@ struct LibraryServiceTests {
     @Test func `session expiry is handed to the session service`() async {
         let sessionService = MockSessionService.signedIn()
         let service = makeService(repository: MockLibraryRepository(librariesResult: { _ in throw MixtapeError.sessionExpired }), sessionService: sessionService)
-        // Slice 020: wired the way `AppContainer` wires it, so the epoch guard's skipped `.failed`
-        // write (decision log row 4) is observed as the `endSession()` reset it lands on, not as
-        // whatever `.failed(.sessionExpired)` used to look like pre-020.
         sessionService.onSessionEnded = { _ in service.endSession() }
         await service.loadHome()
         #expect(service.libraries == .idle)
@@ -208,18 +204,18 @@ struct LibraryServiceTests {
         sessionService.onSessionEnded = { _ in service.endSession() }
 
         await sessionService.signIn(userName: "jamie", password: "pw")
-        await service.loadLibrary(id: movies.id) // AC20a
+        await service.loadLibrary(id: movies.id)
         #expect(service.pages[movies.id]?.isLoaded == true)
 
         sessionService.signOut()
         #expect(service.pages.isEmpty)
         #expect(service.libraries == .idle)
 
-        await sessionService.validateServer(urlText: "localhost:8096") // signOut() cleared serverIdentity
-        await sessionService.signIn(userName: "riley", password: "pw") // AC20b
+        await sessionService.validateServer(urlText: "localhost:8096")
+        await sessionService.signIn(userName: "riley", password: "pw")
         await service.loadHome()
         #expect(calls.urls.filter { $0 == userB.userID }.count == 1)
-        #expect(service.libraries.isLoaded) // the epoch guard let B's write land, not "already loaded"
+        #expect(service.libraries.isLoaded)
     }
 
     @Test func `an externally triggered session end mid fetch never writes a stale page`() async {
@@ -235,8 +231,8 @@ struct LibraryServiceTests {
         let service = makeService(repository: repository, sessionService: sessionService)
         sessionService.onSessionEnded = { _ in service.endSession() }
         let load = Task { await service.loadLibrary(id: movies.id) }
-        #expect(await eventually { started.urls == ["started"] }) // proves the fetch is genuinely in flight
-        sessionService.signOut() // external to this fetch: not its own catch block
+        #expect(await eventually { started.urls == ["started"] })
+        sessionService.signOut()
         gate.open()
         await load.value
         #expect(service.pages[movies.id] == nil)
@@ -281,8 +277,8 @@ struct LibraryServiceTests {
         })
         let service = makeService(repository: repository)
         let load = Task { await service.loadLibrary(id: movies.id) }
-        #expect(await eventually { started.urls == ["started"] }) // proves the fetch is genuinely in flight
-        await service.refresh() // bumps the generation and clears pages before the stale write can land
+        #expect(await eventually { started.urls == ["started"] })
+        await service.refresh()
         gate.open()
         await load.value
         #expect(service.pages[movies.id] == nil)
@@ -300,7 +296,7 @@ struct LibraryServiceTests {
         let service = makeService(repository: repository)
         let first = Task { await service.loadTracks(albumID: "album-1") }
         await Task.yield()
-        await service.loadTracks(albumID: "album-1") // returns at once: the first is still in flight
+        await service.loadTracks(albumID: "album-1")
         gate.open()
         await first.value
         #expect(recorder.urls == ["album-1"])

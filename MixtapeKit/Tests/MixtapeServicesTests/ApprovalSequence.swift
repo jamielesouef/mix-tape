@@ -6,7 +6,6 @@
 
 import Foundation
 
-/// Hands out a scripted sequence of poll answers, repeating the last one.
 final class ApprovalSequence: @unchecked Sendable {
     private let lock = NSLock()
     private var values: [Bool]
