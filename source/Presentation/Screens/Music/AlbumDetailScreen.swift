@@ -19,15 +19,19 @@ struct AlbumDetailScreen: View {
         List {
             Section {
                 VStack(spacing: 16) {
-                    RemoteImage(source: .item(album, .primary), maxHeight: 600, placeholder: "music.note")
-                        .aspectRatio(1, contentMode: .fit)
-                        .frame(maxWidth: 320)
-                        .clipShape(.rect(cornerRadius: 12))
+                    RemoteImage(
+                        source: .item(album, .primary),
+                        maxHeight: 600,
+                        placeholder: "music.note"
+                    )
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: 320)
+                    .clipShape(.rect(cornerRadius: 12))
                     Text(album.name)
                         .font(.title.bold())
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier(AlbumDetailIdentifiers.titleLabel)
-                    Text([album.albumArtist, album.productionYear.map(String.init)].compactMap(\.self).joined(separator: " · "))
+                    Text(subtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button("Play", systemImage: "play.fill") { play(startingAt: 0) }
@@ -40,7 +44,9 @@ struct AlbumDetailScreen: View {
             }
             Section("Tracks") {
                 switch libraryService.tracks[album.id] {
-                case .none, .idle, .loading:
+                case .none,
+                     .idle,
+                     .loading:
                     ProgressView()
                         .frame(maxWidth: .infinity)
                 case let .failed(error):
@@ -72,9 +78,20 @@ struct AlbumDetailScreen: View {
         return []
     }
 
+    /// Artist and year, with the separator dropped when either one is missing.
+    private var subtitle: String {
+        [album.albumArtist, album.productionYear.map(String.init)]
+            .compactMap(\.self)
+            .joined(separator: " · ")
+    }
+
     private func play(startingAt index: Int) {
         let tracks = loadedTracks
-        guard tracks.isEmpty == false else { return }
+
+        guard tracks.isEmpty == false else {
+            return
+        }
+
         Task { await music.play(album: album, tracks: tracks, startingAt: index) }
     }
 }

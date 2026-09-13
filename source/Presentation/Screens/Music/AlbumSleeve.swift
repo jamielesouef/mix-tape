@@ -16,20 +16,27 @@ struct AlbumSleeve: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(.quaternary)
             if let album {
-                RemoteImage(source: .item(album, .primary), maxHeight: 450, placeholder: "music.note")
-                    .clipShape(.rect(cornerRadius: 8))
-                    .padding(6)
+                RemoteImage(
+                    source: .item(album, .primary),
+                    maxHeight: 450,
+                    placeholder: "music.note"
+                )
+                .clipShape(.rect(cornerRadius: 8))
+                .padding(6)
             }
             if reduceTransparency == false {
                 LinearGradient(
                     colors: [.white.opacity(0.45), .white.opacity(0.1), .clear],
                     startPoint: .topLeading,
-                    endPoint: UnitPoint(x: 0.6, y: 0.65),
+                    endPoint: UnitPoint(x: 0.6, y: 0.65)
                 )
                 .allowsHitTesting(false)
             }
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(isPulsing ? Color.accentColor : Color.primary.opacity(0.2), lineWidth: isPulsing ? 4 : 1)
+                .strokeBorder(
+                    isPulsing ? Color.accentColor : Color.primary.opacity(0.2),
+                    lineWidth: isPulsing ? 4 : 1
+                )
         }
         .aspectRatio(1, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 12))
@@ -52,6 +59,9 @@ struct AlbumSleeve: View {
     #Preview("failure") {
         AlbumSleeve(album: MockMedia.albums[1], isPulsing: true)
             .frame(width: 160)
-            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+            .environment(
+                \.imageService,
+                MockImageService.make(sessionService: MockSessionService.signedOut())
+            )
     }
 #endif

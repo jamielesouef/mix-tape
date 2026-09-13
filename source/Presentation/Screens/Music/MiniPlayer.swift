@@ -15,9 +15,13 @@ struct MiniPlayer: View {
             HStack(spacing: 12) {
                 Button { showNowPlaying = true } label: {
                     HStack(spacing: 12) {
-                        RemoteImage(source: .item(track, .primary), maxHeight: 120, placeholder: "music.note")
-                            .frame(width: 40, height: 40)
-                            .clipShape(.rect(cornerRadius: 6))
+                        RemoteImage(
+                            source: .item(track, .primary),
+                            maxHeight: 120,
+                            placeholder: "music.note"
+                        )
+                        .frame(width: 40, height: 40)
+                        .clipShape(.rect(cornerRadius: 6))
                         Text(track.displayTitle)
                             .font(.subheadline)
                             .lineLimit(1)
@@ -52,16 +56,25 @@ struct MiniPlayer: View {
 #if DEBUG
     #Preview("loaded") {
         @Previewable @State var showNowPlaying = false
-        MiniPlayer(showNowPlaying: $showNowPlaying).environment(\.musicPlayerService, MockMusicPlayerService.playing())
+        MiniPlayer(showNowPlaying: $showNowPlaying).environment(
+            \.musicPlayerService,
+            MockMusicPlayerService.playing()
+        )
     }
 
     #Preview("empty") {
         @Previewable @State var showNowPlaying = false
-        MiniPlayer(showNowPlaying: $showNowPlaying).environment(\.musicPlayerService, MockMusicPlayerService.idle())
+        MiniPlayer(showNowPlaying: $showNowPlaying).environment(
+            \.musicPlayerService,
+            MockMusicPlayerService.idle()
+        )
     }
 
     #Preview("failure") {
         @Previewable @State var showNowPlaying = false
-        MiniPlayer(showNowPlaying: $showNowPlaying).environment(\.musicPlayerService, MockMusicPlayerService.idle())
+        MiniPlayer(showNowPlaying: $showNowPlaying).environment(
+            \.musicPlayerService,
+            MockMusicPlayerService.idle()
+        )
     }
 #endif

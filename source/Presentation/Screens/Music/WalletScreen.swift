@@ -27,7 +27,12 @@ struct WalletScreen: View {
         VStack(spacing: 12) {
             TabView(selection: $pageIndex) {
                 ForEach(0 ..< pageCount, id: \.self) { page in
-                    WalletPage(albums: albums(onPage: page), columns: columns, pulsingAlbumID: pulsingAlbumID, namespace: sleeves) { pulledAlbum = $0 }
+                    WalletPage(
+                        albums: albums(onPage: page),
+                        columns: columns,
+                        pulsingAlbumID: pulsingAlbumID,
+                        namespace: sleeves
+                    ) { pulledAlbum = $0 }
                         .tag(page)
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier(WalletIdentifiers.page(page))
@@ -40,6 +45,7 @@ struct WalletScreen: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .accessibilityIdentifier(WalletIdentifiers.pager)
+
             switch phase {
             case .loading:
                 ProgressView()
@@ -125,12 +131,19 @@ struct WalletScreen: View {
     }
 
     private func returnToSleeve(albumID: String, animated: Bool) {
-        guard isVisible else { return }
+        guard isVisible else {
+            return
+        }
+
+        // The album's page has not loaded yet, so page it in and let the next change retry.
         guard case let .honour(page) = WalletReturn(finished: albumID, pager: pager) else {
             Task { await libraryService.loadMore(libraryID: library.id) }
             return
         }
-        guard music.claimFinish(albumID: albumID) else { return }
+        guard music.claimFinish(albumID: albumID) else {
+            return
+        }
+
         putBack(albumID: albumID, page: page, animated: animated)
     }
 
@@ -140,22 +153,40 @@ struct WalletScreen: View {
             Task { music.acknowledgeFinish() }
             return
         }
+
         withAnimation {
             pageIndex = page
         }
+
         Task {
-            try? await Task.sleep(for: .seconds(0.6))
-            withAnimation(.easeInOut(duration: 0.15)) {
+            try? await Task.sleep(for: .seconds(Self.pageTurnSettle))
+
+            withAnimation(Self.pulseAnimation) {
                 pulsingAlbumID = albumID
             }
-            try? await Task.sleep(for: .seconds(0.15 + 0.4))
-            withAnimation(.easeInOut(duration: 0.15)) {
+
+            try? await Task.sleep(for: .seconds(Self.pulseFade + Self.pulseHold))
+
+            withAnimation(Self.pulseAnimation) {
                 pulsingAlbumID = nil
             }
-            try? await Task.sleep(for: .seconds(0.15))
+
+            try? await Task.sleep(for: .seconds(Self.pulseFade))
+
             music.acknowledgeFinish()
         }
     }
+
+    // MARK: - Put-back timings
+
+    //
+    // The sleeve is slid back into the wallet, then its border pulses so the eye lands on
+    // where the album went. Each sleep waits out the animation that precedes it.
+
+    private static let pageTurnSettle = 0.6
+    private static let pulseFade = 0.15
+    private static let pulseHold = 0.4
+    private static let pulseAnimation = Animation.easeInOut(duration: pulseFade)
 }
 
 #if DEBUG

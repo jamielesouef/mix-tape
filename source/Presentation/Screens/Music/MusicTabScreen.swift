@@ -15,7 +15,8 @@ struct MusicTabScreen: View {
         NavigationStack {
             Group {
                 switch libraryService.libraries {
-                case .idle, .loading:
+                case .idle,
+                     .loading:
                     ProgressView()
                 case let .failed(error):
                     RetryView(error: error) { await libraryService.loadHome() }
@@ -23,8 +24,14 @@ struct MusicTabScreen: View {
                     if let music = libraries.first(where: { $0.kind == .music }) {
                         WalletScreen(library: music)
                     } else {
-                        ContentUnavailableView("No music library", systemImage: "music.note", description: Text("Add a music library to this Jellyfin user to see albums here."))
-                            .accessibilityIdentifier(MusicTabIdentifiers.emptyLabel)
+                        ContentUnavailableView(
+                            "No music library",
+                            systemImage: "music.note",
+                            description: Text(
+                                "Add a music library to this Jellyfin user to see albums here."
+                            )
+                        )
+                        .accessibilityIdentifier(MusicTabIdentifiers.emptyLabel)
                     }
                 }
             }
