@@ -6,7 +6,6 @@
 
 import Foundation
 
-/// A latch a mock can `await` on so a test can hold one call in flight while it makes another.
 final class Gate: @unchecked Sendable {
     private let lock = NSLock()
     private var isOpen = true

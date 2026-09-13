@@ -9,9 +9,6 @@ import MixtapeDomain
 import MixtapeInfrastructure
 import SwiftUI
 
-/// Records every call and lets a test fire the player callbacks. Behaves like a player about its
-/// transport: `play`, `pause` and `seek` announce the resulting `VideoTransportEvent`, as AVPlayer
-/// and VLC do, so the service is tested on the one path every pause and seek takes (slice 014).
 @MainActor
 final class StubVideoPlayerController: VideoPlayerControlling {
     var onPositionChange: ((Duration) -> Void)?

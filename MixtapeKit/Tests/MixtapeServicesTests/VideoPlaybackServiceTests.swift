@@ -11,8 +11,6 @@ import MixtapeInfrastructure
 import MixtapeUseCase
 import Testing
 
-/// Mints and records a distinct `StubVideoPlayerController` per `makeController` call, so a test
-/// can tell an operation's own controller apart from the one that replaced it.
 @MainActor
 private final class ControllerSpy {
     private(set) var instances: [StubVideoPlayerController] = []
@@ -202,24 +200,19 @@ struct VideoPlaybackServiceTests {
         let callsAfterB = controller.calls
         gate.open()
         await stale.value
-        #expect(controller.calls == callsAfterB) // A's late resolution installed nothing
+        #expect(controller.calls == callsAfterB)
         #expect(service.item == movieB)
         #expect(service.plan?.itemID == movieB.id)
         #expect(service.status == .playing)
     }
 
-    /// Reviewer finding on AC21a/AC21b/AC21h: those three gate `resolveVideo`, so the stale
-    /// operation always returns at the resolution guard (`VideoPlaybackService.swift:105`) and
-    /// never reaches installing a controller — the four callback guards at lines 113-128 are
-    /// exercised by nothing. This mints a distinct stub per `play()` call so A's controller is
-    /// actually installed and live, then fires its callbacks directly after B has replaced it.
     @Test func `AC21a a stale controller's already-installed callbacks after a newer play never touch the newer state`() async {
         let spy = ControllerSpy()
         let service = makeService { method in spy.make(for: method) }
-        await service.play(item: movie, startAt: .zero) // A installs its own controller and callbacks
+        await service.play(item: movie, startAt: .zero)
         let staleController = spy.instances[0]
         let movieB = MockLibraryRepository.sampleMovies[1]
-        await service.play(item: movieB, startAt: .seconds(3)) // B replaces A's generation
+        await service.play(item: movieB, startAt: .seconds(3))
         #expect(spy.instances.count == 2)
         #expect(service.item == movieB)
         #expect(service.position == .seconds(3))
@@ -255,8 +248,6 @@ struct VideoPlaybackServiceTests {
         let callsAfterSecond = controller.calls
         gate.open()
         await stale.value
-        // The item-ID-only guard this replaces would have let the first (stale) play's completion
-        // pass `self.item?.id == item.id` and overwrite the second's plan/controller.
         #expect(controller.calls == callsAfterSecond)
         #expect(service.status == .playing)
         #expect(service.position == .seconds(5))
@@ -285,12 +276,11 @@ struct VideoPlaybackServiceTests {
         await held.value
         #expect(service.status == .idle)
         #expect(service.item == nil)
-        #expect(controller.calls.isEmpty) // no controller ever installed by the stale completion
+        #expect(controller.calls.isEmpty)
     }
 
     // MARK: Reporting cadence (slice 008)
 
-    /// Awaits the detached report tasks a synchronous control method fires.
     private func settle() async {
         for _ in 0 ..< 20 {
             await Task.yield()
@@ -301,15 +291,15 @@ struct VideoPlaybackServiceTests {
         let reports = ReportLog()
         let repository = Self.loggingRepository(reports)
         let service = makeService(repository: repository) { _ in controller }
-        await service.play(item: movie, startAt: .zero) // start
+        await service.play(item: movie, startAt: .zero)
         await settle()
-        service.togglePlayPause() // pause -> progress paused
+        service.togglePlayPause()
         await settle()
-        service.togglePlayPause() // resume -> progress not paused
+        service.togglePlayPause()
         await settle()
-        service.seek(to: .seconds(5)) // seek -> progress
+        service.seek(to: .seconds(5))
         await settle()
-        await service.stop() // stopped
+        await service.stop()
         #expect(reports.entries == [
             "start pos=0 paused=false",
             "progress pos=0 paused=true",
@@ -319,17 +309,15 @@ struct VideoPlaybackServiceTests {
         ])
     }
 
-    /// Triage 25 (slice 021 AC21f): awaits the report landing directly via `ReportLog.waitForCount`,
-    /// resumed by `append` itself, instead of polling with `eventually` — no timing window to lose.
     @Test func `progress fires once per interval while playing`() async {
         let reports = ReportLog()
         let clock = ManualClock()
         let service = makeService(repository: Self.loggingRepository(reports), clock: clock) { _ in controller }
         await service.play(item: movie, startAt: .zero)
         #expect(reports.entries == ["start pos=0 paused=false"])
-        await clock.tick() // 10 s
+        await clock.tick()
         await reports.waitForCount(2)
-        await clock.tick() // 20 s
+        await clock.tick()
         await reports.waitForCount(3)
         await service.stop()
         #expect(reports.entries == [
@@ -347,11 +335,11 @@ struct VideoPlaybackServiceTests {
         let service = makeService(repository: Self.loggingRepository(reports)) { _ in controller }
         await service.play(item: movie, startAt: .zero)
         controller.onPositionChange?(.seconds(4))
-        controller.onTransportEvent?(.paused) // AVKit's pause button, or the VLC overlay's
+        controller.onTransportEvent?(.paused)
         await settle()
         #expect(service.status == .paused)
         #expect(reports.entries == ["start pos=0 paused=false", "progress pos=4 paused=true"])
-        controller.onTransportEvent?(.paused) // the player announcing a state it is already in
+        controller.onTransportEvent?(.paused)
         await settle()
         #expect(reports.entries.count == 2)
     }
@@ -363,14 +351,14 @@ struct VideoPlaybackServiceTests {
         await service.play(item: movie, startAt: .zero)
         controller.onTransportEvent?(.paused)
         #expect(await eventually { reports.entries.count == 2 })
-        await clock.tick() // 10 s into the pause
-        await clock.tick() // 20 s
-        #expect(await eventually { clock.sleeperCount == 1 }) // the loop is back asleep, having sent nothing
+        await clock.tick()
+        await clock.tick()
+        #expect(await eventually { clock.sleeperCount == 1 })
         #expect(reports.entries == ["start pos=0 paused=false", "progress pos=0 paused=true"])
         controller.onTransportEvent?(.resumed)
         #expect(await eventually { reports.entries.count == 3 })
         #expect(service.status == .playing)
-        await clock.tick() // the heartbeat is back
+        await clock.tick()
         #expect(await eventually { reports.entries.count == 4 })
         await service.stop()
         #expect(reports.entries == [
@@ -386,7 +374,7 @@ struct VideoPlaybackServiceTests {
         let reports = ReportLog()
         let service = makeService(repository: Self.loggingRepository(reports)) { _ in controller }
         await service.play(item: movie, startAt: .zero)
-        controller.onTransportEvent?(.seeked(.seconds(7))) // the system scrubber
+        controller.onTransportEvent?(.seeked(.seconds(7)))
         await settle()
         #expect(service.position == .seconds(7))
         controller.onTransportEvent?(.paused)
@@ -417,9 +405,9 @@ struct VideoPlaybackServiceTests {
     }
 
     @Test(arguments: [
-        (Duration.seconds(43.5), false), // 89.9% of 48.4 s
-        (Duration.seconds(43.56), true), // 90.0%
-        (Duration.seconds(43.6), true), // 90.1%
+        (Duration.seconds(43.5), false),
+        (Duration.seconds(43.56), true),
+        (Duration.seconds(43.6), true),
     ])
     func `watched at stop reports the full duration at or past ninety percent`(position: Duration, watched: Bool) async {
         let reports = ReportLog()
@@ -437,7 +425,6 @@ struct VideoPlaybackServiceTests {
         controller.onPositionChange?(position)
         #expect(service.reachesWatchedThreshold == watched)
         await service.stop()
-        // Watched -> reports the full 48 s so Jellyfin marks it played; not watched -> the resume point.
         let expected = watched ? "stopped pos=48" : "stopped pos=\(position.components.seconds)"
         #expect(reports.entries.contains(expected))
     }

@@ -13,7 +13,7 @@ import Testing
 @Suite(.tags(.repository))
 struct JellyfinAudioStreamTests {
     private let session = UserSession(
-        serverURL: URL(string: "http://localhost:8096")!, // test constant
+        serverURL: URL(string: "http://localhost:8096")!,
         userID: "user-1", userName: "jamie", accessToken: "tok-1", deviceID: "device-1",
     )
 
@@ -41,7 +41,6 @@ struct JellyfinAudioStreamTests {
         #expect(query["transcodingProtocol"] == "hls")
         #expect(query["audioCodec"] == "aac")
         #expect(query["ApiKey"] == "tok-1")
-        // decision 43: no bitrate cap parameter at all.
         #expect(query["maxStreamingBitrate"] == nil)
         #expect(stream.playMethod == .directPlay)
     }
@@ -50,11 +49,6 @@ struct JellyfinAudioStreamTests {
         #expect(repository().audioStream(track: track(id: "t2", container: "opus"), session: session, playSessionID: "psid-2").playMethod == .transcode)
     }
 
-    /// AC23g's URL-shape half (Triage 24, `SPEC-DECISIONS.md` 51): the non-native-container
-    /// fallback requests `main.m3u8` directly, not `universal`, with `segmentContainer` (the field
-    /// `GetVariantHlsAudioPlaylist` actually declares) rather than `transcodingContainer`, and
-    /// carries the caller's `playSessionID` through as `playSessionId` so the server's own
-    /// transcode-session correlation on stop matches what `MusicPlayerService` already reports.
     @Test func `the non-native fallback requests main m3u8 directly with the caller's play session id`() throws {
         let stream = repository().audioStream(track: track(id: "t3", container: "opus"), session: session, playSessionID: "psid-3")
         let components = try #require(URLComponents(url: stream.url, resolvingAgainstBaseURL: false))
@@ -67,7 +61,6 @@ struct JellyfinAudioStreamTests {
         #expect(query["segmentContainer"] == "ts")
         #expect(query["ApiKey"] == "tok-1")
         #expect(query["transcodingContainer"] == nil)
-        // SPEC-DECISIONS 51: GetVariantHlsAudioPlaylist declares none of these three.
         #expect(query["userId"] == nil)
         #expect(query["container"] == nil)
         #expect(query["transcodingProtocol"] == nil)

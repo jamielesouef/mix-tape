@@ -7,7 +7,6 @@
 import MixtapeInfrastructure
 import Testing
 
-/// Lives here per fork F1: Infrastructure has no test target of its own.
 @Suite(.tags(.repository))
 struct RedactingURLsTests {
     @Test func `every URL in a libVLC message is replaced and the rest survives`() {

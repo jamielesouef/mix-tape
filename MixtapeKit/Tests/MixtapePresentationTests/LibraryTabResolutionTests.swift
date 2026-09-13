@@ -9,12 +9,10 @@ import MixtapeDomain
 import MixtapeServices
 import Testing
 
-/// What a tvOS kind tab hosts (§1.5, slice 016): the one library of its kind, a list of several, or
-/// the empty state — and never a library of another kind.
 @Suite(.tags(.presentation))
 @MainActor
 struct LibraryTabResolutionTests {
-    private let one = MockMedia.libraries // Movies, Shows, Music, Books (unsupported)
+    private let one = MockMedia.libraries
     private let secondMusic = Library(id: "lib-music-2", name: "Music 2", kind: .music, imageTag: nil)
 
     @Test func `a single library of the kind is hosted directly, as 011 shipped it`() {

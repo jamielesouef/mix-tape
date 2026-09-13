@@ -6,8 +6,6 @@
 
 import Foundation
 
-/// A clock whose `sleep(for:)` suspends until the test releases it with `tick()`. Lets a test drive
-/// the progress timer one interval at a time instead of racing a real or free-running clock.
 final class ManualClock: Clock, @unchecked Sendable {
     struct Instant: InstantProtocol {
         var offset: Duration
@@ -46,10 +44,6 @@ final class ManualClock: Clock, @unchecked Sendable {
         }
     }
 
-    /// Releases one suspended sleeper, or waits (yielding) until one exists then releases it. The
-    /// wait is bounded by wall-clock time, not a yield count: a fixed 1000 yields dropped a tick
-    /// whenever the loop under test was mid-`await` on a report while the suite ran under load
-    /// (slice 023's gate, the same class as Triage 25), and a dropped tick fails silently.
     func tick() async {
         let deadline = ContinuousClock.now + .seconds(2)
         while ContinuousClock.now < deadline {

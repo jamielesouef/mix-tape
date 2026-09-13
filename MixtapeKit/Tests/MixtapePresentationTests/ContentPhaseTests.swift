@@ -8,7 +8,6 @@ import MixtapeDomain
 @testable import MixtapePresentation
 import Testing
 
-/// The `LoadState` → view-state mapping the screens switch on.
 @Suite(.tags(.presentation))
 struct ContentPhaseTests {
     @Test(arguments: [

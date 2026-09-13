@@ -9,7 +9,6 @@ import Testing
 
 @Suite(.tags(.domain))
 struct WalletPositionTests {
-    /// Five albums: one full 2×2 page and a partial second page holding the last album alone.
     private let albums = ["a", "b", "c", "d", "e"]
 
     @Test(arguments: [
@@ -38,7 +37,7 @@ struct WalletPositionTests {
     }
 
     @Test(arguments: [
-        (0, 2, 1), // an empty wallet still shows one page of empty sleeves
+        (0, 2, 1),
         (4, 2, 1),
         (5, 2, 2),
         (9, 3, 1),

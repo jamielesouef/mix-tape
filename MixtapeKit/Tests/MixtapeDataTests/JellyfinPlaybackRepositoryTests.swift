@@ -18,7 +18,7 @@ struct JellyfinPlaybackRepositoryTests {
     }
 
     private let session = UserSession(
-        serverURL: URL(string: "http://localhost:8096")!, // test constant
+        serverURL: URL(string: "http://localhost:8096")!,
         userID: "user-1", userName: "jamie", accessToken: "tok-1", deviceID: "device-1",
     )
 

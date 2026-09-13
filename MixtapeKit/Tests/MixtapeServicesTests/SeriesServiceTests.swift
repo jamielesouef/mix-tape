@@ -53,8 +53,8 @@ struct SeriesServiceTests {
         })
         let service = MockSeriesService.make(repository: repository)
         let load = Task { await service.loadSeasons(seriesID: "series-1") }
-        #expect(await eventually { started.urls == ["series-1"] }) // proves the fetch is genuinely in flight
-        service.refresh() // bumps the generation and clears seasons before the stale write can land
+        #expect(await eventually { started.urls == ["series-1"] })
+        service.refresh()
         gate.open()
         await load.value
         #expect(service.seasons["series-1"] == nil)
@@ -72,7 +72,7 @@ struct SeriesServiceTests {
         let service = MockSeriesService.make(repository: repository)
         let first = Task { await service.loadSeasons(seriesID: "series-1") }
         await Task.yield()
-        await service.loadSeasons(seriesID: "series-1") // returns at once: the first is still in flight
+        await service.loadSeasons(seriesID: "series-1")
         gate.open()
         await first.value
         #expect(recorder.urls == ["series-1"])
@@ -90,7 +90,7 @@ struct SeriesServiceTests {
         let service = MockSeriesService.make(repository: repository)
         let first = Task { await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1") }
         await Task.yield()
-        await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1") // returns at once: in flight
+        await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1")
         gate.open()
         await first.value
         #expect(recorder.urls == ["series-1/season-1"])
@@ -103,13 +103,11 @@ struct SeriesServiceTests {
             episodesResult: { _, _, _ in throw MixtapeError.sessionExpired },
         )
         let service = MockSeriesService.make(repository: repository, sessionService: sessionService)
-        // Slice 020: wired the way `AppContainer` wires it, so expiry's `.failed` write (unreachable
-        // by the epoch guard per decision log row 4) is observed as the `endSession()` reset instead.
         sessionService.onSessionEnded = { _ in service.endSession() }
         await service.loadSeasons(seriesID: "series-1")
         #expect(service.seasons["series-1"] == .failed(.serverUnreachable))
         await service.loadEpisodes(seriesID: "series-1", seasonID: "season-1")
-        #expect(service.episodes["season-1"] == nil) // endSession() cleared it; the stale write never lands
+        #expect(service.episodes["season-1"] == nil)
         #expect(sessionService.state == .signedOut)
     }
 }

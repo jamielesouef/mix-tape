@@ -9,7 +9,6 @@ import Testing
 
 @Suite(.tags(.domain))
 struct IsAVPlayerNativeTests {
-    /// Engineering doc §8 fixture table plus decision 39's two nil-audio rows.
     @Test(arguments: [
         ("mp4", "h264", "aac", true),
         ("mkv", "h264", "aac", false),

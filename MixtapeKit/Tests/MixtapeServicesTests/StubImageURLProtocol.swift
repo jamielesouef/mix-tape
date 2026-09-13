@@ -6,10 +6,6 @@
 
 import Foundation
 
-/// Routes each request by its full URL to a per-test handler, so `ImageService` tests get a stub
-/// `URLSession` without a live network. Mirrors `StubURLProtocol`/`StubServer` in `MixtapeDataTests`,
-/// duplicated here rather than shared because `MixtapeServicesTests` has no dependency on that test
-/// target (`Package.swift`'s `testTarget` dependency lists are disjoint).
 final class StubImageURLProtocol: URLProtocol, @unchecked Sendable {
     typealias Handler = @Sendable () async -> (statusCode: Int, data: Data)
 

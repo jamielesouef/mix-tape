@@ -147,7 +147,7 @@ struct SessionServiceTests {
         await service.startQuickConnect()
         await service.pollTask?.value
         #expect(service.quickConnect == .failed(.quickConnectExpired))
-        #expect(service.state == .loading) // untouched: expiry never changes the session state
+        #expect(service.state == .loading)
         #expect(clock.sleeps.count == 60)
         #expect(clock.now.offset == .seconds(300))
     }

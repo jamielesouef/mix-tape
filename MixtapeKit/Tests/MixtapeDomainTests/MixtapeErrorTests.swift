@@ -9,7 +9,6 @@ import Testing
 
 @Suite(.tags(.domain))
 struct MixtapeErrorTests {
-    /// The exhaustive switch is the test: a missing or extra case fails to compile (decision 9 — no `.forbidden`).
     @Test(arguments: [
         MixtapeError.serverUnreachable, .notAJellyfinServer, .invalidCredentials, .quickConnectUnavailable,
         .quickConnectExpired, .sessionExpired, .noPlayableSource, .transport("x"), .decoding,

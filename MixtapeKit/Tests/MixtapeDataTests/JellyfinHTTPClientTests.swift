@@ -16,7 +16,7 @@ struct JellyfinHTTPClientTests {
         JellyfinHTTPClient(session: stub.session, deviceName: "Test iPhone")
     }
 
-    private let base = URL(string: "http://localhost:8096")! // test constant
+    private let base = URL(string: "http://localhost:8096")!
     private var signedIn: AuthContext {
         AuthContext(baseURL: base, deviceID: "device-1", appVersion: "1.0", token: "tok")
     }
@@ -124,7 +124,7 @@ struct JellyfinHTTPClientTests {
     }
 
     @Test func `post encodes the body as JSON`() async throws {
-        struct Body: Encodable { let Username: String } // PascalCase key by name, as a DTO's CodingKeys would
+        struct Body: Encodable { let Username: String }
         stub.respond(status: 200, body: Data(#"{"ServerName":"m","Version":"v"}"#.utf8))
         _ = try await client.post("/Users/AuthenticateByName", body: Body(Username: "jamie"), auth: signedOut) as PascalCaseFixture
         #expect(stub.lastRequest?.value(forHTTPHeaderField: "Content-Type") == "application/json")
