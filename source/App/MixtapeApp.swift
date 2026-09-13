@@ -12,7 +12,7 @@ struct MixtapeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootScreen()
+            HomeScreen()
                 .environment(\.sessionService, container.sessionService)
                 .environment(\.libraryService, container.libraryService)
                 .environment(\.imageService, container.imageService)
