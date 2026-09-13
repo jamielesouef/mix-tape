@@ -20,10 +20,18 @@
 
         public var body: some View {
             ZStack(alignment: .bottomLeading) {
-                RemoteImage(source: .item(current, current.backdropImageTag == nil ? .primary : .backdrop), maxHeight: 1080, placeholder: "film")
-                    .ignoresSafeArea()
-                LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .center, endPoint: .bottom)
-                    .ignoresSafeArea()
+                RemoteImage(
+                    source: .item(current, current.backdropImageTag == nil ? .primary : .backdrop),
+                    maxHeight: 1080,
+                    placeholder: "film"
+                )
+                .ignoresSafeArea()
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.85)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 20) {
                     Text(current.displayTitle)
                         .font(.largeTitle.bold())
@@ -42,8 +50,10 @@
                         Button("Play", systemImage: "play.fill") { play(from: .zero) }
                             .accessibilityIdentifier(MovieDetailIdentifiers.playButton)
                         if current.playback.hasResumePoint {
-                            Button("Resume", systemImage: "playpause.fill") { play(from: current.playback.position) }
-                                .accessibilityIdentifier(MovieDetailIdentifiers.resumeButton)
+                            Button("Resume", systemImage: "playpause.fill") {
+                                play(from: current.playback.position)
+                            }
+                            .accessibilityIdentifier(MovieDetailIdentifiers.resumeButton)
                         }
                     }
                     if let fraction = current.progressFraction {
@@ -75,7 +85,7 @@
                             await libraryService.loadDetail(id: item.id)
                         }
                     }
-                },
+                }
             )
         }
 

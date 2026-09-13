@@ -16,9 +16,13 @@
             List(libraries) { library in
                 NavigationLink(value: library) {
                     HStack(spacing: 24) {
-                        RemoteImage(source: .library(library), maxHeight: 180, placeholder: "books.vertical")
-                            .frame(width: 192, height: 108)
-                            .clipShape(.rect(cornerRadius: 12))
+                        RemoteImage(
+                            source: .library(library),
+                            maxHeight: 180,
+                            placeholder: "books.vertical"
+                        )
+                        .frame(width: 192, height: 108)
+                        .clipShape(.rect(cornerRadius: 12))
                         Text(library.name)
                             .font(.headline)
                     }
@@ -34,7 +38,7 @@
             NavigationStack {
                 LibraryKindListScreen(libraries: [
                     MockMedia.libraries[2],
-                    Library(id: "lib-music-2", name: "Music 2", kind: .music, imageTag: nil),
+                    Library(id: "lib-music-2", name: "Music 2", kind: .music, imageTag: nil)
                 ])
             }
             .environment(\.imageService, MockImageService.make())
@@ -50,7 +54,10 @@
             NavigationStack {
                 LibraryKindListScreen(libraries: [MockMedia.libraries[2]])
             }
-            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+            .environment(
+                \.imageService,
+                MockImageService.make(sessionService: MockSessionService.signedOut())
+            )
         }
     #endif
 #endif

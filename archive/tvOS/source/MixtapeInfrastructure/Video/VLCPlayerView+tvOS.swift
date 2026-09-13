@@ -50,7 +50,8 @@
                 switch direction {
                 case .left: controller.step(by: -10)
                 case .right: controller.step(by: 10)
-                case .up, .down: break
+                case .up,
+                     .down: break
                 @unknown default: break
                 }
             }

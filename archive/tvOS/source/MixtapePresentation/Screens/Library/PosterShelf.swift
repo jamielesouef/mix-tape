@@ -20,7 +20,13 @@
                     Text(title)
                         .font(.title.bold())
                         .accessibilityIdentifier(PosterShelfIdentifiers.titleLabel)
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 40, alignment: .top), count: 5), spacing: 48) {
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.flexible(), spacing: 40, alignment: .top),
+                            count: 5
+                        ),
+                        spacing: 48
+                    ) {
                         ForEach(items) { item in
                             NavigationLink(value: item) {
                                 PosterCard(item: item)
@@ -60,7 +66,10 @@
             NavigationStack {
                 PosterShelf(title: "Shows", items: [MockMedia.series]) {}
             }
-            .environment(\.imageService, MockImageService.make(sessionService: MockSessionService.signedOut()))
+            .environment(
+                \.imageService,
+                MockImageService.make(sessionService: MockSessionService.signedOut())
+            )
         }
     #endif
 #endif

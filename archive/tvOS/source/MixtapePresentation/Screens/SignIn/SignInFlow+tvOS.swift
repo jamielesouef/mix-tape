@@ -25,7 +25,7 @@
                     onUsePassword: {
                         sessionService.cancelQuickConnect()
                         usingPassword = true
-                    },
+                    }
                 )
             }
         }
@@ -41,7 +41,10 @@
         }
 
         #Preview("failure") {
-            SignInFlow().environment(\.sessionService, MockSessionService.failed(.serverUnreachable))
+            SignInFlow().environment(
+                \.sessionService,
+                MockSessionService.failed(.serverUnreachable)
+            )
         }
     #endif
 #endif

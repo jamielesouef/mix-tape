@@ -20,7 +20,9 @@
         public var body: some View {
             Group {
                 switch libraryService.pages[library.id] {
-                case .none, .idle, .loading:
+                case .none,
+                     .idle,
+                     .loading:
                     ProgressView()
                 case let .failed(error):
                     RetryView(error: error) { await libraryService.loadLibrary(id: library.id) }
@@ -31,7 +33,13 @@
                         VStack(alignment: .leading, spacing: 32) {
                             Text(library.name)
                                 .font(.title.bold())
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 40, alignment: .top), count: 6), spacing: 48) {
+                            LazyVGrid(
+                                columns: Array(
+                                    repeating: GridItem(.flexible(), spacing: 40, alignment: .top),
+                                    count: 6
+                                ),
+                                spacing: 48
+                            ) {
                                 ForEach(page.items) { album in
                                     NavigationLink(value: album) {
                                         PosterCard(item: album, aspectRatio: 1)

@@ -23,7 +23,8 @@
             NavigationStack {
                 Group {
                     switch libraryService.libraries {
-                    case .idle, .loading:
+                    case .idle,
+                         .loading:
                         ProgressView()
                     case let .failed(error):
                         RetryView(error: error) { await libraryService.loadHome() }
@@ -34,8 +35,14 @@
                         case let .several(libraries):
                             LibraryKindListScreen(libraries: libraries)
                         case .none:
-                            ContentUnavailableView("No \(name) library", systemImage: symbol, description: Text("Add a \(name) library to this Jellyfin user to see it here."))
-                                .accessibilityIdentifier(LibraryTabIdentifiers.emptyLabel(name))
+                            ContentUnavailableView(
+                                "No \(name) library",
+                                systemImage: symbol,
+                                description: Text(
+                                    "Add a \(name) library to this Jellyfin user to see it here."
+                                )
+                            )
+                            .accessibilityIdentifier(LibraryTabIdentifiers.emptyLabel(name))
                         }
                     }
                 }
@@ -93,7 +100,10 @@
 
     #if DEBUG
         #Preview("loaded") {
-            LibraryTabScreen(kind: .movies).environment(\.libraryService, MockLibraryService.loaded())
+            LibraryTabScreen(kind: .movies).environment(
+                \.libraryService,
+                MockLibraryService.loaded()
+            )
         }
 
         #Preview("empty") {
@@ -101,7 +111,10 @@
         }
 
         #Preview("failure") {
-            LibraryTabScreen(kind: .tvShows).environment(\.libraryService, MockLibraryService.failed())
+            LibraryTabScreen(kind: .tvShows).environment(
+                \.libraryService,
+                MockLibraryService.failed()
+            )
         }
     #endif
 #endif

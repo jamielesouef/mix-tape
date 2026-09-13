@@ -20,14 +20,18 @@
         public var body: some View {
             Group {
                 switch libraryService.pages[library.id] {
-                case .none, .idle, .loading:
+                case .none,
+                     .idle,
+                     .loading:
                     ProgressView()
                 case let .failed(error):
                     RetryView(error: error) { await libraryService.loadLibrary(id: library.id) }
                 case let .loaded(page) where page.items.isEmpty:
                     ContentUnavailableView("No movies", systemImage: "film")
                 case let .loaded(page):
-                    PosterShelf(title: library.name, items: page.items) { await libraryService.loadMore(libraryID: library.id) }
+                    PosterShelf(title: library.name, items: page.items) {
+                        await libraryService.loadMore(libraryID: library.id)
+                    }
                 }
             }
             .task { await libraryService.loadLibrary(id: library.id) }
