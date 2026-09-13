@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct AlbumDetailScreen: View {
+    // MARK: - Properties
+
     @Environment(\.libraryService) private var libraryService: LibraryService
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     let album: MediaItem
@@ -14,6 +16,8 @@ struct AlbumDetailScreen: View {
     init(album: MediaItem) {
         self.album = album
     }
+
+    // MARK: - Body
 
     var body: some View {
         List {
@@ -71,6 +75,8 @@ struct AlbumDetailScreen: View {
         .task { await libraryService.loadTracks(albumID: album.id) }
     }
 
+    // MARK: - Private
+
     private var loadedTracks: [MediaItem] {
         if case let .loaded(tracks) = libraryService.tracks[album.id] {
             return tracks
@@ -95,6 +101,8 @@ struct AlbumDetailScreen: View {
         Task { await music.play(album: album, tracks: tracks, startingAt: index) }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

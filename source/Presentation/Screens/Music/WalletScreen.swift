@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct WalletScreen: View {
+    // MARK: - Properties
+
     @Environment(\.libraryService) private var libraryService: LibraryService
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @Environment(\.horizontalSizeClass) private var sizeClass: UserInterfaceSizeClass?
@@ -19,9 +21,13 @@ struct WalletScreen: View {
     @State private var isVisible = false
     let library: Library
 
+    // MARK: - Initialization
+
     init(library: Library) {
         self.library = library
     }
+
+    // MARK: - Body
 
     var body: some View {
         VStack(spacing: 12) {
@@ -103,6 +109,8 @@ struct WalletScreen: View {
             returnToSleeveIfFinished(animated: scenePhase == .active)
         }
     }
+
+    // MARK: - Private
 
     private var columns: Int {
         sizeClass == .regular ? 3 : 2
@@ -188,6 +196,8 @@ struct WalletScreen: View {
     private static let pulseHold = 0.4
     private static let pulseAnimation = Animation.easeInOut(duration: pulseFade)
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded — full and partial pages") {

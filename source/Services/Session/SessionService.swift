@@ -16,6 +16,8 @@ final class SessionService {
         case signedIn(UserSession)
     }
 
+    // MARK: - Properties
+
     private(set) var state: State
     private(set) var serverIdentity: ServerIdentity?
     private(set) var error: MixtapeError?
@@ -35,6 +37,8 @@ final class SessionService {
 
     @ObservationIgnored var pollTask: Task<Void, Never>?
     @ObservationIgnored var onSessionEnded: ((UserSession) -> Void)?
+
+    // MARK: - Initialization
 
     init(
         validateServer: ValidateServerUseCase,
@@ -65,6 +69,8 @@ final class SessionService {
     deinit {
         pollTask?.cancel()
     }
+
+    // MARK: - Public API
 
     func restore() async {
         do {
@@ -187,6 +193,8 @@ final class SessionService {
             onSessionEnded?(endedSession)
         }
     }
+
+    // MARK: - Private
 
     private func poll(secret: String, server: ServerIdentity) async {
         var elapsed: Duration = .zero

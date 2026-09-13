@@ -68,6 +68,8 @@ nonisolated enum LibraryMapper {
         )
     }
 
+    // MARK: - Private
+
     private static func kind(_ type: String?) -> MediaKind? {
         switch type {
         case "MusicAlbum": .musicAlbum

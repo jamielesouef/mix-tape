@@ -32,6 +32,8 @@ nonisolated struct ValidateServerUseCase: Sendable {
         }
     }
 
+    // MARK: - Private
+
     private func identity(at text: String) async throws -> ServerIdentity {
         guard let url = URL(string: text), url.host() != nil else {
             throw MixtapeError.serverUnreachable

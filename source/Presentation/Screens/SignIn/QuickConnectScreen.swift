@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct QuickConnectScreen: View {
+    // MARK: - Properties
+
     @Environment(\.sessionService) private var sessionService: SessionService
     let onCancel: () -> Void
     let onUsePassword: (() -> Void)?
@@ -15,6 +17,8 @@ struct QuickConnectScreen: View {
         self.onCancel = onCancel
         self.onUsePassword = onUsePassword
     }
+
+    // MARK: - Body
 
     var body: some View {
         VStack(spacing: 24) {
@@ -56,6 +60,8 @@ struct QuickConnectScreen: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("waiting") {

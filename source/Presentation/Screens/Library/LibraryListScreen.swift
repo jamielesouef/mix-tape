@@ -7,9 +7,13 @@
 import SwiftUI
 
 struct LibraryListScreen: View {
+    // MARK: - Properties
+
     @Environment(\.libraryService) private var libraryService: LibraryService
 
     init() {}
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -61,6 +65,8 @@ struct LibraryListScreen: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

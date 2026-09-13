@@ -72,6 +72,8 @@
             )
         }
 
+        // MARK: - Private
+
         private static func page(_ items: [MediaItem]) -> Page<MediaItem> {
             Page(items: items, totalCount: items.count, startIndex: 0)
         }

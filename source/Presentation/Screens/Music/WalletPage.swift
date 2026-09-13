@@ -7,11 +7,15 @@
 import SwiftUI
 
 struct WalletPage: View {
+    // MARK: - Properties
+
     let albums: [MediaItem]
     let columns: Int
     let pulsingAlbumID: String?
     let namespace: Namespace.ID
     let select: (MediaItem) -> Void
+
+    // MARK: - Body
 
     var body: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 16) {
@@ -39,6 +43,8 @@ struct WalletPage: View {
         .padding()
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

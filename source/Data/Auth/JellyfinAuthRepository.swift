@@ -7,15 +7,21 @@
 import Foundation
 
 nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
+    // MARK: - Properties
+
     private let client: JellyfinHTTPClient
     private let deviceID: String
     private let appVersion: String
+
+    // MARK: - Initialization
 
     init(client: JellyfinHTTPClient, deviceID: String, appVersion: String) {
         self.client = client
         self.deviceID = deviceID
         self.appVersion = appVersion
     }
+
+    // MARK: - AuthRepositoryProtocol
 
     func serverIdentity(at url: URL) async throws -> ServerIdentity {
         let dto: PublicSystemInfoDTO = try await client.get(
@@ -71,6 +77,8 @@ nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
         )
         return try AuthMapper.userSession(from: dto, serverURL: server.baseURL, deviceID: deviceID)
     }
+
+    // MARK: - Private
 
     private func context(baseURL: URL) -> AuthContext {
         AuthContext(baseURL: baseURL, deviceID: deviceID, appVersion: appVersion, token: nil)

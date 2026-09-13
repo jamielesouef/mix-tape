@@ -7,7 +7,11 @@
 import SwiftUI
 
 struct NowPlayingControls: View {
+    // MARK: - Properties
+
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
+
+    // MARK: - Body
 
     var body: some View {
         HStack(spacing: 44) {
@@ -33,6 +37,8 @@ struct NowPlayingControls: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

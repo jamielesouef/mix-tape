@@ -7,7 +7,11 @@
 import SwiftUI
 
 struct MediaItemDestination: View {
+    // MARK: - Properties
+
     let item: MediaItem
+
+    // MARK: - Body
 
     var body: some View {
         switch item.kind {
@@ -18,6 +22,8 @@ struct MediaItemDestination: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

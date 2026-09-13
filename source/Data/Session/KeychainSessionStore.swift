@@ -7,14 +7,20 @@
 import Foundation
 
 nonisolated struct KeychainSessionStore: SessionStoreProtocol {
+    // MARK: - Properties
+
     private static let sessionAccount = "session"
     private static let deviceIDAccount = "deviceId"
 
     private let store: KeychainStore
 
+    // MARK: - Initialization
+
     init(store: KeychainStore = KeychainStore(service: "mobi.jamie.mixtape")) {
         self.store = store
     }
+
+    // MARK: - SessionStoreProtocol
 
     func load() throws -> UserSession? {
         guard let data = try store.data(account: Self.sessionAccount) else {

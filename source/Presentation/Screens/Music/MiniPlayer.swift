@@ -7,8 +7,12 @@
 import SwiftUI
 
 struct MiniPlayer: View {
+    // MARK: - Properties
+
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @Binding var showNowPlaying: Bool
+
+    // MARK: - Body
 
     var body: some View {
         if let track = Self.dockedTrack(in: music) {
@@ -48,10 +52,14 @@ struct MiniPlayer: View {
         }
     }
 
+    // MARK: - Private
+
     static func dockedTrack(in music: MusicPlayerService) -> MediaItem? {
         music.isActive ? music.current : nil
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

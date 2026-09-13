@@ -12,11 +12,15 @@ struct RemoteImage: View {
         case library(Library)
     }
 
+    // MARK: - Properties
+
     @Environment(\.imageService) private var imageService: ImageService
     @State private var image: UIImage?
     let source: Source
     let maxHeight: Int
     var placeholder = "photo"
+
+    // MARK: - Body
 
     var body: some View {
         ZStack {
@@ -37,6 +41,8 @@ struct RemoteImage: View {
         }
     }
 
+    // MARK: - Private
+
     private func loadImage() async -> UIImage? {
         switch source {
         case let .item(item, kind):
@@ -46,6 +52,8 @@ struct RemoteImage: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

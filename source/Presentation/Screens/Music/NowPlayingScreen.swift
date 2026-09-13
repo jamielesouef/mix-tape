@@ -7,9 +7,13 @@
 import SwiftUI
 
 struct NowPlayingScreen: View {
+    // MARK: - Properties
+
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
 
     init() {}
+
+    // MARK: - Body
 
     var body: some View {
         VStack(spacing: 28) {
@@ -44,6 +48,8 @@ struct NowPlayingScreen: View {
         .accessibilityIdentifier(NowPlayingIdentifiers.screen)
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

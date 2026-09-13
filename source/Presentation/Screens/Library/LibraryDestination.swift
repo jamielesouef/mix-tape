@@ -7,7 +7,11 @@
 import SwiftUI
 
 struct LibraryDestination: View {
+    // MARK: - Properties
+
     let library: Library
+
+    // MARK: - Body
 
     var body: some View {
         switch library.kind {
@@ -18,6 +22,8 @@ struct LibraryDestination: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

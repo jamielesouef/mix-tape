@@ -8,9 +8,13 @@
 import SwiftUI
 
 struct HomeScreen: View {
+    // MARK: - Properties
+
     @Environment(\.sessionService) private var sessionService: SessionService
 
     init() {}
+
+    // MARK: - Body
 
     var body: some View {
         Group {
@@ -30,6 +34,8 @@ struct HomeScreen: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loading") {

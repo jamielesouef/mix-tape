@@ -8,7 +8,11 @@ import Foundation
 import SwiftUI
 
 struct TrackRow: View {
+    // MARK: - Properties
+
     let track: MediaItem
+
+    // MARK: - Body
 
     var body: some View {
         HStack {
@@ -23,6 +27,8 @@ struct TrackRow: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

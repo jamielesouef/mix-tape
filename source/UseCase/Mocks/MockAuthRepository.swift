@@ -9,6 +9,8 @@ import Foundation
 #if DEBUG
 
     nonisolated struct MockAuthRepository: AuthRepositoryProtocol {
+        // MARK: - Properties
+
         var serverIdentityResult: @Sendable (URL) async throws -> ServerIdentity
         var authenticateResult: @Sendable (String, String, ServerIdentity) async throws
             -> UserSession
@@ -18,6 +20,8 @@ import Foundation
         var quickConnectStateResult: @Sendable (String, ServerIdentity) async throws -> Bool
         var authenticateWithQuickConnectResult: @Sendable (String, ServerIdentity) async throws
             -> UserSession
+
+        // MARK: - Sample data
 
         static let sampleServer = ServerIdentity(
             id: "server-1",
@@ -32,6 +36,8 @@ import Foundation
             accessToken: "token",
             deviceID: "device-1"
         )
+
+        // MARK: - Initialization
 
         init(
             serverIdentityResult: @escaping @Sendable (URL) async throws -> ServerIdentity = { _ in
@@ -62,6 +68,8 @@ import Foundation
             self.quickConnectStateResult = quickConnectStateResult
             self.authenticateWithQuickConnectResult = authenticateWithQuickConnectResult
         }
+
+        // MARK: - AuthRepositoryProtocol
 
         func serverIdentity(at url: URL) async throws -> ServerIdentity {
             try await serverIdentityResult(url)

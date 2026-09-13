@@ -37,6 +37,8 @@ nonisolated struct JellyfinImageURLBuilder: ImageURLBuilderProtocol {
         return components?.url
     }
 
+    // MARK: - Private
+
     /// Jellyfin re-encodes on the way out; 90 keeps sleeve art clean without a large payload.
     private static let jpegQuality = 90
 }

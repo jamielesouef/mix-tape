@@ -14,6 +14,8 @@ nonisolated struct KeychainStore: Sendable {
 
     let service: String
 
+    // MARK: - Public API
+
     func data(account: String) throws -> Data? {
         var query = baseQuery(account: account)
         query[kSecReturnData as String] = true
@@ -63,6 +65,8 @@ nonisolated struct KeychainStore: Sendable {
             throw Failure(status: status)
         }
     }
+
+    // MARK: - Private
 
     private func baseQuery(account: String) -> [String: Any] {
         [

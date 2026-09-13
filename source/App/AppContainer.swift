@@ -9,10 +9,14 @@ import UIKit
 
 @MainActor
 struct AppContainer {
+    // MARK: - Properties
+
     let sessionService: SessionService
     let libraryService: LibraryService
     let imageService: ImageService
     let musicPlayerService: MusicPlayerService
+
+    // MARK: - Initialization
 
     init() {
         let client = Self.makeHTTPClient()

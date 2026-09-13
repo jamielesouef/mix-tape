@@ -8,11 +8,15 @@
     import Foundation
 
     nonisolated struct MockLibraryRepository: LibraryRepositoryProtocol {
+        // MARK: - Properties
+
         var librariesResult: @Sendable (UserSession) async throws -> [Library]
         var itemsResult: @Sendable (String, MediaKind, PageRequest, UserSession) async throws
             -> Page<MediaItem>
         var itemResult: @Sendable (String, UserSession) async throws -> MediaItem
         var tracksResult: @Sendable (String, UserSession) async throws -> [MediaItem]
+
+        // MARK: - Initialization
 
         init(
             librariesResult: @escaping @Sendable (UserSession) async throws -> [Library] = { _ in
@@ -46,6 +50,8 @@
             self.itemResult = itemResult
             self.tracksResult = tracksResult
         }
+
+        // MARK: - LibraryRepositoryProtocol
 
         func libraries(session: UserSession) async throws -> [Library] {
             try await librariesResult(session)
@@ -142,6 +148,8 @@
                 albumID: "album-1"
             )
         ]
+
+        // MARK: - Private
 
         private static func item(
             id: String,

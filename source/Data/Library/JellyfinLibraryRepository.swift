@@ -7,15 +7,21 @@
 import Foundation
 
 nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
+    // MARK: - Properties
+
     private let client: JellyfinHTTPClient
     private let appVersion: String
 
     private static let listFields = "Overview,PrimaryImageAspectRatio"
 
+    // MARK: - Initialization
+
     init(client: JellyfinHTTPClient, appVersion: String) {
         self.client = client
         self.appVersion = appVersion
     }
+
+    // MARK: - LibraryRepositoryProtocol
 
     func libraries(session: UserSession) async throws -> [Library] {
         let dto: ItemsResultDTO = try await client.get(
@@ -74,6 +80,8 @@ nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
         )
         return LibraryMapper.items(from: dto)
     }
+
+    // MARK: - Private
 
     private static func itemType(_ kind: MediaKind) -> String {
         switch kind {

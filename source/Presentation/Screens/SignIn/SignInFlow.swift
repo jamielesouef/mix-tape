@@ -7,8 +7,12 @@
 import SwiftUI
 
 struct SignInFlow: View {
+    // MARK: - Properties
+
     @Environment(\.sessionService) private var sessionService: SessionService
     @State private var usingQuickConnect = false
+
+    // MARK: - Body
 
     var body: some View {
         if sessionService.serverIdentity == nil {
@@ -23,6 +27,8 @@ struct SignInFlow: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("server entry") {

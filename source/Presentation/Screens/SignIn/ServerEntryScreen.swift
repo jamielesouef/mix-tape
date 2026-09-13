@@ -7,10 +7,14 @@
 import SwiftUI
 
 struct ServerEntryScreen: View {
+    // MARK: - Properties
+
     @Environment(\.sessionService) private var sessionService: SessionService
     @State private var urlText = ""
 
     init() {}
+
+    // MARK: - Body
 
     var body: some View {
         VStack(spacing: 20) {
@@ -41,12 +45,16 @@ struct ServerEntryScreen: View {
         .frame(maxWidth: 480)
     }
 
+    // MARK: - Private
+
     private func connect() {
         let text = urlText
 
         Task { await sessionService.validateServer(urlText: text) }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("empty") {

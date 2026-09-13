@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct SignInScreen: View {
+    // MARK: - Properties
+
     @Environment(\.sessionService) private var sessionService: SessionService
     @State private var userName = ""
     @State private var password = ""
@@ -15,6 +17,8 @@ struct SignInScreen: View {
     init(onUseQuickConnect: @escaping () -> Void) {
         self.onUseQuickConnect = onUseQuickConnect
     }
+
+    // MARK: - Body
 
     var body: some View {
         VStack(spacing: 20) {
@@ -50,6 +54,8 @@ struct SignInScreen: View {
         .frame(maxWidth: 480)
     }
 
+    // MARK: - Private
+
     private func signIn() {
         let name = userName
         let secret = password
@@ -57,6 +63,8 @@ struct SignInScreen: View {
         Task { await sessionService.signIn(userName: name, password: secret) }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

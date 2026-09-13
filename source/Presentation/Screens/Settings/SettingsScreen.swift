@@ -7,9 +7,13 @@
 import SwiftUI
 
 struct SettingsScreen: View {
+    // MARK: - Properties
+
     @Environment(\.sessionService) private var sessionService: SessionService
 
     init() {}
+
+    // MARK: - Body
 
     var body: some View {
         List {
@@ -26,6 +30,8 @@ struct SettingsScreen: View {
         }
     }
 
+    // MARK: - Private
+
     private var userName: String {
         if case let .signedIn(session) = sessionService.state {
             return session.userName
@@ -40,6 +46,8 @@ struct SettingsScreen: View {
         return "—"
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

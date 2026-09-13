@@ -7,9 +7,13 @@
 import SwiftUI
 
 struct MusicTabScreen: View {
+    // MARK: - Properties
+
     @Environment(\.libraryService) private var libraryService: LibraryService
 
     init() {}
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -43,6 +47,8 @@ struct MusicTabScreen: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

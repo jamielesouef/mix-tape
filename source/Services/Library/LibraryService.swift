@@ -12,6 +12,8 @@ import Observation
 final class LibraryService {
     static let pageSize = 60
 
+    // MARK: - Properties
+
     private(set) var libraries: LoadState<[Library]> = .idle
     private(set) var pages: [String: LoadState<Page<MediaItem>>] = [:]
     private(set) var details: [String: LoadState<MediaItem>] = [:]
@@ -28,6 +30,8 @@ final class LibraryService {
     private let fetchItemDetail: FetchItemDetailUseCase
     private let fetchAlbumTracks: FetchAlbumTracksUseCase
     private let sessionService: SessionService
+
+    // MARK: - Initialization
 
     init(
         fetchLibraries: FetchLibrariesUseCase,
@@ -52,6 +56,8 @@ final class LibraryService {
         self.tracks = tracks
         self.pageLoadError = pageLoadError
     }
+
+    // MARK: - Public API
 
     var loadedLibraries: [Library] {
         if case let .loaded(list) = libraries {
@@ -266,6 +272,8 @@ final class LibraryService {
         tracks = [:]
         pageLoadError = [:]
     }
+
+    // MARK: - Private
 
     private var session: UserSession? {
         if case let .signedIn(session) = sessionService.state {

@@ -7,9 +7,13 @@
 import SwiftUI
 
 struct NowPlayingScrubber: View {
+    // MARK: - Properties
+
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @State private var draggedSeconds: Double?
     let track: MediaItem
+
+    // MARK: - Body
 
     var body: some View {
         Slider(value: scrubPosition, in: 0 ... max(trackSeconds, 1)) { isDragging in
@@ -23,6 +27,8 @@ struct NowPlayingScrubber: View {
         }
         .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
     }
+
+    // MARK: - Private
 
     private var trackSeconds: Double {
         track.runtime.map { Double($0.components.seconds) } ?? 1
@@ -40,6 +46,8 @@ struct NowPlayingScrubber: View {
         )
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

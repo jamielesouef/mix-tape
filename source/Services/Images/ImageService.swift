@@ -13,11 +13,15 @@ import UIKit
 final class ImageService {
     static let cacheLimitBytes = 120 * 1024 * 1024
 
+    // MARK: - Properties
+
     private let builder: any ImageURLBuilderProtocol
     private let sessionService: SessionService
     private let urlSession: URLSession
     @ObservationIgnored private let cache = NSCache<NSURL, UIImage>()
     @ObservationIgnored private var inFlightRequests: [URL: Task<UIImage?, Never>] = [:]
+
+    // MARK: - Initialization
 
     init(
         builder: any ImageURLBuilderProtocol,
@@ -30,6 +34,8 @@ final class ImageService {
 
         cache.totalCostLimit = Self.cacheLimitBytes
     }
+
+    // MARK: - Public API
 
     func imageURL(for item: MediaItem, kind: ImageKind, maxHeight: Int) -> URL? {
         guard let session else {
@@ -106,6 +112,8 @@ final class ImageService {
 
         return await task.value
     }
+
+    // MARK: - Private
 
     private func fetch(_ url: URL) async -> UIImage? {
         guard

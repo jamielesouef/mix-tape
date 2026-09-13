@@ -7,8 +7,12 @@
 import SwiftUI
 
 struct RetryView: View {
+    // MARK: - Properties
+
     let error: MixtapeError
     let retry: () async -> Void
+
+    // MARK: - Body
 
     var body: some View {
         ContentUnavailableView {
@@ -23,6 +27,8 @@ struct RetryView: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {

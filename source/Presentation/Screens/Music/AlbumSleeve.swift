@@ -7,9 +7,13 @@
 import SwiftUI
 
 struct AlbumSleeve: View {
+    // MARK: - Properties
+
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency: Bool
     let album: MediaItem?
     var isPulsing = false
+
+    // MARK: - Body
 
     var body: some View {
         ZStack {
@@ -43,6 +47,8 @@ struct AlbumSleeve: View {
         .accessibilityLabel(album?.displayTitle ?? "Empty sleeve")
     }
 }
+
+// MARK: - Previews
 
 #if DEBUG
     #Preview("loaded") {
