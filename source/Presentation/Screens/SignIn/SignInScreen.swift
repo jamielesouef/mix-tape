@@ -53,13 +53,17 @@ struct SignInScreen: View {
     private func signIn() {
         let name = userName
         let secret = password
+
         Task { await sessionService.signIn(userName: name, password: secret) }
     }
 }
 
 #if DEBUG
     #Preview("loaded") {
-        SignInScreen(onUseQuickConnect: {}).environment(\.sessionService, MockSessionService.serverValidated())
+        SignInScreen(onUseQuickConnect: {}).environment(
+            \.sessionService,
+            MockSessionService.serverValidated()
+        )
     }
 
     #Preview("failure") {
@@ -68,6 +72,9 @@ struct SignInScreen: View {
     }
 
     #Preview("empty") {
-        SignInScreen(onUseQuickConnect: {}).environment(\.sessionService, MockSessionService.signedOut())
+        SignInScreen(onUseQuickConnect: {}).environment(
+            \.sessionService,
+            MockSessionService.signedOut()
+        )
     }
 #endif

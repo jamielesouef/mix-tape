@@ -43,6 +43,7 @@ struct ServerEntryScreen: View {
 
     private func connect() {
         let text = urlText
+
         Task { await sessionService.validateServer(urlText: text) }
     }
 }
@@ -53,7 +54,10 @@ struct ServerEntryScreen: View {
     }
 
     #Preview("failure") {
-        ServerEntryScreen().environment(\.sessionService, MockSessionService.failed(.notAJellyfinServer))
+        ServerEntryScreen().environment(
+            \.sessionService,
+            MockSessionService.failed(.notAJellyfinServer)
+        )
     }
 
     #Preview("loaded") {

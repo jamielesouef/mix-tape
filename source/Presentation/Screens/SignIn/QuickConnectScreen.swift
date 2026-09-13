@@ -59,15 +59,24 @@ struct QuickConnectScreen: View {
 
 #if DEBUG
     #Preview("waiting") {
-        QuickConnectScreen(onCancel: {}).environment(\.sessionService, MockSessionService.quickConnectWaiting())
+        QuickConnectScreen(onCancel: {}).environment(
+            \.sessionService,
+            MockSessionService.quickConnectWaiting()
+        )
     }
 
     #Preview("failure") {
         QuickConnectScreen(onCancel: {}, onUsePassword: {})
-            .environment(\.sessionService, MockSessionService.quickConnectFailed(.quickConnectUnavailable))
+            .environment(
+                \.sessionService,
+                MockSessionService.quickConnectFailed(.quickConnectUnavailable)
+            )
     }
 
     #Preview("idle") {
-        QuickConnectScreen(onCancel: {}).environment(\.sessionService, MockSessionService.serverValidated())
+        QuickConnectScreen(onCancel: {}).environment(
+            \.sessionService,
+            MockSessionService.serverValidated()
+        )
     }
 #endif
