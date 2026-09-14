@@ -52,27 +52,8 @@ struct WalletScreen: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .accessibilityIdentifier(WalletIdentifiers.pager)
 
-            switch phase {
-            case .loading:
-                ProgressView()
-                    .controlSize(.small)
-            case let .failed(error):
-                Text(error.message)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Button("Retry") { Task { await libraryService.loadLibrary(id: library.id) } }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier(WalletIdentifiers.retryButton)
-            case .empty:
-                Text("No albums in this library yet.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier(WalletIdentifiers.emptyLabel)
-            case .loaded:
-                Text("Page \(pageIndex + 1, format: .number) of \(pageCount, format: .number)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier(WalletIdentifiers.pageIndicator)
+            WalletFooter(phase: phase, pageIndex: pageIndex, pageCount: pageCount) {
+                Task { await libraryService.loadLibrary(id: library.id) }
             }
         }
         .padding(.bottom)
