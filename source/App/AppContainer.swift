@@ -22,12 +22,11 @@ struct AppContainer {
         let client = Self.makeHTTPClient()
         let sessionStore = KeychainSessionStore()
         let deviceID = (try? sessionStore.deviceID()) ?? UUID().uuidString
-        let appVersion = Self.appVersion
 
         let repositories = Self.makeRepositories(
             client: client,
             deviceID: deviceID,
-            appVersion: appVersion
+            appVersion: Self.appVersion
         )
 
         sessionService = Self.makeSessionService(
@@ -40,16 +39,10 @@ struct AppContainer {
         )
         imageService = Self.makeImageService(sessionService: sessionService)
 
-        // Captured locally because a struct initialiser cannot escape `self` into a closure.
-        let images = imageService
-        let artworkProvider: @Sendable (MediaItem) async -> UIImage? = { track in
-            await images.image(for: track, kind: .primary, maxHeight: Self.artworkHeight)
-        }
-
         musicPlayerService = Self.makeMusicPlayerService(
             playbackRepository: repositories.playback,
             sessionService: sessionService,
-            artworkProvider: artworkProvider
+            imageService: imageService
         )
 
         let libraries = libraryService
@@ -145,9 +138,13 @@ struct AppContainer {
     private static func makeMusicPlayerService(
         playbackRepository: JellyfinPlaybackRepository,
         sessionService: SessionService,
-        artworkProvider: @escaping @Sendable (MediaItem) async -> UIImage?
+        imageService: ImageService
     ) -> MusicPlayerService {
-        MusicPlayerService(
+        let artworkProvider: @Sendable (MediaItem) async -> UIImage? = { track in
+            await imageService.image(for: track, kind: .primary, maxHeight: artworkHeight)
+        }
+
+        return MusicPlayerService(
             controller: AudioPlayerController(),
             buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: playbackRepository),
             reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
