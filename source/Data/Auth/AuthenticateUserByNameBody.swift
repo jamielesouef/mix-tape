@@ -6,10 +6,10 @@
 
 nonisolated struct AuthenticateUserByNameBody: Encodable {
     let username: String
-    let pw: String
+    let password: String
 
     enum CodingKeys: String, CodingKey {
         case username = "Username"
-        case pw = "Pw"
+        case password = "Pw"
     }
 }

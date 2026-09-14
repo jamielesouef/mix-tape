@@ -38,7 +38,7 @@ nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
     ) async throws -> UserSession {
         let dto: AuthenticationResultDTO = try await client.post(
             "/Users/AuthenticateByName",
-            body: AuthenticateUserByNameBody(username: userName, pw: password),
+            body: AuthenticateUserByNameBody(username: userName, password: password),
             auth: context(baseURL: server.baseURL)
         )
         return try AuthMapper.userSession(from: dto, serverURL: server.baseURL, deviceID: deviceID)
