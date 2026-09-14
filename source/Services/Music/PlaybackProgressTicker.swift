@@ -51,12 +51,7 @@ final class PlaybackProgressTicker {
     ) {
         task?.cancel()
 
-        let clock = clock
-        let interval = interval
-        let reportInterval = reportInterval
-        let stallThreshold = stallThreshold
-
-        task = Task {
+        task = Task { [clock, interval, reportInterval, stallThreshold] in
             var tickState = TickState()
 
             while true {
