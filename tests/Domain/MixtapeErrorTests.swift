@@ -36,4 +36,22 @@ struct MixtapeErrorTests {
             }
         #expect(recognised)
     }
+
+    @Test
+    func `mapping passes an existing MixtapeError through unchanged`() {
+        #expect(MixtapeError.mapping(from: MixtapeError.sessionExpired) == .sessionExpired)
+    }
+
+    @Test
+    func `mapping wraps any other error as transport with its description`() {
+        struct SomeError: Error, CustomStringConvertible {
+            var description: String {
+                "boom"
+            }
+        }
+
+        let mapped = MixtapeError.mapping(from: SomeError())
+
+        #expect(mapped == .transport(SomeError().localizedDescription))
+    }
 }
