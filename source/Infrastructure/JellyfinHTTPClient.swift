@@ -10,15 +10,6 @@ nonisolated struct JellyfinHTTPClient: Sendable {
     let session: URLSession
     let deviceName: String
 
-    private static let credentialPaths: Set<String> = [
-        "/Users/AuthenticateByName",
-        "/Users/AuthenticateWithQuickConnect"
-    ]
-    private static let quickConnectPaths: Set<String> = [
-        "/QuickConnect/Enabled",
-        "/QuickConnect/Initiate"
-    ]
-
     func get<T: Decodable & Sendable>(
         _ path: String,
         query: [URLQueryItem] = [],
@@ -132,46 +123,18 @@ nonisolated struct JellyfinHTTPClient: Sendable {
         do {
             (data, response) = try await session.data(for: request)
         } catch let error as URLError {
-            throw Self.map(error)
+            throw JellyfinErrorMapper.map(error)
         }
 
         guard let http = response as? HTTPURLResponse else {
             throw MixtapeError.transport(path)
         }
 
-        if let failure = Self.map(status: http.statusCode, path: path) {
+        if let failure = JellyfinErrorMapper.map(status: http.statusCode, path: path) {
             throw failure
         }
 
         return data
-    }
-
-    // MARK: - Mapping
-
-    static func map(status: Int, path: String) -> MixtapeError? {
-        switch status {
-        case 200 ... 299:
-            nil
-        case 401 where credentialPaths.contains(path):
-            .invalidCredentials
-        case 401 where quickConnectPaths.contains(path):
-            .quickConnectUnavailable
-        case 401:
-            .sessionExpired
-        default:
-            .transport(HTTPURLResponse.localizedString(forStatusCode: status))
-        }
-    }
-
-    static func map(_ error: URLError) -> MixtapeError {
-        switch error.code {
-        case .cannotFindHost,
-             .cannotConnectToHost,
-             .timedOut:
-            .serverUnreachable
-        default:
-            .transport(error.localizedDescription)
-        }
     }
 
     // MARK: - JSON
