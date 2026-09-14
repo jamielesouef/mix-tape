@@ -13,6 +13,8 @@ import Observation
 @MainActor
 @Observable
 final class LibraryPagesService {
+    static let pageSize = 60
+
     private(set) var pages: [String: LoadState<Page<MediaItem>>]
     private(set) var pageLoadError: [String: MixtapeError] = [:]
 
@@ -21,17 +23,14 @@ final class LibraryPagesService {
 
     private let epoch: LoadEpochTracker
     private let fetchLibraryItems: FetchLibraryItemsUseCase
-    private let pageSize: Int
 
     init(
         fetchLibraryItems: FetchLibraryItemsUseCase,
         epoch: LoadEpochTracker,
-        pageSize: Int,
         pages: [String: LoadState<Page<MediaItem>>] = [:]
     ) {
         self.fetchLibraryItems = fetchLibraryItems
         self.epoch = epoch
-        self.pageSize = pageSize
         self.pages = pages
     }
 
@@ -63,7 +62,7 @@ final class LibraryPagesService {
         exhausted.remove(id)
         pages[id] = .loading
 
-        let request = PageRequest(startIndex: 0, limit: pageSize)
+        let request = PageRequest(startIndex: 0, limit: Self.pageSize)
 
         guard
             let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
@@ -82,7 +81,7 @@ final class LibraryPagesService {
         case let .success(page):
             pages[id] = .loaded(page)
 
-            if page.items.count < pageSize || page.items.count >= page.totalCount {
+            if page.items.count < Self.pageSize || page.items.count >= page.totalCount {
                 exhausted.insert(id)
             }
         case let .failure(mapped):
@@ -106,7 +105,7 @@ final class LibraryPagesService {
         inFlight.insert(id)
         defer { inFlight.remove(id) }
 
-        let request = PageRequest(startIndex: current.items.count, limit: pageSize)
+        let request = PageRequest(startIndex: current.items.count, limit: Self.pageSize)
 
         guard
             let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
@@ -123,20 +122,26 @@ final class LibraryPagesService {
 
         switch result {
         case let .success(next):
-            let merged = current.items + next.items
-
-            pages[id] = .loaded(Page(
-                items: merged,
-                totalCount: next.totalCount,
-                startIndex: current.startIndex
-            ))
-            pageLoadError[id] = nil
-
-            if next.items.count < pageSize || merged.count >= next.totalCount {
-                exhausted.insert(id)
-            }
+            append(next, to: current, id: id)
         case let .failure(mapped):
             pageLoadError[id] = mapped
+        }
+    }
+
+    /// Appends a freshly fetched page onto the one already cached, and marks the library
+    /// exhausted once the server has nothing left to give.
+    private func append(_ next: Page<MediaItem>, to current: Page<MediaItem>, id: String) {
+        let merged = current.items + next.items
+
+        pages[id] = .loaded(Page(
+            items: merged,
+            totalCount: next.totalCount,
+            startIndex: current.startIndex
+        ))
+        pageLoadError[id] = nil
+
+        if next.items.count < Self.pageSize || merged.count >= next.totalCount {
+            exhausted.insert(id)
         }
     }
 

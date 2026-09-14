@@ -10,18 +10,15 @@ import Observation
 @MainActor
 @Observable
 final class LibraryService {
-    static let pageSize = 60
-
     // MARK: - Properties
 
     private(set) var libraries: LoadState<[Library]> = .idle
-    private(set) var details: [String: LoadState<MediaItem>] = [:]
 
     private let epoch: LoadEpochTracker
     private let pagesService: LibraryPagesService
     private let albumTracksService: AlbumTracksService
+    private let detailsService: LibraryDetailsService
     private let fetchLibraries: FetchLibrariesUseCase
-    private let fetchItemDetail: FetchItemDetailUseCase
     private let sessionService: SessionService
 
     // MARK: - Initialization
@@ -39,13 +36,11 @@ final class LibraryService {
         pageLoadError: [String: MixtapeError] = [:]
     ) {
         self.fetchLibraries = fetchLibraries
-        self.fetchItemDetail = fetchItemDetail
         self.sessionService = sessionService
         epoch = LoadEpochTracker(sessionService: sessionService)
         pagesService = LibraryPagesService(
             fetchLibraryItems: fetchLibraryItems,
             epoch: epoch,
-            pageSize: Self.pageSize,
             pages: pages
         )
         albumTracksService = AlbumTracksService(
@@ -54,8 +49,13 @@ final class LibraryService {
             epoch: epoch,
             tracks: tracks
         )
+        detailsService = LibraryDetailsService(
+            fetchItemDetail: fetchItemDetail,
+            sessionService: sessionService,
+            epoch: epoch,
+            details: details
+        )
         self.libraries = libraries
-        self.details = details
     }
 
     // MARK: - Public API
@@ -81,6 +81,10 @@ final class LibraryService {
 
     var tracks: [String: LoadState<[MediaItem]>] {
         albumTracksService.tracks
+    }
+
+    var details: [String: LoadState<MediaItem>] {
+        detailsService.details
     }
 
     func loadHome() async {
@@ -110,7 +114,7 @@ final class LibraryService {
             await loadLibraries(epoch: requestEpoch, generation: generation)
         }
 
-        guard let library = library(id: id) else {
+        guard library(id: id) != nil else {
             if epoch.isCurrent(epoch: requestEpoch, generation: generation) {
                 pagesService.markFailed(id: id, error: .transport("Library not found"))
             }
@@ -119,47 +123,27 @@ final class LibraryService {
 
         await pagesService.loadFirstPage(
             id: id,
-            kind: Self.itemKind(library.kind),
+            kind: .musicAlbum,
             epoch: requestEpoch,
             generation: generation
         )
     }
 
     func loadMore(libraryID id: String) async {
-        guard let session, let library = library(id: id) else {
+        guard let session, library(id: id) != nil else {
             return
         }
 
         await pagesService.loadMore(
             id: id,
-            kind: Self.itemKind(library.kind),
+            kind: .musicAlbum,
             epoch: session,
             generation: epoch.generation
         )
     }
 
     func loadDetail(id: String) async {
-        guard let session else {
-            return
-        }
-
-        let requestEpoch = session
-        let generation = epoch.generation
-
-        details[id] = .loading
-
-        guard
-            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
-                try await fetchItemDetail(id: id, session: requestEpoch)
-            })
-        else {
-            return
-        }
-
-        switch result {
-        case let .success(loaded): details[id] = .loaded(loaded)
-        case let .failure(mapped): details[id] = .failed(mapped)
-        }
+        await detailsService.loadDetail(id: id)
     }
 
     func loadTracks(albumID: String) async {
@@ -169,7 +153,7 @@ final class LibraryService {
     func refresh() async {
         epoch.advance()
 
-        details = [:]
+        detailsService.reset()
         pagesService.reset()
         albumTracksService.reset()
 
@@ -178,7 +162,7 @@ final class LibraryService {
 
     func endSession() {
         libraries = .idle
-        details = [:]
+        detailsService.reset()
         pagesService.reset()
         albumTracksService.reset()
     }
@@ -187,10 +171,6 @@ final class LibraryService {
 
     private var session: UserSession? {
         sessionService.currentSession
-    }
-
-    static func itemKind(_: LibraryKind) -> MediaKind {
-        .musicAlbum
     }
 
     /// Fetches the library list into `libraries`. Shared by the home load and by the album
