@@ -33,17 +33,11 @@ struct SettingsScreen: View {
     // MARK: - Private
 
     private var userName: String {
-        if case let .signedIn(session) = sessionService.state {
-            return session.userName
-        }
-        return "—"
+        sessionService.currentSession?.userName ?? "—"
     }
 
     private var serverHost: String {
-        if case let .signedIn(session) = sessionService.state {
-            return session.serverURL.host() ?? "—"
-        }
-        return "—"
+        sessionService.currentSession?.serverURL.host() ?? "—"
     }
 }
 

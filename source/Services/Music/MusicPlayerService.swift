@@ -389,9 +389,6 @@ private extension MusicPlayerService {
     }
 
     var session: UserSession? {
-        if case let .signedIn(session) = sessionService.state {
-            return session
-        }
-        return nil
+        sessionService.currentSession
     }
 }
