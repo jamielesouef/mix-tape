@@ -21,21 +21,14 @@ final class SessionService {
     private(set) var state: State
     private(set) var serverIdentity: ServerIdentity?
     private(set) var error: MixtapeError?
-    private(set) var quickConnect: QuickConnectUIState
     private(set) var isBusy = false
 
+    private let quickConnectCoordinator: QuickConnectCoordinator
     private let validateServer: ValidateServerUseCase
     private let signInWithPassword: SignInWithPasswordUseCase
-    private let startQuickConnect: StartQuickConnectUseCase
-    private let pollQuickConnect: PollQuickConnectUseCase
     private let restoreSession: RestoreSessionUseCase
     private let signOutUseCase: SignOutUseCase
-    private let clock: any Clock<Duration>
 
-    static let pollInterval: Duration = .seconds(5)
-    static let pollTimeout: Duration = .seconds(5 * 60)
-
-    @ObservationIgnored var pollTask: Task<Void, Never>?
     @ObservationIgnored var onSessionEnded: ((UserSession) -> Void)?
 
     // MARK: - Initialization
@@ -55,22 +48,44 @@ final class SessionService {
     ) {
         self.validateServer = validateServer
         self.signInWithPassword = signInWithPassword
-        self.startQuickConnect = startQuickConnect
-        self.pollQuickConnect = pollQuickConnect
         self.restoreSession = restoreSession
         signOutUseCase = signOut
-        self.clock = clock
+        quickConnectCoordinator = QuickConnectCoordinator(
+            startQuickConnect: startQuickConnect,
+            pollQuickConnect: pollQuickConnect,
+            clock: clock,
+            initialState: quickConnect
+        )
         state = initialState
         self.serverIdentity = serverIdentity
-        self.quickConnect = quickConnect
         self.error = error
-    }
 
-    deinit {
-        pollTask?.cancel()
+        quickConnectCoordinator.onSignedIn = { [weak self] session in
+            self?.state = .signedIn(session)
+        }
     }
 
     // MARK: - Public API
+
+    /// The signed-in session, or nil when signed out or still restoring.
+    ///
+    /// The single source of truth for "does a session currently exist" — every other
+    /// service reads this rather than re-deriving it from `state`.
+    var currentSession: UserSession? {
+        if case let .signedIn(session) = state {
+            return session
+        }
+        return nil
+    }
+
+    var quickConnect: QuickConnectUIState {
+        quickConnectCoordinator.state
+    }
+
+    /// Exposed so tests can await the quick-connect poll loop's completion.
+    var pollTask: Task<Void, Never>? {
+        quickConnectCoordinator.pollTask
+    }
 
     func restore() async {
         do {
@@ -80,7 +95,7 @@ final class SessionService {
                 state = .signedOut
             }
         } catch {
-            self.error = Self.mixtapeError(error)
+            self.error = MixtapeError.mapping(from: error)
             state = .signedOut
         }
     }
@@ -94,7 +109,7 @@ final class SessionService {
         do {
             serverIdentity = try await validateServer(urlText: urlText)
         } catch {
-            self.error = Self.mixtapeError(error)
+            self.error = MixtapeError.mapping(from: error)
         }
     }
 
@@ -126,26 +141,13 @@ final class SessionService {
             return
         }
 
-        pollTask?.cancel()
         error = nil
 
-        do {
-            let handshake = try await startQuickConnect(server: server)
-
-            quickConnect = .waiting(code: handshake.code)
-            pollTask = Task { [weak self] in
-                await self?.poll(secret: handshake.secret, server: server)
-            }
-        } catch {
-            quickConnect = .failed(Self.mixtapeError(error))
-        }
+        await quickConnectCoordinator.start(server: server)
     }
 
     func cancelQuickConnect() {
-        pollTask?.cancel()
-        pollTask = nil
-
-        quickConnect = .idle
+        quickConnectCoordinator.cancel()
     }
 
     func clearServer() {
@@ -156,99 +158,27 @@ final class SessionService {
     }
 
     func signOut() {
-        pollTask?.cancel()
-        pollTask = nil
-
-        let endedSession = signedInSession
-
         do {
             try signOutUseCase()
             error = nil
         } catch {
-            self.error = Self.mixtapeError(error)
+            self.error = MixtapeError.mapping(from: error)
         }
 
-        state = .signedOut
-        serverIdentity = nil
-        quickConnect = .idle
-
-        if let endedSession {
-            onSessionEnded?(endedSession)
-        }
+        endSession(clearingServer: true)
     }
 
     func handleSessionExpiry() {
-        pollTask?.cancel()
-        pollTask = nil
-
-        let endedSession = signedInSession
-
         try? signOutUseCase()
-
-        state = .signedOut
-        quickConnect = .idle
         error = .sessionExpired
 
-        if let endedSession {
-            onSessionEnded?(endedSession)
-        }
+        endSession(clearingServer: false)
     }
 
     // MARK: - Private
 
-    private func poll(secret: String, server: ServerIdentity) async {
-        var elapsed: Duration = .zero
-
-        while elapsed < Self.pollTimeout {
-            do {
-                try await clock.sleep(for: Self.pollInterval)
-            } catch {
-                return
-            }
-
-            elapsed += Self.pollInterval
-
-            do {
-                guard
-                    let session = try await pollQuickConnect(secret: secret, server: server)
-                else {
-                    continue
-                }
-                guard Task.isCancelled == false else {
-                    return
-                }
-
-                state = .signedIn(session)
-                quickConnect = .idle
-                return
-            } catch is CancellationError {
-                return
-            } catch {
-                guard Task.isCancelled == false else {
-                    return
-                }
-
-                quickConnect = .failed(Self.mixtapeError(error))
-                return
-            }
-        }
-
-        guard Task.isCancelled == false else {
-            return
-        }
-
-        quickConnect = .failed(.quickConnectExpired)
-    }
-
-    private var signedInSession: UserSession? {
-        if case let .signedIn(session) = state {
-            return session
-        }
-        return nil
-    }
-
     private func handle(_ error: any Error) {
-        let mapped = Self.mixtapeError(error)
+        let mapped = MixtapeError.mapping(from: error)
 
         if mapped == .sessionExpired {
             handleSessionExpiry()
@@ -257,7 +187,22 @@ final class SessionService {
         }
     }
 
-    private static func mixtapeError(_ error: any Error) -> MixtapeError {
-        (error as? MixtapeError) ?? .transport(error.localizedDescription)
+    /// The shared part of ending a session: cancels any in-flight quick-connect poll, resets
+    /// to signed out, and notifies `onSessionEnded`. `signOut` also forgets the server so the
+    /// user re-enters it; a session-expiry leaves it in place so re-signing-in needs no retyping.
+    private func endSession(clearingServer: Bool) {
+        quickConnectCoordinator.cancel()
+
+        let endedSession = currentSession
+
+        state = .signedOut
+
+        if clearingServer {
+            serverIdentity = nil
+        }
+
+        if let endedSession {
+            onSessionEnded?(endedSession)
+        }
     }
 }
