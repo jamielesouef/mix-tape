@@ -138,4 +138,22 @@ struct MusicPlayerServiceTests {
         service.seek(to: .seconds(-5))
         #expect(controller.seeks.last == .zero)
     }
+
+    @Test
+    func `previous restarts past the restart window`() {
+        let restarts = MusicPlayerService.shouldRestartOnPrevious(position: .seconds(4), index: 1)
+        #expect(restarts)
+    }
+
+    @Test
+    func `previous restarts at the first track even within the restart window`() {
+        let restarts = MusicPlayerService.shouldRestartOnPrevious(position: .seconds(1), index: 0)
+        #expect(restarts)
+    }
+
+    @Test
+    func `previous steps back within the restart window past the first track`() {
+        let restarts = MusicPlayerService.shouldRestartOnPrevious(position: .seconds(1), index: 1)
+        #expect(restarts == false)
+    }
 }
