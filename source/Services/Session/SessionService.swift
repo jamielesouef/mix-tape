@@ -89,11 +89,7 @@ final class SessionService {
 
     func restore() async {
         do {
-            if let session = try restoreSession() {
-                state = .signedIn(session)
-            } else {
-                state = .signedOut
-            }
+            state = try restoreSession().map(State.signedIn) ?? .signedOut
         } catch {
             self.error = MixtapeError.mapping(from: error)
             state = .signedOut
@@ -132,7 +128,13 @@ final class SessionService {
 
             state = .signedIn(session)
         } catch {
-            handle(error)
+            let mapped = MixtapeError.mapping(from: error)
+
+            if mapped == .sessionExpired {
+                handleSessionExpiry()
+            } else {
+                self.error = mapped
+            }
         }
     }
 
@@ -176,16 +178,6 @@ final class SessionService {
     }
 
     // MARK: - Private
-
-    private func handle(_ error: any Error) {
-        let mapped = MixtapeError.mapping(from: error)
-
-        if mapped == .sessionExpired {
-            handleSessionExpiry()
-        } else {
-            self.error = mapped
-        }
-    }
 
     /// The shared part of ending a session: cancels any in-flight quick-connect poll, resets
     /// to signed out, and notifies `onSessionEnded`. `signOut` also forgets the server so the
