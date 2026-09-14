@@ -118,6 +118,7 @@
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
 				B5A28072A198C1156566389F /* Check Layer Imports */,
+				FD4FC85E92760622F92B437D /* SwiftLint */,
 			);
 			buildRules = (
 			);
@@ -261,6 +262,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\"${SRCROOT}/scripts/check-layer-imports.sh\"\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		FD4FC85E92760622F92B437D /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\nif which swiftlint > /dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed, run 'brew install swiftlint'\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
