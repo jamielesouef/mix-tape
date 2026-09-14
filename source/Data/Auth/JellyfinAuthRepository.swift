@@ -63,7 +63,7 @@ nonisolated struct JellyfinAuthRepository: AuthRepositoryProtocol {
             query: [URLQueryItem(name: "secret", value: secret)],
             auth: context(baseURL: server.baseURL)
         )
-        return dto.authenticated ?? false
+        return dto.authenticated
     }
 
     func authenticateWithQuickConnect(
