@@ -7,12 +7,13 @@ progress back.
 architecture template. `docs/jellyfin-openapi.json` (Jellyfin 10.11.11, OpenAPI
 3.0.1) is the API contract.
 
-Precedence, highest first: **`SPEC-DECISIONS.md`**, then the engineering doc,
-then `docs/architecture.md`, then this file. Read `SPEC-DECISIONS.md` before
-acting on a layout, naming or platform-target question — it records answers that
-contradict what the older docs say. If you find two docs disagreeing and
-`SPEC-DECISIONS.md` is silent, stop and say so rather than picking the reading
-that makes the task easier.
+Precedence, highest first: the engineering doc, then `docs/architecture.md`,
+then this file. `SPEC-DECISIONS.md` used to sit above all three; it was deleted
+in the single-target rewrite. Numbered "decision N" references here are
+historical — 46, 47 and 52 are recorded in `docs/`, but 53, 54 and 55 were only
+in the deleted file and are written down nowhere. If you find two docs
+disagreeing, stop and say so rather than picking the reading that makes the task
+easier.
 
 ## Target
 
@@ -25,9 +26,8 @@ No third-party dependencies — VLCKit was removed along with video playback.
 
 ## The toolchain here is ahead of the one this must stay compatible with
 
-There is no CI in this repo — it is removed until the MVP and its local tests
-exist. That makes local `xcodebuild` the only signal, and local is misleading:
-this machine runs **Xcode 27 / Swift 6.4**, while the toolchain this project
+There is no CI in this repo. That makes local `xcodebuild` the only signal, and
+local is misleading: this machine runs **Xcode 27 / Swift 6.4**, while the toolchain this project
 targets is **Xcode 26.6 / Swift 6.2**. Two rules follow, and neither shows up as
 a local error:
 
@@ -120,20 +120,6 @@ Follow these references, in priority order:
 4. Kodeco Swift Style Guide
 5. Repository `.swiftformat` and SwiftLint configuration
 
-### General principles
-
-- Clarity at the call site is more important than brevity.
-- Prefer obvious, conventional Swift over clever or compressed Swift.
-- Match the style and abstractions already present in the surrounding code.
-- Do not introduce abstractions merely to reduce repetition.
-- Do not combine unrelated operations just because Swift syntax permits it.
-- Keep control flow shallow and easy to scan.
-- Prefer early exits with `guard` where they make the happy path clearer.
-- Prefer meaningful intermediate values over deeply nested expressions.
-- Prefer descriptive names over abbreviations.
-- Avoid unnecessary comments. Prefer code whose intent is apparent from naming and structure.
-- Comments should explain why something exists, not restate what the code does.
-
 ### Function structure
 
 Functions should read as a sequence of distinct logical steps.
@@ -202,32 +188,6 @@ status = .playing
 await refreshNowPlayingAsync(generation: generation)
 ```
 
-### Function calls and declarations
-
-Keep short, genuinely simple calls on one line.
-
-Use multiline formatting when a call:
-
-- has several labelled arguments
-- is difficult to scan on one line
-- mixes closures with other arguments
-- approaches the configured line-length limit
-- benefits from visually exposing the role of each argument
-
-Prefer:
-
-```swift
-let stream = buildAudioStreamURL(
-    track: track,
-    session: session,
-    playSessionID: playSessionID
-)
-```
-
-over a dense equivalent when the multiline form is easier to read.
-
-Do not force every call to be multiline. Use judgement based on readability.
-
 ### Expressions
 
 Do not optimise for the fewest expressions or statements.
@@ -245,31 +205,6 @@ when it is easier to understand than chaining everything together.
 
 Keep fluent chains together when the sequence itself is the clearest representation.
 
-### Naming
-
-Names should make usage understandable without consulting the declaration.
-
-- Use nouns for values and types.
-- Use verbs or verb phrases for actions.
-- Name booleans so they read as assertions, such as `isPlaying`, `hasNextTrack`, or `canRetry`.
-- Avoid vague names such as `data`, `info`, `value`, `result`, `item`, or `manager` when a more precise domain name exists.
-- Avoid abbreviations unless they are conventional within Swift or the codebase.
-- Do not encode type information redundantly in names.
-
-### Types and APIs
-
-Prefer small APIs with clear responsibilities.
-
-Do not add:
-
-- unnecessary protocols
-- wrapper types with no behavioural purpose
-- generic abstractions for a single concrete use
-- helper functions used only once unless they materially improve readability
-- dependency layers solely to make code appear architecturally pure
-
-Extract code when the extracted concept has a meaningful name or isolates a coherent responsibility.
-
 ### Swift-specific style
 
 - Prefer type inference when the type is obvious.
@@ -282,58 +217,6 @@ Extract code when the extracted concept has a meaningful name or isolates a cohe
 - Do not use `@unchecked Sendable` to silence concurrency errors unless the safety invariant is understood and documented.
 - Prefer structured concurrency over detached or unstructured tasks.
 - Avoid unnecessary `Task {}` wrappers.
-
-### SwiftUI
-
-- Use SwiftUI-first design.
-- Keep views declarative.
-- Do not move simple presentation logic into unnecessary view models.
-- Prefer focused `@Observable` models where mutable shared state is actually required.
-- Keep side effects outside `body`.
-- Extract subviews when they represent meaningful UI concepts or materially improve readability, not merely to reduce line count.
-
-### Changes to existing code
-
-Before editing:
-
-- inspect nearby code
-- preserve established terminology
-- preserve architectural boundaries
-- reuse existing helpers and patterns where appropriate
-
-Do not rewrite surrounding code unless doing so is necessary for the requested change.
-
-Avoid unrelated cleanup in focused changes.
-
-### Formatting
-
-The repository formatter is authoritative.
-
-After editing Swift files, run:
-
-```bash
-swiftformat .
-```
-
-Do not manually fight formatter output.
-
-Formatting is only the final mechanical pass. Code should already be organised into readable logical sections before formatting.
-
-### Final review
-
-Before considering Swift work complete, reread the changed code as if reviewing another engineer's pull request.
-
-Check that:
-
-- intent is obvious without reconstructing the implementation mentally
-- functions have a clear narrative flow
-- logical phases are visually separated
-- names communicate domain meaning
-- expressions are not unnecessarily dense
-- control flow is straightforward
-- concurrency is correct
-- no needless abstraction was introduced
-- the resulting code looks like deliberate production Swift rather than generated code
 
 ## Testing
 
@@ -348,15 +231,15 @@ All unit tests are one Xcode test target, `MixtapeTests`, over the whole of
 the app as its test host, so every file uses `@testable import Mixtape` — one
 module, one import (decisions 52 and 53).
 
-**No XCUITest this round.** The `MixtapeUITests` target stays wired up and its
-stub file stays in place, but no UI test is written and none runs in a gate. Do
-not add one, and do not "temporarily" enable the target to check something.
+**No XCUITest.** The `MixtapeUITests` target stays wired up and its stub file
+stays in place, but no UI test is written and `gate.sh` skips the bundle. Do not
+add one, and do not "temporarily" enable the target to check something.
 
 Accessibility identifiers are **still required** on every screen, per
 engineering doc §9 — they are what makes the deferred UI tests writable, and
 retrofitting them across a finished app is far more work than writing them
 beside the view. The accessibility pass and the Reduce Transparency pass both
-remain in scope.
+still apply.
 
 ## The development server
 
@@ -376,6 +259,57 @@ denied on this machine. Enter credentials on the iOS simulator with
 `xcrun simctl io <udid> screenshot`. The Apple TV remote helpers moved to
 `archive/tvOS/scripts/` with the rest of the tvOS build.
 
+## What stays out
+
+The app is built. Adding a feature is a decision, not a default — none of the
+following is in the codebase, and none gets an abstraction, a protocol method,
+or a TODO until you are asked for it by name:
+
+downloads and offline playback · multi-server or multi-user switching · search ·
+SyncPlay · AirPlay/Cast UI beyond what the system gives free · collections,
+playlists, favourites, watched toggling · widgets · settings beyond sign out ·
+localisation beyond `en`.
+
+The absences in "The product rule that gets 'fixed' by mistake" are a different
+category: engineering doc §1.1 rules them out permanently, not just for now.
+
+There is no CI and no XCUITest. Their seams stay intact — accessibility
+identifiers on every screen, `./scripts/gate.sh` callable by a workflow — so do
+not strip either. Do not build either without being asked.
+
+## Verify before you finish
+
+Run this before handing work back. One command:
+
+```bash
+./scripts/gate.sh
+```
+
+It runs, in order, and stops at the first failure:
+
+1. `xcodebuild build` for the `Mixtape` scheme.
+2. `xcodebuild test` for it, unit tests only — `-skip-testing:MixtapeUITests`.
+   Skipping the UI bundle is the *only* permitted exclusion. The script reads
+   the result bundle and fails if failed or skipped is anything but zero —
+   silencing a test is never a way to make this pass.
+3. `./scripts/check-layer-imports.sh` — `Domain` and `UseCase` stay
+   framework-free.
+4. `./scripts/check-glass-fallback.sh` — every Liquid Glass surface goes
+   through `Shared/GlassChrome.swift` and carries a Reduce Transparency
+   fallback.
+5. `swiftformat --lint .` is clean.
+
+Needs `jq` and `swiftformat` on PATH. Every run appends a line to `.gate-log`
+(gitignored); the previous run's output survives as `$out.prev`.
+
+It resolves a simulator at runtime rather than hardcoding an OS version —
+this machine has no iOS 26.0 runtime, and a pinned `OS=26.0` destination fails
+as a destination error that reads like a project fault:
+
 ```bash
 xcrun simctl list devices available
 ```
+
+If it fails twice in a row with no progress between attempts, stop and say so
+rather than weakening the check, deleting the test, or moving on. Never report
+work as done with a failing or removed test.
