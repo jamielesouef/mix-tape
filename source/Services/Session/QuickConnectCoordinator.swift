@@ -82,27 +82,7 @@ final class QuickConnectCoordinator {
 
             elapsed += Self.pollInterval
 
-            do {
-                guard
-                    let session = try await pollQuickConnect(secret: secret, server: server)
-                else {
-                    continue
-                }
-                guard Task.isCancelled == false else {
-                    return
-                }
-
-                state = .idle
-                onSignedIn?(session)
-                return
-            } catch is CancellationError {
-                return
-            } catch {
-                guard Task.isCancelled == false else {
-                    return
-                }
-
-                state = .failed(MixtapeError.mapping(from: error))
+            if await isFinished(secret: secret, server: server) {
                 return
             }
         }
@@ -112,5 +92,31 @@ final class QuickConnectCoordinator {
         }
 
         state = .failed(.quickConnectExpired)
+    }
+
+    /// One poll of the handshake. True when the loop is over — approved, cancelled or failed —
+    /// and false when the server is still waiting on the user to approve the code.
+    private func isFinished(secret: String, server: ServerIdentity) async -> Bool {
+        do {
+            guard let session = try await pollQuickConnect(secret: secret, server: server) else {
+                return false
+            }
+            guard Task.isCancelled == false else {
+                return true
+            }
+
+            state = .idle
+            onSignedIn?(session)
+        } catch is CancellationError {
+            return true
+        } catch {
+            guard Task.isCancelled == false else {
+                return true
+            }
+
+            state = .failed(MixtapeError.mapping(from: error))
+        }
+
+        return true
     }
 }
