@@ -1,5 +1,5 @@
 {
-  "model": "fable",
+  "model": "sonnet",
   "env": {
     "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
   },
@@ -19,6 +19,11 @@
       "Bash(xcrun*)",
       "Bash(grep*)",
       "Bash(ls*)"
+    ],
+    "deny": [
+      "Read(/.gate-out/**)",
+      "Read(/.gate-out.prev/**)",
+      "Read(.xcresult)"
     ]
   }
 }
