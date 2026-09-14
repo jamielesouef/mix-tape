@@ -167,34 +167,23 @@ struct WalletScreen: View {
         }
 
         Task {
-            try? await Task.sleep(for: .seconds(Self.pageTurnSettle))
+            try? await Task.sleep(for: .seconds(PutBackTiming.pageTurnSettle))
 
-            withAnimation(Self.pulseAnimation) {
+            withAnimation(PutBackTiming.pulseAnimation) {
                 pulsingAlbumID = albumID
             }
 
-            try? await Task.sleep(for: .seconds(Self.pulseFade + Self.pulseHold))
+            try? await Task.sleep(for: .seconds(PutBackTiming.pulseFade + PutBackTiming.pulseHold))
 
-            withAnimation(Self.pulseAnimation) {
+            withAnimation(PutBackTiming.pulseAnimation) {
                 pulsingAlbumID = nil
             }
 
-            try? await Task.sleep(for: .seconds(Self.pulseFade))
+            try? await Task.sleep(for: .seconds(PutBackTiming.pulseFade))
 
             music.acknowledgeFinish()
         }
     }
-
-    // MARK: - Put-back timings
-
-    //
-    // The sleeve is slid back into the wallet, then its border pulses so the eye lands on
-    // where the album went. Each sleep waits out the animation that precedes it.
-
-    private static let pageTurnSettle = 0.6
-    private static let pulseFade = 0.15
-    private static let pulseHold = 0.4
-    private static let pulseAnimation = Animation.easeInOut(duration: pulseFade)
 }
 
 // MARK: - Previews
