@@ -41,7 +41,10 @@ for rawLine in envText.split(separator: "\n") {
     if line.isEmpty || line.hasPrefix("#") {
         continue
     }
-    guard let equals = line.firstIndex(of: "=") else { continue }
+    guard let equals = line.firstIndex(of: "=") else {
+        continue
+    }
+
     let key = String(line[..<equals]).trimmingCharacters(in: .whitespaces)
     let value = String(line[line.index(after: equals)...]).trimmingCharacters(in: .whitespaces)
     env[key] = value
@@ -79,6 +82,7 @@ let task = URLSession.shared.dataTask(with: request) { data, response, error in
         print("no HTTP response")
         exit(1)
     }
+
     print(http.statusCode)
     if let data, let body = String(data: data, encoding: .utf8) {
         print(body)

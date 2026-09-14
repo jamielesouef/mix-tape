@@ -1,0 +1,48 @@
+//  LibraryDestination.swift
+//  mixtape
+//
+//  Created by Jamie Le Souëf on 04/09/2026.
+//
+
+import SwiftUI
+
+struct LibraryDestination: View {
+    // MARK: - Properties
+
+    let library: Library
+
+    // MARK: - Body
+
+    var body: some View {
+        switch library.kind {
+        case .music:
+            WalletScreen(library: library)
+        case .unsupported:
+            ContentUnavailableView(library.name, systemImage: "questionmark.folder")
+        }
+    }
+}
+
+// MARK: - Previews
+
+#if DEBUG
+    #Preview("loaded") {
+        NavigationStack {
+            LibraryDestination(library: MockMedia.libraries[0])
+        }
+        .environment(\.libraryService, MockLibraryService.loaded())
+    }
+
+    #Preview("empty") {
+        NavigationStack {
+            LibraryDestination(library: MockMedia.libraries[3])
+        }
+    }
+
+    #Preview("failure") {
+        NavigationStack {
+            LibraryDestination(library: MockMedia.libraries[2])
+        }
+        .environment(\.libraryService, MockLibraryService.failed())
+    }
+#endif

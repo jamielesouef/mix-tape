@@ -1,7 +1,7 @@
 # mixtape — build repo
 
-A Jellyfin client for iOS. Browse video and music libraries, play both,
-report progress back.
+A Jellyfin client for iOS. Browse a music library, play albums, report
+progress back.
 
 `docs/engineering-doc.md` is the source of truth. Appendix A in it is the
 architecture template. `docs/jellyfin-openapi.json` (Jellyfin 10.11.11, OpenAPI
@@ -21,10 +21,7 @@ no `#available`. The deployment target is **26.1**, not 26.0: the wallet's
 `tabViewBottomAccessory` is 26.1 API and `#available` is banned (decision 52).
 Swift 6 language mode.
 `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
-VLCKit is the only third-party dependency, a remote package on the app target.
-Its pin lives in `MixTape.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
-Package.resolved` and must stay committed — without it every `xcodebuild` call
-re-resolves and loses the binary artifact (decision 53).
+No third-party dependencies — VLCKit was removed along with video playback.
 
 ## The toolchain here is ahead of the one this must stay compatible with
 
@@ -79,8 +76,8 @@ review enforces the folder edges now. `scripts/check-layer-imports.sh` still
 enforces the one part a grep can see: `Domain` and `UseCase` stay framework-free.
 
 The tree is `source/` (`App`, `Domain`, `UseCase`, `Infrastructure`, `Data`,
-`Services`, `Presentation`), `tests/` (five unit-test bundles), `uitest/`
-(XCUITest) and `archive/tvOS/` (decision 52).
+`Services`, `Presentation`), `tests/` (one bundle, folders mirroring `source/`),
+`uitest/` (XCUITest) and `archive/tvOS/` (decision 52).
 
 Repositories are stateless `Sendable` structs; caching is an injected
 collaborator, never hidden inside one. Infrastructure is stateless or
@@ -107,9 +104,9 @@ Use lists and bullet points when asked to, or when the content is multifaceted e
 - Protocol suffix `*Protocol`. `Mock*` in the main target for previews, `Stub*`
   in test targets only.
 - Liquid Glass for chrome, always with a Reduce Transparency fallback.
-- One platform, so no platform divergence. The surviving `+iOS.swift` files and
-  their `#if os(iOS)` guards are a leftover of the tvOS split; leave them where
-  they are rather than renaming them in an unrelated change.
+- One platform, so no platform divergence. The `+iOS.swift` suffixes and
+  `#if os(iOS)` guards were a leftover of the tvOS split and are gone — the
+  files carry the plain type name. Do not reintroduce either.
 
 ## Testing
 

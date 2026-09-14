@@ -1,7 +1,7 @@
 # mixtape — build repo
 
-A Jellyfin client for iOS and tvOS. Browse video and music libraries, play both,
-report progress back.
+A Jellyfin client for iOS. Browse a music library, play albums, report
+progress back.
 
 `docs/engineering-doc.md` is the source of truth. Appendix A in it is the
 architecture template. `docs/jellyfin-openapi.json` (Jellyfin 10.11.11, OpenAPI
@@ -16,10 +16,12 @@ that makes the task easier.
 
 ## Target
 
-iOS 26+, tvOS 26+. No macOS. No back-deploy, no `#available`.
+iOS only — iPhone and iPad, portrait. No macOS, no tvOS. No back-deploy,
+no `#available`. The deployment target is **26.1**, not 26.0: the wallet's
+`tabViewBottomAccessory` is 26.1 API and `#available` is banned (decision 52).
 Swift 6 language mode.
-`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
-VLCKit is the only third-party dependency.
+`SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated`, `SWIFT_APPROACHABLE_CONCURRENCY = NO`.
+No third-party dependencies — VLCKit was removed along with video playback.
 
 ## The toolchain here is ahead of the one this must stay compatible with
 
@@ -51,7 +53,8 @@ dismisses, the wallet returns to the page that album came from.
 These are absent, not disabled, not deferred to V2. Do not add them. Do not add
 an abstraction that only a cross-album queue would use.
 
-tvOS gets a conventional focus-driven album grid. No wallet there.
+The tvOS build is gone (decision 52). Its files sit in `archive/tvOS/`, out of
+the project. Do not revive them as part of an unrelated change.
 
 ## Architecture — MV, never MVVM
 
@@ -64,10 +67,17 @@ Presentation → Services → UseCase → Domain
                   Data, Infrastructure
 ```
 
-Six SPM targets in `MixtapeKit`, layout and dependency edges per engineering doc
-§3. `MixtapePresentation` never depends on `MixtapeData`, `MixtapeUseCase`, or
-`MixtapeInfrastructure`. `MixtapeUseCase` never imports SwiftUI or Observation.
-The composition root in the app target is the only place that sees all six.
+Six layer folders under `source/`, all compiled into the one app target
+(decision 53). There is no `MixtapeKit` package and no `import MixtapeDomain`.
+The edges are still the rule — `Presentation` never reaches into `Data`,
+`UseCase` or `Infrastructure`; `UseCase` never imports SwiftUI or Observation;
+`AppContainer.swift` is the only place that wires all six — but nothing but
+review enforces the folder edges now. `scripts/check-layer-imports.sh` still
+enforces the one part a grep can see: `Domain` and `UseCase` stay framework-free.
+
+The tree is `source/` (`App`, `Domain`, `UseCase`, `Infrastructure`, `Data`,
+`Services`, `Presentation`), `tests/` (one bundle, folders mirroring `source/`),
+`uitest/` (XCUITest) and `archive/tvOS/` (decision 52).
 
 Repositories are stateless `Sendable` structs; caching is an injected
 collaborator, never hidden inside one. Infrastructure is stateless or
@@ -94,8 +104,236 @@ Use lists and bullet points when asked to, or when the content is multifaceted e
 - Protocol suffix `*Protocol`. `Mock*` in the main target for previews, `Stub*`
   in test targets only.
 - Liquid Glass for chrome, always with a Reduce Transparency fallback.
-- Platform divergence: two files with `#if os(iOS)` / `#if os(tvOS)`, named for
-  what they are. Never one file branching inside a body.
+- One platform, so no platform divergence. The `+iOS.swift` suffixes and
+  `#if os(iOS)` guards were a leftover of the tvOS split and are gone — the
+  files carry the plain type name. Do not reintroduce either.
+
+## Swift code quality
+
+Write Swift for human readers first. Optimise for clarity, locality, and ease of review rather than brevity or minimising line count.
+
+Follow these references, in priority order:
+
+1. Swift API Design Guidelines
+2. Google Swift Style Guide
+3. Airbnb Swift Style Guide
+4. Kodeco Swift Style Guide
+5. Repository `.swiftformat` and SwiftLint configuration
+
+### General principles
+
+- Clarity at the call site is more important than brevity.
+- Prefer obvious, conventional Swift over clever or compressed Swift.
+- Match the style and abstractions already present in the surrounding code.
+- Do not introduce abstractions merely to reduce repetition.
+- Do not combine unrelated operations just because Swift syntax permits it.
+- Keep control flow shallow and easy to scan.
+- Prefer early exits with `guard` where they make the happy path clearer.
+- Prefer meaningful intermediate values over deeply nested expressions.
+- Prefer descriptive names over abbreviations.
+- Avoid unnecessary comments. Prefer code whose intent is apparent from naming and structure.
+- Comments should explain why something exists, not restate what the code does.
+
+### Function structure
+
+Functions should read as a sequence of distinct logical steps.
+
+Use blank lines between conceptual phases such as:
+
+- validation and early exits
+- cancellation or cleanup
+- creation of local state
+- mutation of instance state
+- data transformation
+- calls into controllers, repositories, or services
+- reporting, telemetry, or other side effects
+- asynchronous follow-up work
+
+Do not produce a long uninterrupted block of unrelated statements.
+
+Prefer:
+
+```swift
+guard let session, queue.indices.contains(index) else {
+    return
+}
+
+progressTask?.cancel()
+
+let generation = OperationGeneration()
+let track = queue[index]
+
+currentGeneration = generation
+currentIndex = index
+position = .zero
+status = .preparing
+
+let stream = buildAudioStreamURL(
+    track: track,
+    session: session,
+    playSessionID: playSessionID
+)
+
+controller.load(url: stream.url)
+controller.play()
+
+status = .playing
+
+await refreshNowPlayingAsync(generation: generation)
+```
+
+Avoid:
+
+```swift
+guard let session, queue.indices.contains(index) else {
+    return
+}
+progressTask?.cancel()
+let generation = OperationGeneration()
+let track = queue[index]
+currentGeneration = generation
+currentIndex = index
+position = .zero
+status = .preparing
+let stream = buildAudioStreamURL(track: track, session: session, playSessionID: playSessionID)
+controller.load(url: stream.url)
+controller.play()
+status = .playing
+await refreshNowPlayingAsync(generation: generation)
+```
+
+### Function calls and declarations
+
+Keep short, genuinely simple calls on one line.
+
+Use multiline formatting when a call:
+
+- has several labelled arguments
+- is difficult to scan on one line
+- mixes closures with other arguments
+- approaches the configured line-length limit
+- benefits from visually exposing the role of each argument
+
+Prefer:
+
+```swift
+let stream = buildAudioStreamURL(
+    track: track,
+    session: session,
+    playSessionID: playSessionID
+)
+```
+
+over a dense equivalent when the multiline form is easier to read.
+
+Do not force every call to be multiline. Use judgement based on readability.
+
+### Expressions
+
+Do not optimise for the fewest expressions or statements.
+
+Avoid dense expressions containing multiple transformations, optional operations, closures, or side effects.
+
+Prefer:
+
+```swift
+let activeTracks = tracks.filter(\.isActive)
+let sortedTracks = activeTracks.sorted(using: sortOrder)
+```
+
+when it is easier to understand than chaining everything together.
+
+Keep fluent chains together when the sequence itself is the clearest representation.
+
+### Naming
+
+Names should make usage understandable without consulting the declaration.
+
+- Use nouns for values and types.
+- Use verbs or verb phrases for actions.
+- Name booleans so they read as assertions, such as `isPlaying`, `hasNextTrack`, or `canRetry`.
+- Avoid vague names such as `data`, `info`, `value`, `result`, `item`, or `manager` when a more precise domain name exists.
+- Avoid abbreviations unless they are conventional within Swift or the codebase.
+- Do not encode type information redundantly in names.
+
+### Types and APIs
+
+Prefer small APIs with clear responsibilities.
+
+Do not add:
+
+- unnecessary protocols
+- wrapper types with no behavioural purpose
+- generic abstractions for a single concrete use
+- helper functions used only once unless they materially improve readability
+- dependency layers solely to make code appear architecturally pure
+
+Extract code when the extracted concept has a meaningful name or isolates a coherent responsibility.
+
+### Swift-specific style
+
+- Prefer type inference when the type is obvious.
+- Avoid explicit `self` unless required or useful for disambiguation.
+- Prefer optional shorthand binding such as `guard let session else`.
+- Prefer modern Swift APIs and language features supported by the deployment target.
+- Prefer value semantics unless identity or shared mutable state is required.
+- Respect Swift 6 strict concurrency.
+- Treat actor isolation, `Sendable`, and task lifetime as correctness concerns, not compiler obstacles.
+- Do not use `@unchecked Sendable` to silence concurrency errors unless the safety invariant is understood and documented.
+- Prefer structured concurrency over detached or unstructured tasks.
+- Avoid unnecessary `Task {}` wrappers.
+
+### SwiftUI
+
+- Use SwiftUI-first design.
+- Keep views declarative.
+- Do not move simple presentation logic into unnecessary view models.
+- Prefer focused `@Observable` models where mutable shared state is actually required.
+- Keep side effects outside `body`.
+- Extract subviews when they represent meaningful UI concepts or materially improve readability, not merely to reduce line count.
+
+### Changes to existing code
+
+Before editing:
+
+- inspect nearby code
+- preserve established terminology
+- preserve architectural boundaries
+- reuse existing helpers and patterns where appropriate
+
+Do not rewrite surrounding code unless doing so is necessary for the requested change.
+
+Avoid unrelated cleanup in focused changes.
+
+### Formatting
+
+The repository formatter is authoritative.
+
+After editing Swift files, run:
+
+```bash
+swiftformat .
+```
+
+Do not manually fight formatter output.
+
+Formatting is only the final mechanical pass. Code should already be organised into readable logical sections before formatting.
+
+### Final review
+
+Before considering Swift work complete, reread the changed code as if reviewing another engineer's pull request.
+
+Check that:
+
+- intent is obvious without reconstructing the implementation mentally
+- functions have a clear narrative flow
+- logical phases are visually separated
+- names communicate domain meaning
+- expressions are not unnecessarily dense
+- control flow is straightforward
+- concurrency is correct
+- no needless abstraction was introduced
+- the resulting code looks like deliberate production Swift rather than generated code
 
 ## Testing
 
@@ -104,10 +342,15 @@ Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 Test behaviour, not the mock's plumbing. Inject a clock; never sleep.
 Repositories are tested against a stubbed `URLProtocol` — never a live server.
 
-**No XCUITest this round.** The `iOSUITests` and `tvOSUITests` targets stay
-wired up and their stub files stay in place, but no UI test is written and none
-runs in a gate. Do not add one, and do not "temporarily" enable the targets to
-check something.
+All unit tests are one Xcode test target, `MixtapeTests`, over the whole of
+`tests/` — folders named `tests/Domain`, `tests/UseCase`, etc. to match
+`source/` (decision 54), but one target, not five (decision 55). It loads into
+the app as its test host, so every file uses `@testable import Mixtape` — one
+module, one import (decisions 52 and 53).
+
+**No XCUITest this round.** The `MixtapeUITests` target stays wired up and its
+stub file stays in place, but no UI test is written and none runs in a gate. Do
+not add one, and do not "temporarily" enable the target to check something.
 
 Accessibility identifiers are **still required** on every screen, per
 engineering doc §9 — they are what makes the deferred UI tests writable, and
@@ -128,136 +371,11 @@ mapping runs against captured JSON fixtures, repositories against a stubbed
 `URLProtocol`. A test that needs the server running is a broken test.
 
 Read the server through `./scripts/jf-probe.swift` (decision 47); `curl` is
-denied on this machine. Drive the Apple TV simulator with
-`./scripts/tv-remote.sh <udid> up|down|left|right|select|menu|type:TEXT`
-(decision 49) — `idb ui key` and `idb ui remote` are refused on this
-CoreSimulator, and the Xcode 26.6 Simulator app's keyboard never reaches tvOS.
-Screenshot between presses with `xcrun simctl io <udid> screenshot`; there is
-no accessibility tree for tvOS over `idb`, so identifier queries wait for XCUITest.
-
-## Scope
-
-Only the 15 capabilities in engineering doc §1 are in scope. Everything in
-"Out of scope for V1" is not to be built, and gets no abstraction, no protocol
-method, and no TODO.
-
-Deferred beyond that, this round only: **XCUITest** and CI. Both are coming
-back, so leave their seams intact — accessibility identifiers for the first,
-gate commands that a workflow can call for the second. Do not build either.
-
-## Slice gate criteria
-
-A slice is done only when all of the following hold. Do not start the next slice
-until they do.
-
-1. `xcodebuild build` passes for both the `iOS` and `tvOS` schemes.
-2. `xcodebuild test` passes for both schemes, unit tests only — new tests
-   included, none skipped, none commented out:
-
-   ```
-   -skip-testing:iOSUITests      # iOS scheme
-   -skip-testing:tvOSUITests     # tvOS scheme
-   ```
-
-   Skipping the UI bundles is the *only* permitted exclusion. Skipping a unit
-   test is never a way to pass this gate.
-3. `./scripts/check-layer-imports.sh` exits 0. **Slice 1 creates this script**
-   (engineering doc §13 step 1); until it exists, slice 1 is the only slice that
-   may run, and creating it is part of slice 1's outcome.
-4. `swiftformat --lint .` is clean.
-5. The slice's own stated outcome is demonstrable, and the acceptance criteria
-   from engineering doc §12 that the slice claims are satisfied.
-6. One commit for the slice, message naming the slice.
-
-Resolve a simulator at runtime rather than hardcoding an OS version — this
-machine has no iOS 26.0 runtime, so a pinned `OS=26.0` destination fails as a
-destination error that reads like a project fault:
+denied on this machine. Enter credentials on the iOS simulator with
+`./scripts/sim-type.sh` (decision 46) and screenshot with
+`xcrun simctl io <udid> screenshot`. The Apple TV remote helpers moved to
+`archive/tvOS/scripts/` with the rest of the tvOS build.
 
 ```bash
 xcrun simctl list devices available
 ```
-
-If a gate fails twice in a row with no progress between attempts, stop and record
-why in `BLOCKED.md` rather than weakening the gate, deleting the test, or moving
-on. Never mark a slice complete with a failing or removed test.
-
-You are operating autonomously. The user is not watching in real time and cannot answer
-questions mid-task, so asking 'Want me to…?' or 'Shall I…?' will block the work. For
-reversible actions that follow from the original request, proceed without asking. Stop
-only for destructive actions or genuine scope changes the user must decide. Offering
-follow-ups after the task is done is fine; asking permission before doing the work is not.
-
-Exception: when the user is describing a problem, asking a question, or thinking out loud
-rather than requesting a change, the deliverable is your assessment. Report your findings
-and stop. Don't apply a fix until they ask for one.
-
-Before ending your turn, check your last paragraph. If it is a plan, an analysis, a
-question, a list of next steps, or a promise about work you have not done ('I'll…', 'let
-me know when…'), do that work now with tool calls. That includes retrying after errors and
-gathering missing information yourself. Do not stop because the context or session is long.
-End your turn only when the task is complete or you are blocked on input only the user can
-provide.
-
-Before running a command that changes system state (such as restarts, deletes, or config
-edits), check that the evidence actually supports that specific action. A signal that
-pattern-matches to a known failure may have a different cause.
-
-# Delivering work
-
-The user's request — or the plan they approved — sets the scope, and the scope is the
-deliverable: don't quietly narrow, widen, or swap it. Read ambiguity the way a careful
-colleague would: make routine judgment calls yourself, and check in only when different
-readings would lead to materially different work. If you see a real problem with the task
-as specified, say so in a sentence or two and keep building under stated assumptions; if
-the user hears the concern and reaffirms, that is their decision, so deliver the full
-request.
-
-If a question comes up partway, first do everything that doesn't depend on the answer;
-then state the assumption you made, or — when going ahead on a wrong guess would be unsafe
-or would make the work useless — put the question at the end of a turn that also delivers
-that progress. If one part turns out to be blocked, complete every other part in full and
-say exactly what you left out and why — the whole task is the deliverable, and scaling it
-down is the user's call, not yours. A step you have decided on is something to run, not to
-announce: describing the next step and ending the turn leaves it undone until the user
-replies.
-
-Keep changes to what the request needs. Something else you notice worth doing — cleanup or
-documentation the task didn't call for, a change to a file the task didn't require — is a
-suggestion to make at the end, not a change to make; actions clearly beyond what the ask
-implies, and risky or destructive ones, still need the user's go-ahead.
-
-# Scope of changes and tests
-
-If, while working or testing, you find a pre-existing bug, a performance concern, or
-behaviour the task doesn't mention, don't fix, optimise or extend it in this change unless
-the requested behaviour cannot work without it; report it as a follow-up in your summary.
-Where the task is ambiguous, implement the reading its wording and the surrounding code
-most directly support, state that assumption in your summary, and don't build for the
-other readings as well. Verify your work however you like; scratch scripts and quick
-checks need not be kept. Commit tests only where the task asks for them or this repository
-already keeps tests for this kind of change, sized like the neighbouring test files —
-roughly one focused test per stated behaviour — and don't turn scratch checks into
-additional permanent test files. This is about extras only: implement every behaviour the
-task asks for, completely.
-
-# Edits
-
-The number of tokens used to edit files is best minimized, all else being equal.
-Therefore, when it will not affect the end result, try to surgically edit a file rather
-than rewrite the entire thing.
-
-# Progress
-
-Before you start, say in a line what you're about to do; brief updates while you work help
-the user follow along. Close with a short recap that stands on its own — what you found,
-what you did, and what's next — so a reader who only sees the last message has the full
-picture.
-
-# Delegation
-
-Delegate to subagents when a task splits into parts that can be researched or read
-independently and you only need the conclusions. Give each subagent enough context to
-finish on its own — it cannot see this conversation. Send independent subagents in a
-single message so they run concurrently. Review the returned work yourself before using
-it; spawn a separate reviewer only for changes that are large or hard to verify by reading.
-Subagents never commit — you make the commits.

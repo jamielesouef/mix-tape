@@ -1,0 +1,32 @@
+//  PlaceholderPlaybackRepository.swift
+//  mixtape
+//
+//  Created by Jamie Le Souëf on 04/09/2026.
+//
+
+import Foundation
+
+nonisolated struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
+    func audioStream(
+        track: MediaItem,
+        session: UserSession,
+        playSessionID _: String
+    ) -> AudioStream {
+        AudioStream(
+            url: session.serverURL.appending(path: "Audio/\(track.id)/unavailable"),
+            playMethod: .directPlay
+        )
+    }
+
+    func reportStart(_: PlaybackReport, session _: UserSession) async throws {
+        throw MixtapeError.serverUnreachable
+    }
+
+    func reportProgress(_: PlaybackReport, session _: UserSession) async throws {
+        throw MixtapeError.serverUnreachable
+    }
+
+    func reportStopped(_: PlaybackReport, session _: UserSession) async throws {
+        throw MixtapeError.serverUnreachable
+    }
+}

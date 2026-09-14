@@ -1,0 +1,128 @@
+//  AlbumDetailScreen.swift
+//  mixtape
+//
+//  Created by Jamie Le Souëf on 03/09/2026.
+//
+
+import SwiftUI
+
+struct AlbumDetailScreen: View {
+    // MARK: - Properties
+
+    @Environment(\.libraryService) private var libraryService: LibraryService
+    @Environment(\.musicPlayerService) private var music: MusicPlayerService
+    let album: MediaItem
+
+    init(album: MediaItem) {
+        self.album = album
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 16) {
+                    RemoteImage(
+                        source: .item(album, .primary),
+                        maxHeight: 600,
+                        placeholder: "music.note"
+                    )
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: 320)
+                    .clipShape(.rect(cornerRadius: 12))
+                    Text(album.name)
+                        .font(.title.bold())
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier(AlbumDetailIdentifiers.titleLabel)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button("Play", systemImage: "play.fill") { play(startingAt: 0) }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(loadedTracks.isEmpty)
+                        .accessibilityIdentifier(AlbumDetailIdentifiers.playButton)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical)
+            }
+            Section("Tracks") {
+                switch libraryService.tracks[album.id] {
+                case .none,
+                     .idle,
+                     .loading:
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                case let .failed(error):
+                    RetryView(error: error) { await libraryService.loadTracks(albumID: album.id) }
+                case let .loaded(tracks) where tracks.isEmpty:
+                    Text("No tracks")
+                        .foregroundStyle(.secondary)
+                case let .loaded(tracks):
+                    ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
+                        Button { play(startingAt: index) } label: {
+                            TrackRow(track: track)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier(AlbumDetailIdentifiers.trackRow(track.id))
+                    }
+                }
+            }
+        }
+        .navigationTitle(album.name)
+        .task { await libraryService.loadTracks(albumID: album.id) }
+    }
+
+    // MARK: - Private
+
+    private var loadedTracks: [MediaItem] {
+        if case let .loaded(tracks) = libraryService.tracks[album.id] {
+            return tracks
+        }
+        return []
+    }
+
+    /// Artist and year, with the separator dropped when either one is missing.
+    private var subtitle: String {
+        [album.albumArtist, album.productionYear.map { $0.formatted(.number.grouping(.never)) }]
+            .compactMap(\.self)
+            .joined(separator: " · ")
+    }
+
+    private func play(startingAt index: Int) {
+        let tracks = loadedTracks
+
+        guard tracks.isEmpty == false else {
+            return
+        }
+
+        Task { await music.play(album: album, tracks: tracks, startingAt: index) }
+    }
+}
+
+// MARK: - Previews
+
+#if DEBUG
+    #Preview("loaded") {
+        NavigationStack {
+            AlbumDetailScreen(album: MockMedia.albums[0])
+        }
+        .environment(\.libraryService, MockLibraryService.loaded())
+    }
+
+    #Preview("empty") {
+        NavigationStack {
+            AlbumDetailScreen(album: MockMedia.albums[0])
+        }
+        .environment(\.libraryService, MockLibraryService.empty())
+    }
+
+    #Preview("failure") {
+        NavigationStack {
+            AlbumDetailScreen(album: MockMedia.albums[0])
+        }
+        .environment(\.libraryService, MockLibraryService.failed())
+    }
+#endif
