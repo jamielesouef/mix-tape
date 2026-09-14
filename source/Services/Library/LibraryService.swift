@@ -15,20 +15,13 @@ final class LibraryService {
     // MARK: - Properties
 
     private(set) var libraries: LoadState<[Library]> = .idle
-    private(set) var pages: [String: LoadState<Page<MediaItem>>] = [:]
     private(set) var details: [String: LoadState<MediaItem>] = [:]
-    private(set) var tracks: [String: LoadState<[MediaItem]>] = [:]
-    private(set) var pageLoadError: [String: MixtapeError] = [:]
 
-    private var inFlight: Set<String> = []
-    private var exhausted: Set<String> = []
-    private var tracksInFlight: Set<String> = []
-    private var currentGeneration = OperationGeneration()
-
+    private let epoch: LoadEpochTracker
+    private let pagesService: LibraryPagesService
+    private let albumTracksService: AlbumTracksService
     private let fetchLibraries: FetchLibrariesUseCase
-    private let fetchLibraryItems: FetchLibraryItemsUseCase
     private let fetchItemDetail: FetchItemDetailUseCase
-    private let fetchAlbumTracks: FetchAlbumTracksUseCase
     private let sessionService: SessionService
 
     // MARK: - Initialization
@@ -46,15 +39,23 @@ final class LibraryService {
         pageLoadError: [String: MixtapeError] = [:]
     ) {
         self.fetchLibraries = fetchLibraries
-        self.fetchLibraryItems = fetchLibraryItems
         self.fetchItemDetail = fetchItemDetail
-        self.fetchAlbumTracks = fetchAlbumTracks
         self.sessionService = sessionService
+        epoch = LoadEpochTracker(sessionService: sessionService)
+        pagesService = LibraryPagesService(
+            fetchLibraryItems: fetchLibraryItems,
+            epoch: epoch,
+            pageSize: Self.pageSize,
+            pages: pages
+        )
+        albumTracksService = AlbumTracksService(
+            fetchAlbumTracks: fetchAlbumTracks,
+            sessionService: sessionService,
+            epoch: epoch,
+            tracks: tracks
+        )
         self.libraries = libraries
-        self.pages = pages
         self.details = details
-        self.tracks = tracks
-        self.pageLoadError = pageLoadError
     }
 
     // MARK: - Public API
@@ -70,12 +71,24 @@ final class LibraryService {
         loadedLibraries.first { $0.id == id }
     }
 
+    var pages: [String: LoadState<Page<MediaItem>>] {
+        pagesService.pages
+    }
+
+    var pageLoadError: [String: MixtapeError] {
+        pagesService.pageLoadError
+    }
+
+    var tracks: [String: LoadState<[MediaItem]>] {
+        albumTracksService.tracks
+    }
+
     func loadHome() async {
         guard let session else {
             return
         }
 
-        let generation = currentGeneration
+        let generation = epoch.generation
 
         libraries = .loading
 
@@ -86,110 +99,43 @@ final class LibraryService {
         guard let session else {
             return
         }
-
-        if case .loaded = pages[id] {
+        guard pagesService.isLoaded(id) == false, pagesService.isInFlight(id) == false else {
             return
         }
 
-        guard inFlight.contains(id) == false else {
-            return
-        }
-
-        let epoch = session
-        let generation = currentGeneration
+        let requestEpoch = session
+        let generation = epoch.generation
 
         if libraries.isLoaded == false {
-            await loadLibraries(epoch: epoch, generation: generation)
+            await loadLibraries(epoch: requestEpoch, generation: generation)
         }
 
         guard let library = library(id: id) else {
-            if isCurrent(epoch: epoch, generation: generation) {
-                pages[id] = .failed(.transport("Library not found"))
+            if epoch.isCurrent(epoch: requestEpoch, generation: generation) {
+                pagesService.markFailed(id: id, error: .transport("Library not found"))
             }
             return
         }
 
-        inFlight.insert(id)
-        defer { inFlight.remove(id) }
-
-        exhausted.remove(id)
-        pages[id] = .loading
-
-        do {
-            let page = try await fetchLibraryItems(
-                libraryID: id,
-                kind: Self.itemKind(library.kind),
-                page: PageRequest(startIndex: 0, limit: Self.pageSize),
-                session: epoch
-            )
-
-            guard isCurrent(epoch: epoch, generation: generation) else {
-                return
-            }
-
-            pages[id] = .loaded(page)
-
-            if page.items.count < Self.pageSize || page.items.count >= page.totalCount {
-                exhausted.insert(id)
-            }
-        } catch {
-            let mapped = handle(error)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                pages[id] = .failed(mapped)
-            }
-        }
+        await pagesService.loadFirstPage(
+            id: id,
+            kind: Self.itemKind(library.kind),
+            epoch: requestEpoch,
+            generation: generation
+        )
     }
 
     func loadMore(libraryID id: String) async {
         guard let session, let library = library(id: id) else {
             return
         }
-        guard inFlight.contains(id) == false, exhausted.contains(id) == false else {
-            return
-        }
-        guard case let .loaded(current) = pages[id] else {
-            return
-        }
 
-        let epoch = session
-        let generation = currentGeneration
-
-        inFlight.insert(id)
-        defer { inFlight.remove(id) }
-
-        do {
-            let request = PageRequest(startIndex: current.items.count, limit: Self.pageSize)
-            let next = try await fetchLibraryItems(
-                libraryID: id,
-                kind: Self.itemKind(library.kind),
-                page: request,
-                session: epoch
-            )
-
-            guard isCurrent(epoch: epoch, generation: generation) else {
-                return
-            }
-
-            let merged = current.items + next.items
-
-            pages[id] = .loaded(Page(
-                items: merged,
-                totalCount: next.totalCount,
-                startIndex: current.startIndex
-            ))
-            pageLoadError[id] = nil
-
-            if next.items.count < Self.pageSize || merged.count >= next.totalCount {
-                exhausted.insert(id)
-            }
-        } catch {
-            let mapped = handle(error)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                pageLoadError[id] = mapped
-            }
-        }
+        await pagesService.loadMore(
+            id: id,
+            kind: Self.itemKind(library.kind),
+            epoch: session,
+            generation: epoch.generation
+        )
     }
 
     func loadDetail(id: String) async {
@@ -197,89 +143,50 @@ final class LibraryService {
             return
         }
 
-        let epoch = session
-        let generation = currentGeneration
+        let requestEpoch = session
+        let generation = epoch.generation
 
         details[id] = .loading
 
-        do {
-            let loaded = try await fetchItemDetail(id: id, session: epoch)
+        guard
+            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+                try await fetchItemDetail(id: id, session: requestEpoch)
+            })
+        else {
+            return
+        }
 
-            if isCurrent(epoch: epoch, generation: generation) {
-                details[id] = .loaded(loaded)
-            }
-        } catch {
-            let mapped = handle(error)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                details[id] = .failed(mapped)
-            }
+        switch result {
+        case let .success(loaded): details[id] = .loaded(loaded)
+        case let .failure(mapped): details[id] = .failed(mapped)
         }
     }
 
     func loadTracks(albumID: String) async {
-        guard let session else {
-            return
-        }
-
-        if case .loaded = tracks[albumID] {
-            return
-        }
-
-        guard tracksInFlight.contains(albumID) == false else {
-            return
-        }
-
-        let epoch = session
-        let generation = currentGeneration
-
-        tracksInFlight.insert(albumID)
-        defer { tracksInFlight.remove(albumID) }
-
-        tracks[albumID] = .loading
-
-        do {
-            let loaded = try await fetchAlbumTracks(albumID: albumID, session: epoch)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                tracks[albumID] = .loaded(loaded)
-            }
-        } catch {
-            let mapped = handle(error)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                tracks[albumID] = .failed(mapped)
-            }
-        }
+        await albumTracksService.loadTracks(albumID: albumID)
     }
 
     func refresh() async {
-        currentGeneration = OperationGeneration()
+        epoch.advance()
 
-        pages = [:]
         details = [:]
-        tracks = [:]
-        pageLoadError = [:]
-        exhausted = []
+        pagesService.reset()
+        albumTracksService.reset()
 
         await loadHome()
     }
 
     func endSession() {
         libraries = .idle
-        pages = [:]
         details = [:]
-        tracks = [:]
-        pageLoadError = [:]
+        pagesService.reset()
+        albumTracksService.reset()
     }
 
     // MARK: - Private
 
     private var session: UserSession? {
-        if case let .signedIn(session) = sessionService.state {
-            return session
-        }
-        return nil
+        sessionService.currentSession
     }
 
     static func itemKind(_: LibraryKind) -> MediaKind {
@@ -288,36 +195,21 @@ final class LibraryService {
 
     /// Fetches the library list into `libraries`. Shared by the home load and by the album
     /// load, which needs the list on hand before it can resolve a library by id.
-    private func loadLibraries(epoch: UserSession, generation: OperationGeneration) async {
-        do {
-            let loaded = try await fetchLibraries(session: epoch)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                libraries = .loaded(loaded)
-            }
-        } catch {
-            let mapped = handle(error)
-
-            if isCurrent(epoch: epoch, generation: generation) {
-                libraries = .failed(mapped)
-            }
-        }
-    }
-
-    /// Whether a result that started under `epoch` and `generation` may still be applied.
-    /// A sign-out or a refresh while the request was in flight makes it stale, and stale
-    /// results are dropped rather than written over newer state.
-    private func isCurrent(epoch: UserSession, generation: OperationGeneration) -> Bool {
-        session == epoch && currentGeneration == generation
-    }
-
-    private func handle(_ error: any Error) -> MixtapeError {
-        let mapped = (error as? MixtapeError) ?? .transport(error.localizedDescription)
-
-        if mapped == .sessionExpired {
-            sessionService.handleSessionExpiry()
+    private func loadLibraries(
+        epoch requestEpoch: UserSession,
+        generation: OperationGeneration
+    ) async {
+        guard
+            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+                try await fetchLibraries(session: requestEpoch)
+            })
+        else {
+            return
         }
 
-        return mapped
+        switch result {
+        case let .success(loaded): libraries = .loaded(loaded)
+        case let .failure(mapped): libraries = .failed(mapped)
+        }
     }
 }
