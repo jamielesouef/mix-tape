@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
+struct PlaceholderPlaybackRepository: PlaybackRepositoryProtocol {
     func audioStream(
         track: MediaItem,
         session: UserSession,

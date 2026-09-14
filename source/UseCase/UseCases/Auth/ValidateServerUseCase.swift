@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct ValidateServerUseCase: Sendable {
+struct ValidateServerUseCase: Sendable {
     private let repository: any AuthRepositoryProtocol
 
     init(repository: any AuthRepositoryProtocol) {

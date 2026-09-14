@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct FetchItemDetailUseCase: Sendable {
+struct FetchItemDetailUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 
     init(repository: any LibraryRepositoryProtocol) {

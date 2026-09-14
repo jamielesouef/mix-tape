@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct FetchAlbumTracksUseCase: Sendable {
+struct FetchAlbumTracksUseCase: Sendable {
     private let repository: any LibraryRepositoryProtocol
 
     init(repository: any LibraryRepositoryProtocol) {

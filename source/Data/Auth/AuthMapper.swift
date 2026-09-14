@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated enum AuthMapper {
+enum AuthMapper {
     static func serverIdentity(
         from dto: PublicSystemInfoDTO,
         baseURL: URL

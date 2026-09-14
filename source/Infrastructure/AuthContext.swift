@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct AuthContext: Sendable, Equatable {
+struct AuthContext: Sendable, Equatable {
     let baseURL: URL
     let deviceID: String
     let appVersion: String

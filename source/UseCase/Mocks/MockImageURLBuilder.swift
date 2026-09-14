@@ -7,7 +7,7 @@
 import Foundation
 
 #if DEBUG
-    nonisolated struct MockImageURLBuilder: ImageURLBuilderProtocol {
+    struct MockImageURLBuilder: ImageURLBuilderProtocol {
         /// Previews want a real picture, so the path is a placeholder image of the requested
         /// size. The item and tag ride along as query items: the placeholder host ignores
         /// them, and they keep the builder's inputs visible to tests.

@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
+struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
     private let client: JellyfinHTTPClient
     private let appVersion: String
 

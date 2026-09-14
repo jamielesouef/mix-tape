@@ -19,6 +19,9 @@ disabled_rules:
   - trailing_comma
   - todo
   - opening_brace
+  # SwiftFormat's own modifierOrder rule enforces the opposite order
+  # (private/final before nonisolated); SwiftFormat runs in gate.sh and wins.
+  - modifier_order
 
 opt_in_rules:
   - array_init
@@ -46,7 +49,6 @@ opt_in_rules:
   - legacy_multiple
   - literal_expression_end_indentation
   - lower_acl_than_parent
-  - modifier_order
   - multiline_parameters
   - operator_usage_whitespace
   - overridden_super_call
@@ -77,7 +79,7 @@ type_name:
     error: 60
 
 identifier_name:
-  min_length: 2
+  min_length: 3
   excluded:
     - id
     - x
@@ -93,16 +95,16 @@ line_length:
   ignores_comments: true
 
 file_length:
-  warning: 300
-  error: 400
-
-type_body_length:
   warning: 200
   error: 250
 
+type_body_length:
+  warning: 150
+  error: 200
+
 function_body_length:
-  warning: 60
-  error: 100
+  warning: 30
+  error: 40
 
 cyclomatic_complexity:
   warning: 12

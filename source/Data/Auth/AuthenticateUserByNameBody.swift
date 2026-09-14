@@ -4,12 +4,12 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct AuthenticateUserByNameBody: Encodable {
+struct AuthenticateUserByNameBody: Encodable {
     let username: String
-    let pw: String
+    let password: String
 
     enum CodingKeys: String, CodingKey {
         case username = "Username"
-        case pw = "Pw"
+        case password = "Pw"
     }
 }

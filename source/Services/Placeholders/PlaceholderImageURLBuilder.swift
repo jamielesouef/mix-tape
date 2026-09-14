@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct PlaceholderImageURLBuilder: ImageURLBuilderProtocol {
+struct PlaceholderImageURLBuilder: ImageURLBuilderProtocol {
     func url(
         itemID _: String,
         tag _: String?,

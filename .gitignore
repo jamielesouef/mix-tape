@@ -56,3 +56,7 @@ media/
 # Anchored: unanchored `screens/` also matched every source `Screens/` directory,
 # because the filesystem here is case-insensitive.
 /screens/
+
+# gate.sh output: raw xcodebuild logs + result bundles
+.gate-out/
+.gate-out.prev/

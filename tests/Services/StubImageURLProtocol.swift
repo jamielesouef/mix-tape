@@ -35,6 +35,8 @@ final class StubImageURLProtocol: URLProtocol, @unchecked Sendable {
         return URLSession(configuration: config)
     }
 
+    // Overrides URLProtocol's `class func` API; `static` cannot express an override.
+    // swiftlint:disable:next static_over_final_class
     override class func canInit(with request: URLRequest) -> Bool {
         guard let url = request.url else {
             return false
@@ -43,6 +45,8 @@ final class StubImageURLProtocol: URLProtocol, @unchecked Sendable {
         return registry.handler(for: url) != nil
     }
 
+    // Overrides URLProtocol's `class func` API; `static` cannot express an override.
+    // swiftlint:disable:next static_over_final_class
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         request
     }

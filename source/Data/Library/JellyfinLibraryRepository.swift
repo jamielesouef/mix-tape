@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
+struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
     // MARK: - Properties
 
     private let client: JellyfinHTTPClient

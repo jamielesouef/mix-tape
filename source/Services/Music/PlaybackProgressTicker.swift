@@ -51,16 +51,8 @@ final class PlaybackProgressTicker {
     ) {
         task?.cancel()
 
-        let clock = clock
-        let interval = interval
-        let reportInterval = reportInterval
-        let stallThreshold = stallThreshold
-
-        task = Task {
-            var elapsedSinceReport: Duration = .zero
-            var lastPosition: Duration = .zero
-            var hasAdvanced = false
-            var staleTicks = 0
+        task = Task { [clock, interval, reportInterval, stallThreshold] in
+            var tickState = TickState()
 
             while true {
                 do {
@@ -76,31 +68,18 @@ final class PlaybackProgressTicker {
                     continue
                 }
 
-                if current > .zero {
-                    hasAdvanced = true
-                }
+                let tick = tickState.advance(
+                    position: current,
+                    interval: interval,
+                    reportInterval: reportInterval,
+                    stallThreshold: stallThreshold
+                )
 
-                if hasAdvanced {
-                    staleTicks = current == lastPosition ? staleTicks + 1 : 0
-                }
+                await handle(tick)
 
-                lastPosition = current
-
-                guard staleTicks < stallThreshold else {
-                    await handle(.stalled)
+                if tick == .stalled {
                     return
                 }
-
-                elapsedSinceReport += interval
-
-                guard elapsedSinceReport >= reportInterval else {
-                    await handle(.refresh)
-                    continue
-                }
-
-                elapsedSinceReport = .zero
-
-                await handle(.refreshAndReport)
             }
         }
     }

@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct PlaybackState: Sendable, Hashable {
+struct PlaybackState: Sendable, Hashable {
     let position: Duration
 
     var hasResumePoint: Bool {

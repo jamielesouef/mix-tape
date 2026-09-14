@@ -14,7 +14,7 @@
 # so its result bundle can still be read.
 set -u
 cd "$(dirname "$0")/.." || exit 2
-out=${GATE_OUT:-${TMPDIR:-/tmp}/mixtape-gate}
+out=${GATE_OUT:-.gate-out}
 log=.gate-log
 sha=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
 started=$(date '+%Y-%m-%dT%H:%M:%S')
@@ -52,8 +52,7 @@ step=
 run() {
     echo "== $*"
     if ! "$@" > "$out/$step.log" 2>&1; then
-        grep -E "error:|Testing failed|TEST FAILED|BUILD FAILED" "$out/$step.log" | cut -c1-300 | head -40
-        tail -20 "$out/$step.log"
+        ./scripts/xcreport.sh "$step" "$out/$step.log" "$out/Mixtape.xcresult"
         fail "$step (log: $out/$step.log)"
     fi
 }

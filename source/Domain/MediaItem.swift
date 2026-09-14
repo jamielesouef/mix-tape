@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct MediaItem: Sendable, Identifiable, Hashable {
+struct MediaItem: Sendable, Identifiable, Hashable {
     let id: String
     let name: String
     let kind: MediaKind

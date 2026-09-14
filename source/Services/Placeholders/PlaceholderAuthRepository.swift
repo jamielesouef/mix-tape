@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct PlaceholderAuthRepository: AuthRepositoryProtocol {
+struct PlaceholderAuthRepository: AuthRepositoryProtocol {
     func serverIdentity(at _: URL) async throws -> ServerIdentity {
         throw MixtapeError.serverUnreachable
     }

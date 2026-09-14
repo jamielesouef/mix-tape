@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct BuildAudioStreamURLUseCase: Sendable {
+struct BuildAudioStreamURLUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 
     init(repository: any PlaybackRepositoryProtocol) {

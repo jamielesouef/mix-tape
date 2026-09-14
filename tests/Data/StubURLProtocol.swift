@@ -10,10 +10,14 @@ import Foundation
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     static let headerName = "X-Stub-Server"
 
+    // Overrides URLProtocol's `class func` API; `static` cannot express an override.
+    // swiftlint:disable:next static_over_final_class
     override class func canInit(with _: URLRequest) -> Bool {
         true
     }
 
+    // Overrides URLProtocol's `class func` API; `static` cannot express an override.
+    // swiftlint:disable:next static_over_final_class
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         request
     }

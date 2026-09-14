@@ -6,7 +6,7 @@
 
 import os
 
-nonisolated struct AppLogger: Sendable {
+struct AppLogger: Sendable {
     static let network = AppLogger(category: "network")
     static let playback = AppLogger(category: "playback")
     static let auth = AppLogger(category: "auth")

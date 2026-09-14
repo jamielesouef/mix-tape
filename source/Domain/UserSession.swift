@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct UserSession: Sendable, Equatable {
+struct UserSession: Sendable, Equatable {
     let serverURL: URL
     let userID: String
     let userName: String

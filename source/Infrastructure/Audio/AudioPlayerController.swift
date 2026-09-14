@@ -23,27 +23,35 @@ final class AudioPlayerController: AudioPlayerControlling {
     private var timeObserver: Any?
     private var endObserver: (any NSObjectProtocol)?
     private var statusObservation: NSKeyValueObservation?
-    private var interruptionObserver: (any NSObjectProtocol)?
-    private var routeChangeObserver: (any NSObjectProtocol)?
-    private var mediaResetObserver: (any NSObjectProtocol)?
-    private var didConfigureSession = false
     private var lastLoadedURL: URL?
 
-    init() {
-        configureRemoteCommands()
-        configureSessionObservers()
-    }
+    private let audioSession = AudioSessionCoordinator()
+    private let remoteCommands = RemoteCommandCenter()
 
-    isolated deinit {
-        for observer in [interruptionObserver, routeChangeObserver, mediaResetObserver] {
-            if let observer {
-                NotificationCenter.default.removeObserver(observer)
+    init() {
+        remoteCommands.onPlay = { [weak self] in self?.onRemotePlay?() }
+        remoteCommands.onPause = { [weak self] in self?.onRemotePause?() }
+        remoteCommands.onNext = { [weak self] in self?.onRemoteNext?() }
+        remoteCommands.onPrevious = { [weak self] in self?.onRemotePrevious?() }
+        remoteCommands.onSeek = { [weak self] position in self?.onRemoteSeek?(position) }
+
+        audioSession.onPause = { [weak self] in self?.onRemotePause?() }
+        audioSession.onPlay = { [weak self] in self?.onRemotePlay?() }
+        audioSession.onReconfigureNeeded = { [weak self] in
+            guard let self else {
+                return
+            }
+
+            if let lastLoadedURL {
+                load(url: lastLoadedURL)
+            } else {
+                audioSession.configureIfNeeded()
             }
         }
     }
 
     func load(url: URL) {
-        configureSessionIfNeeded()
+        audioSession.configureIfNeeded()
 
         lastLoadedURL = url
         removeItemObservers()
@@ -106,7 +114,7 @@ final class AudioPlayerController: AudioPlayerControlling {
     }
 
     func setNextTrackEnabled(_ enabled: Bool) {
-        MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = enabled
+        remoteCommands.setNextTrackEnabled(enabled)
     }
 
     // MARK: - Private
@@ -116,24 +124,6 @@ final class AudioPlayerController: AudioPlayerControlling {
 
     private static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
         MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-    }
-
-    private func configureSessionIfNeeded() {
-        guard didConfigureSession == false else {
-            return
-        }
-
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback)
-            try AVAudioSession.sharedInstance().setActive(true)
-
-            didConfigureSession = true
-
-            AppLogger.playback.info("audio session configured: category .playback, active")
-        } catch {
-            AppLogger.playback
-                .error("audio session configuration failed: \(error.localizedDescription)")
-        }
     }
 
     // MARK: - Item observers
@@ -189,143 +179,5 @@ final class AudioPlayerController: AudioPlayerControlling {
         timeObserver = nil
         endObserver = nil
         statusObservation = nil
-    }
-
-    // MARK: - Audio session observers
-
-    private func configureSessionObservers() {
-        let center = NotificationCenter.default
-
-        observeInterruptions(on: center)
-        observeRouteChanges(on: center)
-        observeMediaServicesReset(on: center)
-
-        AppLogger.playback
-            .info("audio session interruption/route-change/reset observers registered")
-    }
-
-    private func observeInterruptions(on center: NotificationCenter) {
-        interruptionObserver = center.addObserver(
-            forName: AVAudioSession.interruptionNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            let userInfo = notification.userInfo
-
-            guard let typeValue = userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt else {
-                return
-            }
-
-            let optionsValue = userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
-
-            MainActor.assumeIsolated {
-                self?.handleInterruption(typeValue: typeValue, optionsValue: optionsValue)
-            }
-        }
-    }
-
-    private func observeRouteChanges(on center: NotificationCenter) {
-        routeChangeObserver = center.addObserver(
-            forName: AVAudioSession.routeChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            let reasonKey = AVAudioSessionRouteChangeReasonKey
-
-            guard let reasonValue = notification.userInfo?[reasonKey] as? UInt else {
-                return
-            }
-
-            MainActor.assumeIsolated {
-                self?.handleRouteChange(reasonValue: reasonValue)
-            }
-        }
-    }
-
-    private func observeMediaServicesReset(on center: NotificationCenter) {
-        mediaResetObserver = center.addObserver(
-            forName: AVAudioSession.mediaServicesWereResetNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.handleMediaServicesReset()
-            }
-        }
-    }
-
-    // MARK: - Audio session handlers
-
-    private func handleInterruption(typeValue: UInt, optionsValue: UInt) {
-        guard let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
-            return
-        }
-
-        let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
-
-        switch audioInterruptionAction(type: type, options: options) {
-        case .pause: onRemotePause?()
-        case .resume: onRemotePlay?()
-        case .none: break
-        }
-    }
-
-    private func handleRouteChange(reasonValue: UInt) {
-        guard
-            let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue),
-            reason == .oldDeviceUnavailable
-        else {
-            return
-        }
-
-        onRemotePause?()
-    }
-
-    private func handleMediaServicesReset() {
-        didConfigureSession = false
-
-        AppLogger.playback.error("media services reset; reconfiguring audio session")
-
-        guard let lastLoadedURL else {
-            configureSessionIfNeeded()
-            return
-        }
-
-        load(url: lastLoadedURL)
-    }
-
-    // MARK: - Remote commands
-
-    private func configureRemoteCommands() {
-        let center = MPRemoteCommandCenter.shared()
-
-        center.playCommand.addTarget { [weak self] _ in
-            self?.onRemotePlay?()
-            return .success
-        }
-
-        center.pauseCommand.addTarget { [weak self] _ in
-            self?.onRemotePause?()
-            return .success
-        }
-
-        center.nextTrackCommand.addTarget { [weak self] _ in
-            self?.onRemoteNext?()
-            return .success
-        }
-
-        center.previousTrackCommand.addTarget { [weak self] _ in
-            self?.onRemotePrevious?()
-            return .success
-        }
-
-        center.changePlaybackPositionCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
-                return .commandFailed
-            }
-
-            self?.onRemoteSeek?(.seconds(event.positionTime))
-            return .success
-        }
     }
 }

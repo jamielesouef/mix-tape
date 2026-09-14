@@ -7,6 +7,10 @@
 import Observation
 import UIKit
 
+// swiftlint:disable file_length
+// Sole owner of the observable playback queue/status/position — CLAUDE.md's
+// single-source-of-truth rule ("the queue is the album") keeps this state on one
+// type; splitting it would risk two owners of the same queue.
 @MainActor
 @Observable
 final class MusicPlayerService {
@@ -16,6 +20,12 @@ final class MusicPlayerService {
 
     /// Pressing previous this far into a track restarts it rather than stepping back a track.
     static let restartWindow: Duration = .seconds(3)
+
+    /// Whether pressing previous restarts the current track rather than stepping back a
+    /// track — true past `restartWindow` into the track, or already at the first track.
+    static func shouldRestartOnPrevious(position: Duration, index: Int) -> Bool {
+        position > restartWindow || index == 0
+    }
 
     // MARK: - Properties
 
@@ -51,9 +61,7 @@ final class MusicPlayerService {
     @ObservationIgnored private var currentGeneration = OperationGeneration()
     @ObservationIgnored private var claimedFinishID: String?
     private let controller: any AudioPlayerControlling
-    private let reporter: PlaybackReporter
-    private let ticker: PlaybackProgressTicker
-    private let nowPlaying: NowPlayingCoordinator
+    private let telemetry: PlaybackTelemetry
     private let sessionService: SessionService
 
     // MARK: - Initialization
@@ -71,21 +79,23 @@ final class MusicPlayerService {
         self.controller = controller
         self.sessionService = sessionService
 
-        reporter = PlaybackReporter(
-            buildAudioStreamURL: buildAudioStreamURL,
-            reportStart: reportStart,
-            reportProgress: reportProgress,
-            reportStopped: reportStopped
-        )
-        ticker = PlaybackProgressTicker(
-            clock: clock,
-            interval: Self.nowPlayingInterval,
-            reportInterval: Self.progressInterval,
-            stallThreshold: Self.stallTickThreshold
-        )
-        nowPlaying = NowPlayingCoordinator(
-            controller: controller,
-            artworkProvider: artworkProvider
+        telemetry = PlaybackTelemetry(
+            reporter: PlaybackReporter(
+                buildAudioStreamURL: buildAudioStreamURL,
+                reportStart: reportStart,
+                reportProgress: reportProgress,
+                reportStopped: reportStopped
+            ),
+            ticker: PlaybackProgressTicker(
+                clock: clock,
+                interval: Self.nowPlayingInterval,
+                reportInterval: Self.progressInterval,
+                stallThreshold: Self.stallTickThreshold
+            ),
+            nowPlaying: NowPlayingCoordinator(
+                controller: controller,
+                artworkProvider: artworkProvider
+            )
         )
 
         controller.onEnded = { [weak self] in self?.trackDidEnd() }
@@ -130,23 +140,14 @@ final class MusicPlayerService {
             return
         }
 
-        enqueueStoppedReportForCurrent()
-
-        if currentIndex + 1 < queue.count {
-            await start(index: currentIndex + 1)
-        } else {
-            finish()
-        }
+        await advanceOrFinish(from: currentIndex)
     }
 
     func previous() async {
         guard let currentIndex else {
             return
         }
-
-        let isPastRestartWindow = position > Self.restartWindow
-
-        guard isPastRestartWindow == false, currentIndex > 0 else {
+        guard Self.shouldRestartOnPrevious(position: position, index: currentIndex) == false else {
             seek(to: .zero)
             return
         }
@@ -169,7 +170,7 @@ final class MusicPlayerService {
     func stop() async {
         tearDown(reportingTo: session)
 
-        await reporter.drain()
+        await telemetry.drain()
     }
 
     func claimFinish(albumID: String) -> Bool {
@@ -195,22 +196,9 @@ final class MusicPlayerService {
 
 private extension MusicPlayerService {
     func tearDown(reportingTo session: UserSession?) {
-        ticker.cancel()
-        currentGeneration = OperationGeneration()
+        telemetry.reportStopped(track: current, position: position, session: session)
 
-        if let track = current, let session {
-            reporter.stopped(track: track, position: position, session: session)
-        }
-
-        controller.stop()
-
-        status = .idle
-        album = nil
-        queue = []
-        currentIndex = nil
-        position = .zero
-        finishedAlbumID = nil
-        claimedFinishID = nil
+        resetPlayback(clearingQueue: true)
     }
 
     func start(index: Int) async {
@@ -218,7 +206,7 @@ private extension MusicPlayerService {
             return
         }
 
-        ticker.cancel()
+        telemetry.stopTicking()
 
         let generation = OperationGeneration()
         let track = queue[index]
@@ -228,10 +216,10 @@ private extension MusicPlayerService {
         position = .zero
         status = .preparing
 
-        reporter.beginSession()
-        nowPlaying.clearArtwork()
+        telemetry.beginSession()
+        telemetry.clearArtwork()
 
-        let stream = reporter.audioStream(for: track, session: session)
+        let stream = telemetry.audioStream(for: track, session: session)
 
         controller.load(url: stream.url)
         controller.play()
@@ -239,10 +227,21 @@ private extension MusicPlayerService {
 
         status = .playing
 
-        reporter.started(track: track, position: .zero, stream: stream, session: session)
+        telemetry.reportStarted(track: track, position: .zero, stream: stream, session: session)
         startProgressReporting(track: track, generation: generation)
 
         await refreshNowPlayingAsync(generation: generation)
+    }
+
+    /// Advances to the track after `index`, or ends the album when it was the last one.
+    func advanceOrFinish(from index: Int) async {
+        enqueueStoppedReportForCurrent()
+
+        if index + 1 < queue.count {
+            await start(index: index + 1)
+        } else {
+            finish()
+        }
     }
 
     func handleFailure(_ error: MixtapeError) {
@@ -250,26 +249,26 @@ private extension MusicPlayerService {
     }
 
     func pause() {
-        guard status == .playing else {
-            return
-        }
-
-        controller.pause()
-        status = .paused
-
-        reportOnce(isPaused: true)
-        refreshNowPlaying()
+        setPaused(true)
     }
 
     func resume() {
-        guard status == .paused else {
+        setPaused(false)
+    }
+
+    func setPaused(_ isPaused: Bool) {
+        guard status == (isPaused ? .playing : .paused) else {
             return
         }
 
-        controller.play()
-        status = .playing
+        if isPaused {
+            controller.pause()
+        } else {
+            controller.play()
+        }
+        status = isPaused ? .paused : .playing
 
-        reportOnce(isPaused: false)
+        reportOnce(isPaused: isPaused)
         refreshNowPlaying()
     }
 
@@ -287,18 +286,19 @@ private extension MusicPlayerService {
                 return
             }
 
-            enqueueStoppedReportForCurrent()
-
-            if currentIndex + 1 < queue.count {
-                await start(index: currentIndex + 1)
-            } else {
-                finish()
-            }
+            await advanceOrFinish(from: currentIndex)
         }
     }
 
     func finish() {
-        ticker.cancel()
+        resetPlayback(clearingQueue: false)
+    }
+
+    /// Resets playback to idle. A full teardown (explicit stop, sign out) also forgets the
+    /// album/queue and any finish marker; an end-of-album finish leaves them in place so the
+    /// wallet can read which album just finished via `finishedAlbumID`.
+    func resetPlayback(clearingQueue: Bool) {
+        telemetry.stopTicking()
         currentGeneration = OperationGeneration()
 
         controller.stop()
@@ -307,11 +307,18 @@ private extension MusicPlayerService {
         position = .zero
         currentIndex = nil
         claimedFinishID = nil
-        finishedAlbumID = album?.id
+
+        if clearingQueue {
+            album = nil
+            queue = []
+            finishedAlbumID = nil
+        } else {
+            finishedAlbumID = album?.id
+        }
     }
 
     func startProgressReporting(track: MediaItem, generation: OperationGeneration) {
-        ticker.start { [weak self] in
+        telemetry.startTicking { [weak self] in
             guard
                 let self,
                 status == .playing,
@@ -340,43 +347,34 @@ private extension MusicPlayerService {
             return
         }
 
-        await reporter.progress(track: track, position: position, isPaused: false, session: session)
+        await telemetry.reportProgress(track: track, position: position, session: session)
     }
 
     func reportOnce(isPaused: Bool) {
-        guard let track = current, let session else {
-            return
-        }
-
-        let reportedPosition = position
-
-        Task { [reporter] in
-            await reporter.progress(
-                track: track,
-                position: reportedPosition,
-                isPaused: isPaused,
-                session: session
-            )
-        }
+        telemetry.reportOnce(
+            track: current,
+            position: position,
+            isPaused: isPaused,
+            session: session
+        )
     }
 
     func enqueueStoppedReportForCurrent() {
-        guard let track = current, let session else {
-            return
-        }
-
-        reporter.stopped(track: track, position: position, session: session)
+        telemetry.reportStopped(track: current, position: position, session: session)
     }
 
     func refreshNowPlaying() {
-        let isPlaying = status == .playing
-
-        nowPlaying.refresh(track: current, album: album, position: position, isPlaying: isPlaying)
+        telemetry.refreshNowPlaying(
+            track: current,
+            album: album,
+            position: position,
+            isPlaying: status == .playing
+        )
     }
 
     func refreshNowPlayingAsync(generation: OperationGeneration) async {
         if let track = current {
-            await nowPlaying.loadArtwork(for: track) { [weak self] in
+            await telemetry.loadArtwork(for: track) { [weak self] in
                 self?.currentGeneration == generation
             }
         }
@@ -389,9 +387,6 @@ private extension MusicPlayerService {
     }
 
     var session: UserSession? {
-        if case let .signedIn(session) = sessionService.state {
-            return session
-        }
-        return nil
+        sessionService.currentSession
     }
 }

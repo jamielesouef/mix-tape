@@ -1,0 +1,7 @@
+# Nested config: size rules earn nothing on Swift Testing suite bodies.
+# A long @Suite is a feature (readable, one-file-per-feature test coverage),
+# not debt. SwiftLint merges this with the parent .swiftlint.yml by directory.
+disabled_rules:
+  - file_length
+  - type_body_length
+  - function_body_length

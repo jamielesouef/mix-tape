@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct BaseItemDTO: Decodable {
+struct BaseItemDTO: Decodable {
     let id: String
     let name: String?
     let type: String?

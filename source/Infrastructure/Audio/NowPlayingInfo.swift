@@ -7,7 +7,7 @@
 import Foundation
 import UIKit
 
-nonisolated struct NowPlayingInfo: Sendable {
+struct NowPlayingInfo: Sendable {
     let title: String
     let artist: String
     let albumTitle: String

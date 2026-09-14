@@ -8,7 +8,7 @@ import Foundation
 
 #if DEBUG
 
-    nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
+    struct MockPlaybackRepository: PlaybackRepositoryProtocol {
         typealias AudioStreamResult = @Sendable (MediaItem, UserSession, String) -> AudioStream
         typealias ReportResult = @Sendable (PlaybackReport, UserSession) async throws -> Void
 
@@ -55,6 +55,7 @@ import Foundation
         /// that container, so callers can assert on direct play versus transcode.
         static let sampleAudioStream: AudioStreamResult = { track, _, _ in
             AudioStream(
+                // swiftlint:disable:next force_unwrapping
                 url: URL(string: "mock://audio/\(track.id)")!, // literal URL, cannot fail
                 playMethod: isNativeAudioContainer(track.container) ? .directPlay : .transcode
             )

@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 04/09/2026.
 //
 
-nonisolated struct WalletPager: Equatable {
+struct WalletPager: Equatable {
     let albums: [MediaItem]
     let columns: Int
 

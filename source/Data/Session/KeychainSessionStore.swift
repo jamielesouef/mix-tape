@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct KeychainSessionStore: SessionStoreProtocol {
+struct KeychainSessionStore: SessionStoreProtocol {
     // MARK: - Properties
 
     private static let sessionAccount = "session"

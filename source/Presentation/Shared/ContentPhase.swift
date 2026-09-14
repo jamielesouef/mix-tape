@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 04/09/2026.
 //
 
-nonisolated enum ContentPhase<Value: Sendable>: Sendable {
+enum ContentPhase<Value: Sendable>: Sendable {
     case loading
     case failed(MixtapeError)
     case empty
