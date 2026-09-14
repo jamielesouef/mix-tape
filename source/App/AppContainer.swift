@@ -24,41 +24,21 @@ struct AppContainer {
         let deviceID = (try? sessionStore.deviceID()) ?? UUID().uuidString
         let appVersion = Self.appVersion
 
-        let authRepository = JellyfinAuthRepository(
+        let repositories = Self.makeRepositories(
             client: client,
             deviceID: deviceID,
             appVersion: appVersion
         )
-        let libraryRepository = JellyfinLibraryRepository(client: client, appVersion: appVersion)
-        let playbackRepository = JellyfinPlaybackRepository(client: client, appVersion: appVersion)
 
-        sessionService = SessionService(
-            validateServer: ValidateServerUseCase(repository: authRepository),
-            signInWithPassword: SignInWithPasswordUseCase(
-                repository: authRepository,
-                store: sessionStore
-            ),
-            startQuickConnect: StartQuickConnectUseCase(repository: authRepository),
-            pollQuickConnect: PollQuickConnectUseCase(
-                repository: authRepository,
-                store: sessionStore
-            ),
-            restoreSession: RestoreSessionUseCase(store: sessionStore),
-            signOut: SignOutUseCase(store: sessionStore)
+        sessionService = Self.makeSessionService(
+            authRepository: repositories.auth,
+            sessionStore: sessionStore
         )
-
-        libraryService = LibraryService(
-            fetchLibraries: FetchLibrariesUseCase(repository: libraryRepository),
-            fetchLibraryItems: FetchLibraryItemsUseCase(repository: libraryRepository),
-            fetchItemDetail: FetchItemDetailUseCase(repository: libraryRepository),
-            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository),
+        libraryService = Self.makeLibraryService(
+            libraryRepository: repositories.library,
             sessionService: sessionService
         )
-
-        imageService = ImageService(
-            builder: JellyfinImageURLBuilder(),
-            sessionService: sessionService
-        )
+        imageService = Self.makeImageService(sessionService: sessionService)
 
         // Captured locally because a struct initialiser cannot escape `self` into a closure.
         let images = imageService
@@ -66,12 +46,8 @@ struct AppContainer {
             await images.image(for: track, kind: .primary, maxHeight: Self.artworkHeight)
         }
 
-        musicPlayerService = MusicPlayerService(
-            controller: AudioPlayerController(),
-            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: playbackRepository),
-            reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
-            reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
-            reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
+        musicPlayerService = Self.makeMusicPlayerService(
+            playbackRepository: repositories.playback,
             sessionService: sessionService,
             artworkProvider: artworkProvider
         )
@@ -104,6 +80,81 @@ struct AppContainer {
         return JellyfinHTTPClient(
             session: URLSession(configuration: configuration),
             deviceName: DeviceName.current
+        )
+    }
+
+    private struct Repositories {
+        let auth: JellyfinAuthRepository
+        let library: JellyfinLibraryRepository
+        let playback: JellyfinPlaybackRepository
+    }
+
+    private static func makeRepositories(
+        client: JellyfinHTTPClient,
+        deviceID: String,
+        appVersion: String
+    ) -> Repositories {
+        Repositories(
+            auth: JellyfinAuthRepository(
+                client: client,
+                deviceID: deviceID,
+                appVersion: appVersion
+            ),
+            library: JellyfinLibraryRepository(client: client, appVersion: appVersion),
+            playback: JellyfinPlaybackRepository(client: client, appVersion: appVersion)
+        )
+    }
+
+    private static func makeSessionService(
+        authRepository: JellyfinAuthRepository,
+        sessionStore: KeychainSessionStore
+    ) -> SessionService {
+        SessionService(
+            validateServer: ValidateServerUseCase(repository: authRepository),
+            signInWithPassword: SignInWithPasswordUseCase(
+                repository: authRepository,
+                store: sessionStore
+            ),
+            startQuickConnect: StartQuickConnectUseCase(repository: authRepository),
+            pollQuickConnect: PollQuickConnectUseCase(
+                repository: authRepository,
+                store: sessionStore
+            ),
+            restoreSession: RestoreSessionUseCase(store: sessionStore),
+            signOut: SignOutUseCase(store: sessionStore)
+        )
+    }
+
+    private static func makeLibraryService(
+        libraryRepository: JellyfinLibraryRepository,
+        sessionService: SessionService
+    ) -> LibraryService {
+        LibraryService(
+            fetchLibraries: FetchLibrariesUseCase(repository: libraryRepository),
+            fetchLibraryItems: FetchLibraryItemsUseCase(repository: libraryRepository),
+            fetchItemDetail: FetchItemDetailUseCase(repository: libraryRepository),
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository),
+            sessionService: sessionService
+        )
+    }
+
+    private static func makeImageService(sessionService: SessionService) -> ImageService {
+        ImageService(builder: JellyfinImageURLBuilder(), sessionService: sessionService)
+    }
+
+    private static func makeMusicPlayerService(
+        playbackRepository: JellyfinPlaybackRepository,
+        sessionService: SessionService,
+        artworkProvider: @escaping @Sendable (MediaItem) async -> UIImage?
+    ) -> MusicPlayerService {
+        MusicPlayerService(
+            controller: AudioPlayerController(),
+            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: playbackRepository),
+            reportStart: ReportPlaybackStartUseCase(repository: playbackRepository),
+            reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
+            reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
+            sessionService: sessionService,
+            artworkProvider: artworkProvider
         )
     }
 }
