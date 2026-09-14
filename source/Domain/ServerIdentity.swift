@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct ServerIdentity: Sendable, Equatable {
+struct ServerIdentity: Sendable, Equatable {
     let id: String
     let name: String
     let version: String

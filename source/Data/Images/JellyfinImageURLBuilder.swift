@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct JellyfinImageURLBuilder: ImageURLBuilderProtocol {
+struct JellyfinImageURLBuilder: ImageURLBuilderProtocol {
     func url(
         itemID: String,
         tag: String?,

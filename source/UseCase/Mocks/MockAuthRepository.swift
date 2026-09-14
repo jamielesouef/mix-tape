@@ -8,7 +8,7 @@ import Foundation
 
 #if DEBUG
 
-    nonisolated struct MockAuthRepository: AuthRepositoryProtocol {
+    struct MockAuthRepository: AuthRepositoryProtocol {
         // MARK: - Properties
 
         var serverIdentityResult: @Sendable (URL) async throws -> ServerIdentity

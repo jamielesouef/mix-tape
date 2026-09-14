@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated enum MixtapeError: Error, Sendable, Equatable {
+enum MixtapeError: Error, Sendable, Equatable {
     case serverUnreachable
     case notAJellyfinServer
     case invalidCredentials

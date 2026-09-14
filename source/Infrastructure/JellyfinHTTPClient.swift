@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct JellyfinHTTPClient: Sendable {
+struct JellyfinHTTPClient: Sendable {
     let session: URLSession
     let deviceName: String
 

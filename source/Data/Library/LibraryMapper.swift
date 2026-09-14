@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated enum LibraryMapper {
+enum LibraryMapper {
     static func library(from dto: BaseItemDTO) -> Library {
         let kind: LibraryKind =
             switch dto.collectionType {

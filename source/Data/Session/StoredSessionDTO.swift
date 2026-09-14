@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct StoredSessionDTO: Codable {
+struct StoredSessionDTO: Codable {
     let serverURL: URL
     let userID: String
     let userName: String

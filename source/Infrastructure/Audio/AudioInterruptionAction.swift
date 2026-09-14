@@ -6,7 +6,7 @@
 
 import AVFoundation
 
-nonisolated enum AudioInterruptionAction: Equatable {
+enum AudioInterruptionAction: Equatable {
     case pause
     case resume
     case none

@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 04/09/2026.
 //
 
-nonisolated enum WalletReturn: Equatable {
+enum WalletReturn: Equatable {
     case honour(page: Int)
     case pageIn
 

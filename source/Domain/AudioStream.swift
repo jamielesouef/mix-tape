@@ -6,7 +6,7 @@
 
 import Foundation
 
-nonisolated struct AudioStream: Sendable, Equatable {
+struct AudioStream: Sendable, Equatable {
     let url: URL
     let playMethod: PlayMethod
 }

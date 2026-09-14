@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated enum PlayerStatus: Sendable, Equatable {
+enum PlayerStatus: Sendable, Equatable {
     case idle
     case preparing
     case playing

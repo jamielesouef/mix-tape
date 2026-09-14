@@ -8,7 +8,7 @@ import Foundation
 
 #if DEBUG
 
-    final nonisolated class MockSessionStore: SessionStoreProtocol, @unchecked Sendable {
+    final class MockSessionStore: SessionStoreProtocol, @unchecked Sendable {
         // MARK: - Properties
 
         private let lock = NSLock()

@@ -5,9 +5,8 @@
 //
 
 #if DEBUG
-    import Foundation
 
-    nonisolated struct MockLibraryRepository: LibraryRepositoryProtocol {
+    struct MockLibraryRepository: LibraryRepositoryProtocol {
         // MARK: - Properties
 
         var librariesResult: @Sendable (UserSession) async throws -> [Library]

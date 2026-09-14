@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct ReportPlaybackStartUseCase: Sendable {
+struct ReportPlaybackStartUseCase: Sendable {
     private let repository: any PlaybackRepositoryProtocol
 
     init(repository: any PlaybackRepositoryProtocol) {

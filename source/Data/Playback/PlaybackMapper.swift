@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated enum PlaybackMapper {
+enum PlaybackMapper {
     static func body(from report: PlaybackReport) -> PlaybackReportBody {
         PlaybackReportBody(
             itemId: report.itemID,

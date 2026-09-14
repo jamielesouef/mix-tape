@@ -7,7 +7,7 @@
 import Foundation
 import Security
 
-nonisolated struct KeychainStore: Sendable {
+struct KeychainStore: Sendable {
     struct Failure: Error, Equatable {
         let status: OSStatus
     }

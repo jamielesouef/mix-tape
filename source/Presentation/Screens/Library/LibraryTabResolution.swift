@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 05/09/2026.
 //
 
-nonisolated enum LibraryTabResolution: Equatable {
+enum LibraryTabResolution: Equatable {
     case none
     case one(Library)
     case several([Library])

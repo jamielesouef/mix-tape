@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 04/09/2026.
 //
 
-nonisolated struct PlaceholderLibraryRepository: LibraryRepositoryProtocol {
+struct PlaceholderLibraryRepository: LibraryRepositoryProtocol {
     func libraries(session _: UserSession) async throws -> [Library] {
         throw MixtapeError.serverUnreachable
     }

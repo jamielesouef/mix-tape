@@ -8,7 +8,7 @@ import Foundation
 
 #if DEBUG
 
-    nonisolated struct MockPlaybackRepository: PlaybackRepositoryProtocol {
+    struct MockPlaybackRepository: PlaybackRepositoryProtocol {
         typealias AudioStreamResult = @Sendable (MediaItem, UserSession, String) -> AudioStream
         typealias ReportResult = @Sendable (PlaybackReport, UserSession) async throws -> Void
 

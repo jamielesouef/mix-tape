@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct PublicSystemInfoDTO: Decodable {
+struct PublicSystemInfoDTO: Decodable {
     let id: String?
     let serverName: String?
     let version: String?

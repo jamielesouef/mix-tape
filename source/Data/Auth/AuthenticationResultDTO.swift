@@ -4,7 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
-nonisolated struct AuthenticationResultDTO: Decodable {
+struct AuthenticationResultDTO: Decodable {
     let accessToken: String?
     let user: UserDTO?
 
