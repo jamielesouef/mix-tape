@@ -43,11 +43,19 @@ errs=$(grep -hE 'error:' "$log" 2>/dev/null \
 if capped "$errs"; then :; fi
 
 # 2. Test failures. The result bundle is structured; the log is not. Prefer it.
+#    Apple has renamed these keys between Xcode versions, so each is tried under
+#    a few plausible names and an entry that matches none is dumped as raw JSON.
+#    A reporter that silently prints nothing on a real failure is worse than one
+#    that prints something ugly -- the empty case is indistinguishable from pass.
 if [ -n "$result" ] && [ -e "$result" ] && command -v jq > /dev/null 2>&1; then
     tests=$(xcrun xcresulttool get test-results summary --path "$result" 2>/dev/null \
-            | jq -r '.testFailures[]? |
-                "\(.targetName // "?") \(.testName // "?"): \(
-                    (.failureText // "") | gsub("\n"; " ") )"' 2>/dev/null \
+            | jq -r '.testFailures[]?
+                | (.targetName // .testTarget // "") as $t
+                | (.testName // .testIdentifier // "") as $n
+                | ((.failureText // .failureMessage // .message // "")
+                     | gsub("\n"; " ")) as $m
+                | if ($n == "" and $m == "") then tojson
+                  else "\($t) \($n): \($m)" end' 2>/dev/null \
             | strip | cut -c1-240)
     if [ -n "${tests:-}" ]; then
         printf 'test failures:\n'
