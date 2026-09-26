@@ -1,128 +1,246 @@
-# SwiftLint configuration for MixTape
-# Swift 6.2 / iOS 26.1 — MV architecture, one type per file.
+# Case-sensitive paths to include during linting. Directory paths supplied on the
+# command line will be ignored.
+# SwiftFormat owns formatting; SwiftLint owns correctness, metrics and custom rules.
+#
+# The two tools were both enforcing whitespace, spacing, brace placement and
+# redundancy, which is how `wrapMultilineStatementBraces` ended up disabled in
+# `.swiftformat` — SwiftLint's `opening_brace` disagreed with it. Every rule in the
+# second group below has a direct SwiftFormat counterpart, so SwiftLint stands down
+# and `.swiftformat` is the single source of truth for how code is laid out.
+#
+# Keep enforcing here: identifier/type naming, force unwraps and casts, the metrics
+# limits, the `use_of_print` custom rule, and everything SwiftFormat has no opinion on.
+disabled_rules: # rule identifiers turned on by default to exclude from running
+  - non_optional_string_data_conversion
 
-included:
-  - source
-  - tests
-  - uitest
+  # `allowsMasterBranchSync` and friends name a real git branch that is
+  # literally called "master" (the pre-2020 default branch name). The code
+  # has to check for that exact string, so there is no rewording that keeps
+  # the meaning without the word.
+  - inclusive_language
 
-excluded:
-  - .build
-  - DerivedData
-  - archive
-  - design
-  - docs
-  - "**/xcuserdata"
+  # Whitespace and line breaks — SwiftFormat: --trim-whitespace, --linebreaks,
+  # blankLines*, linebreakAtEndOfFile
+  - leading_whitespace
+  - trailing_whitespace
+  - trailing_newline
+  - vertical_whitespace
 
-# Rules that overlap with SwiftFormat are disabled to avoid conflicts.
-disabled_rules:
+  # Spacing — SwiftFormat: spaceAroundParens, spaceAroundOperators, spaceInsideParens
+  - colon
+  - comma
+  - attribute_name_spacing
+  - function_name_whitespace
+  - no_space_in_method_call
+  - return_arrow_whitespace
+
+  # Braces, statement position and indentation — SwiftFormat: braces, elseOnSameLine,
+  # --indent-case, --wrap-arguments.
+  #
+  # `opening_brace` stays ENABLED on purpose: the opening brace belongs on the same
+  # line as the condition, and it is the rule that enforces that. SwiftFormat's
+  # `wrapMultilineStatementBraces` is disabled to match — see `.swiftformat`.
+  - closing_brace
+  - statement_position
+  - switch_case_alignment
+  - vertical_parameter_alignment
+
+  # Redundancy — SwiftFormat: redundantParens, redundantPattern, redundantGet,
+  # redundantNilInit, redundantLet, redundantBreak, void, --semicolons, --trailing-commas
+  - control_statement
+  - empty_enum_arguments
+  - empty_parameters
+  - empty_parentheses_with_trailing_closure
+  - implicit_getter
+  - implicit_optional_initialization
+  - redundant_discardable_let
+  - redundant_void_return
   - trailing_comma
-  - todo
-  - opening_brace
-  # SwiftFormat's own modifierOrder rule enforces the opposite order
-  # (private/final before nonisolated); SwiftFormat runs in gate.sh and wins.
-  - modifier_order
+  - trailing_semicolon
+  - unneeded_break_in_switch
+  - void_return
 
-opt_in_rules:
-  - array_init
-  - closure_end_indentation
-  - closure_spacing
-  - collection_alignment
-  - contains_over_filter_count
-  - contains_over_filter_is_empty
-  - contains_over_first_not_nil
-  - discouraged_optional_boolean
-  - empty_collection_literal
-  - empty_count
-  - empty_string
-  - enum_case_associated_values_count
-  - explicit_init
-  - fallthrough
-  - fatal_error_message
-  - first_where
-  - flatmap_over_map_reduce
-  - force_unwrapping
-  - identical_operands
-  - implicitly_unwrapped_optional
-  - joined_default_parameter
-  - last_where
-  - legacy_multiple
-  - literal_expression_end_indentation
-  - lower_acl_than_parent
-  - multiline_parameters
-  - operator_usage_whitespace
-  - overridden_super_call
-  - prefer_self_type_over_type_of_self
-  - prefer_zero_over_explicit_init
-  - private_action
-  - private_outlet
-  - redundant_nil_coalescing
-  - redundant_type_annotation
-  - sorted_first_last
-  - toggle_bool
-  - unavailable_function
-  - unneeded_parentheses_in_closure_argument
-  - unowned_variable_capture
-  - vertical_parameter_alignment_on_call
-  - vertical_whitespace_closing_braces
-  - yoda_condition
+  # Imports — SwiftFormat: duplicateImports, --import-grouping
+  - duplicate_imports
 
-analyzer_rules:
-  - unused_declaration
-  - unused_import
+excluded: # case-sensitive paths to ignore during linting. Takes precedence over `included`
+  - .build
+  - build
+  - DerivedData
 
-# Enforce house style from AGENTS.md.
-type_name:
-  min_length: 3
-  max_length:
-    warning: 50
-    error: 60
-
-identifier_name:
-  min_length: 3
-  excluded:
-    - id
-    - x
-    - y
-    - to
-    - at
-    - vc
-
-line_length:
-  warning: 120
-  error: 160
-  ignores_urls: true
-  ignores_comments: true
-
-file_length:
-  warning: 200
-  error: 250
+line_length: 150
 
 type_body_length:
-  warning: 150
-  error: 200
+    - 350 # warning
+    - 400 # error
 
-function_body_length:
-  warning: 30
-  error: 40
+# or they can set both explicitly
+file_length:
+    warning: 500
+    error: 1200
 
-cyclomatic_complexity:
-  warning: 12
-  error: 20
+type_name:
+    min_length: 4 # only warning
+    max_length: # warning and error
+        warning: 50
+        error: 60
+    allowed_symbols: ["_"]
+
+large_tuple:
+    - 3
+    - 5
 
 nesting:
-  type_level: 2
+    type_level:
+        - 2
+        - 3
+    function_level:
+        - 2
+        - 3
 
-# fatalError / as! / try! require a same-line comment (AGENTS.md);
-# force_unwrapping and friends are opt-in above so they surface.
-force_cast: error
-force_try: error
+warning_threshold: 5000
 
 custom_rules:
-  no_prefix_bang:
-    name: "No prefix ! — write x == false"
-    regex: '[\s(\[,=]\!\s*[a-zA-Z_][a-zA-Z0-9_.]*'
-    message: "Avoid prefix ! — write `x == false` instead (AGENTS.md)."
-    severity: warning
+    use_of_print:
+        name: "Use of print"
+        excluded: "AppLog.swift"
+        regex: '^[ \t]*print\('
+        message: "Avoid use of print(). Use AppLog.info or AppLog.error instead"
+        severity: error
 
-reporter: "xcode"
+    # A leading `!` is easy to miss when skimming, and easier still to lose in a
+    # diff. `foo == false` reads the same at a glance as `foo == true`.
+    # Force unwraps, `!=`, `try!` and `as!` are unaffected — the lookbehind only
+    # matches a `!` that starts an expression.
+    # The two leading lookbehinds exempt `#if !DEBUG` / `#elseif !FOO`: a compilation
+    # condition takes `!`, `&&` and `||` only, so `#if DEBUG == false` does not compile.
+    # `match_kinds` keeps the rule out of comments and string literals.
+    no_prefix_negation:
+        name: "Prefix negation"
+        regex: '(?<!#if[ \t]{0,8})(?<!#elseif[ \t]{0,8})(?<![A-Za-z0-9_)\]"!=<>?])!(?=[A-Za-z_(])'
+        message: "Write `foo == false` rather than `!foo` — a leading ! is easy to miss"
+        severity: error
+        match_kinds:
+            - argument
+            - identifier
+            - keyword
+            - parameter
+            - typeidentifier
+
+    # The rules below enforce docs/templates/README.md. Each one is a rule that has
+    # a mechanical tell. What has no tell (one derived loadState, no logic in a
+    # view, preview variants) stays with review.
+
+    # A computed `Binding(get:set:)` hides a mutation in its `set` and is rebuilt
+    # on every body pass. Bind `@State` and send the change from `.onChange(of:)`.
+    # See Presentation/PropertyWrappersTemplate.swift.
+    no_hand_built_binding:
+        name: "Hand-built Binding"
+        regex: '\bBinding\s*\(\s*get\s*:'
+        message: "Bind @State (this view owns it) or @Binding (the parent owns it) and react with .onChange(of:)"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # `@State` filled from an init only takes the first value. `@Previewable @State`
+    # in a #Preview is the one place it cannot be private.
+    private_state:
+        name: "Non-private @State"
+        regex: '(?<!@Previewable[ \t]{1,4})@(State|FocusState)[ \t]+(var|let|internal|public|fileprivate)\b'
+        message: "@State and @FocusState belong to this view. Make them private and initialise them inline"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # A private @Binding makes the memberwise init private, so the parent cannot pass `$value`.
+    non_private_binding:
+        name: "Private @Binding"
+        regex: '@Binding[ \t]+private\b'
+        message: "@Binding is set by the parent through the memberwise init. Leave it internal"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # Settings specific to one Mac go through SettingsService, which owns UserDefaults.
+    no_view_storage:
+        name: "Storage wrapper in a view"
+        regex: '@(AppStorage|SceneStorage)\b'
+        message: "Read and write settings through their service, not @AppStorage / @SceneStorage"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    no_legacy_observation:
+        name: "ObservableObject"
+        regex: '\bObservableObject\b|@Published\b|\bclass[ \t]+\w+ViewModel\b'
+        message: "State lives in a @MainActor @Observable final class *Service. No ObservableObject, @Published or view models"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # Bridges to NSSplitView and does not pass invalidation to its children. See CLAUDE.md.
+    no_hsplitview:
+        name: "HSplitView"
+        regex: '\bHSplitView\b'
+        message: "Use HStack + Divider. HSplitView leaves rows half-drawn"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # Stop presenting after first use when stacked with a screen's sheets. See CLAUDE.md.
+    no_file_importer:
+        name: "fileImporter / fileExporter"
+        regex: '\.file(Importer|Exporter)\s*\('
+        message: "Go through FilePanelPresenting (NSOpenPanel / NSSavePanel)"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # Domain <- Data <- Services <- Presentation. Only Presentation and App see SwiftUI.
+    no_swiftui_below_presentation:
+        name: "SwiftUI below Presentation"
+        included: '.*/(Domain|Data|Services)/.*\.swift'
+        regex: '^import[ \t]+SwiftUI\b'
+        message: "Domain, Data and Services do not import SwiftUI. Animation and presentation are a view concern"
+        severity: error
+
+    no_xctest:
+        name: "XCTest"
+        regex: '^import[ \t]+XCTest\b'
+        message: "Swift Testing only. @Suite and @Test, no XCTest"
+        severity: error
+
+    # Tests hold and release work with the StubGitClient continuation gate instead.
+    no_sleep_in_tests:
+        name: "Sleep in a test"
+        included: '.*/homerun-appTests/.*\.swift'
+        regex: '\b(Task\.sleep|sleep|usleep)\s*\('
+        message: "No sleep or polling. Use holdSnapshots / waitUntilSnapshotRequested / releaseSnapshots"
+        severity: error
+        excluded_match_kinds:
+            - comment
+            - doccomment
+            - string
+
+    # A declaration that wraps across lines ends its own paragraph. Consecutive
+    # one-line `let`s stay grouped; a `let` or `var` straight after a line that is
+    # only `)` runs two blocks together. See App/AppDependencies.swift.
+    blank_line_after_multiline_declaration:
+        name: "Blank line after a multi-line declaration"
+        regex: '\n[ \t]*\)[ \t]*\n[ \t]*(let|var)\b'
+        message: "Leave a blank line between a multi-line declaration's closing ) and the next let or var"
+        severity: error
