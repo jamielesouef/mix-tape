@@ -1,62 +1,61 @@
-# macOS
+.claude/settings.local.json
+
+## macOS
 .DS_Store
 .AppleDouble
 .LSOverride
 ._*
-.Spotlight-V100
-.Trashes
 
-# Swift Package Manager local artifacts (e.g. VLCKit binaries)
-.spm/
-
-# Xcode
-.build/
-DerivedData/
-**/xcuserdata/
+## Xcode — user-specific state
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
 *.xcscmblueprint
 *.xccheckout
 *.moved-aside
+
+## Xcode — build products & derived data
+build/
+DerivedData/
 *.hmap
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.xcarchive
+*.o
+*.lo
+*.la
+
+## Xcode Playgrounds
 timeline.xctimeline
 playground.xcworkspace
-*.xcuserstate
-*.xcworkspacedata
 
-# Xcode build output — logs and .xcbuilddata attachments, not source. One of
-# these attachment files reached a commit on 2026-09-09 anyway.
-build/
+## Swift Package Manager
+.build/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+.swiftpm/xcode/xcuserdata/
+.swiftpm/configuration/
+Packages/
+Package.resolved.bak
 
-# Local Jellyfin test fixtures (movies, albums) used to seed the dev server
-# for manual acceptance checks. Large binaries, some copyrighted; never
-# belong in the repo. A whole library's worth reached a commit on
-# 2026-09-09 anyway.
-media/
+## CocoaPods / Carthage (if ever used)
+Pods/
+Carthage/Build/
 
-# Editor state. The Swift extension regenerates launch.json on demand, and the
-# one it writes hardcodes a workspace name that is local to whoever opened it.
-.vscode/
+## Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
 
-# Local Jellyfin credentials for slice 004's acceptance checks and for
-# scripts/jf-probe.swift. Never committed — see SPEC-DECISIONS.md decisions 45
-# and 46. A spike run already leaked a live token into seven scratch files;
-# this entry exists so the same mistake cannot reach a commit.
-.jellyfin-dev.env
-
-# Same as above, different filename — this one reached a commit on
-# 2026-09-09 anyway. Untracked and ignored to stop it happening again.
-.env
-
-# Gate run log (slice 013): one line per ./scripts/gate.sh run. Local evidence, never committed.
-.gate-log
-
-# Ad-hoc screen captures from manual/agent-driven simulator walkthroughs. Local evidence, never committed.
-# Anchored: unanchored `screens/` also matched every source `Screens/` directory,
-# because the filesystem here is case-insensitive.
-/screens/
-
-# gate.sh output: raw xcodebuild logs + result bundles
-.gate-out/
-.gate-out.prev/
+## VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+.vscode-test/
+*.code-workspace
