@@ -88,11 +88,10 @@ struct JellyfinHTTPClient: Sendable {
         auth: AuthContext,
         body: Data?
     ) throws -> URLRequest {
-        guard
-            var components = URLComponents(
-                url: auth.baseURL.appending(path: path),
-                resolvingAgainstBaseURL: false
-            )
+        guard var components = URLComponents(
+            url: auth.baseURL.appending(path: path),
+            resolvingAgainstBaseURL: false
+        )
         else {
             throw MixtapeError.transport(path)
         }

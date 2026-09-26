@@ -64,15 +64,14 @@ final class LibraryPagesService {
 
         let request = PageRequest(startIndex: 0, limit: Self.pageSize)
 
-        guard
-            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
-                try await fetchLibraryItems(
-                    libraryID: id,
-                    kind: kind,
-                    page: request,
-                    session: requestEpoch
-                )
-            })
+        guard let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+            try await fetchLibraryItems(
+                libraryID: id,
+                kind: kind,
+                page: request,
+                session: requestEpoch
+            )
+        })
         else {
             return
         }
@@ -107,15 +106,14 @@ final class LibraryPagesService {
 
         let request = PageRequest(startIndex: current.items.count, limit: Self.pageSize)
 
-        guard
-            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
-                try await fetchLibraryItems(
-                    libraryID: id,
-                    kind: kind,
-                    page: request,
-                    session: requestEpoch
-                )
-            })
+        guard let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+            try await fetchLibraryItems(
+                libraryID: id,
+                kind: kind,
+                page: request,
+                session: requestEpoch
+            )
+        })
         else {
             return
         }

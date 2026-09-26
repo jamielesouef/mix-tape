@@ -116,11 +116,10 @@ final class ImageService {
     // MARK: - Private
 
     private func fetch(_ url: URL) async -> UIImage? {
-        guard
-            let (data, response) = try? await urlSession.data(from: url),
-            let http = response as? HTTPURLResponse,
-            (200 ... 299).contains(http.statusCode),
-            let image = await Self.decode(data)
+        guard let (data, response) = try? await urlSession.data(from: url),
+              let http = response as? HTTPURLResponse,
+              (200 ... 299).contains(http.statusCode),
+              let image = await Self.decode(data)
         else {
             return nil
         }

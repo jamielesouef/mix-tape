@@ -179,10 +179,9 @@ final class LibraryService {
         epoch requestEpoch: UserSession,
         generation: OperationGeneration
     ) async {
-        guard
-            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
-                try await fetchLibraries(session: requestEpoch)
-            })
+        guard let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+            try await fetchLibraries(session: requestEpoch)
+        })
         else {
             return
         }

@@ -55,10 +55,9 @@ final class AlbumTracksService {
 
         tracks[albumID] = .loading
 
-        guard
-            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
-                try await fetchAlbumTracks(albumID: albumID, session: requestEpoch)
-            })
+        guard let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+            try await fetchAlbumTracks(albumID: albumID, session: requestEpoch)
+        })
         else {
             return
         }

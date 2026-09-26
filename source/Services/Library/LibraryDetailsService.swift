@@ -41,10 +41,9 @@ final class LibraryDetailsService {
 
         details[id] = .loading
 
-        guard
-            let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
-                try await fetchItemDetail(id: id, session: requestEpoch)
-            })
+        guard let result = await epoch.fetchCurrent(epoch: requestEpoch, generation: generation, {
+            try await fetchItemDetail(id: id, session: requestEpoch)
+        })
         else {
             return
         }

@@ -277,11 +277,10 @@ private extension MusicPlayerService {
         let generation = currentGeneration
 
         Task { [weak self] in
-            guard
-                let self,
-                generation == currentGeneration,
-                let currentIndex,
-                current?.id == endingTrackID
+            guard let self,
+                  generation == currentGeneration,
+                  let currentIndex,
+                  current?.id == endingTrackID
             else {
                 return
             }
@@ -319,12 +318,11 @@ private extension MusicPlayerService {
 
     func startProgressReporting(track: MediaItem, generation: OperationGeneration) {
         telemetry.startTicking { [weak self] in
-            guard
-                let self,
-                status == .playing,
-                generation == currentGeneration,
-                current?.id == track.id,
-                session != nil
+            guard let self,
+                  status == .playing,
+                  generation == currentGeneration,
+                  current?.id == track.id,
+                  session != nil
             else {
                 return nil
             }

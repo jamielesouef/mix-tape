@@ -45,14 +45,13 @@ final class StubServer: @unchecked Sendable {
     func respond(status: Int, body: Data = Data()) {
         lock.withLock {
             handler = { request in
-                guard
-                    let url = request.url,
-                    let response = HTTPURLResponse(
-                        url: url,
-                        statusCode: status,
-                        httpVersion: nil,
-                        headerFields: nil
-                    )
+                guard let url = request.url,
+                      let response = HTTPURLResponse(
+                          url: url,
+                          statusCode: status,
+                          httpVersion: nil,
+                          headerFields: nil
+                      )
                 else {
                     throw URLError(.badURL)
                 }

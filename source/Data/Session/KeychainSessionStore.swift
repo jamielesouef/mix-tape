@@ -39,9 +39,8 @@ struct KeychainSessionStore: SessionStoreProtocol {
     }
 
     func deviceID() throws -> String {
-        if
-            let data = try store.data(account: Self.deviceIDAccount),
-            let existing = String(data: data, encoding: .utf8) {
+        if let data = try store.data(account: Self.deviceIDAccount),
+           let existing = String(data: data, encoding: .utf8) {
             return existing
         }
 

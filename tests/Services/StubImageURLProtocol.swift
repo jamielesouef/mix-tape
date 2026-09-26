@@ -59,13 +59,12 @@ final class StubImageURLProtocol: URLProtocol, @unchecked Sendable {
 
         Task {
             let (statusCode, data) = await handler()
-            guard
-                let http = HTTPURLResponse(
-                    url: url,
-                    statusCode: statusCode,
-                    httpVersion: nil,
-                    headerFields: nil
-                )
+            guard let http = HTTPURLResponse(
+                url: url,
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: nil
+            )
             else {
                 client?.urlProtocol(self, didFailWithError: URLError(.unknown))
                 return

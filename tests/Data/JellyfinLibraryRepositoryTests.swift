@@ -28,9 +28,8 @@ struct JellyfinLibraryRepositoryTests {
 
     /// The query of the last request the stub saw, empty when nothing has been sent yet.
     private var query: [String: String] {
-        guard
-            let url = stub.lastRequest?.url,
-            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        guard let url = stub.lastRequest?.url,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
             return [:]
         }
