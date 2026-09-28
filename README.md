@@ -23,7 +23,7 @@ A local Jellyfin 10.11.11 (`docker-compose.yml`, or the `mixtape-jellyfin:local`
 ## Building and verifying
 
 ```bash
-xcodebuild build -project MixTape.xcodeproj -scheme Mixtape -destination 'generic/platform=iOS Simulator'
+xcodebuild build -workspace Mixtape.xcworkspace -scheme Mixtape -destination 'generic/platform=iOS Simulator'
 ./scripts/gate.sh   # build, unit tests, layer, glass and swiftformat checks
 ```
 

@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import JellyfinKit
 
 struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
     private let client: JellyfinHTTPClient
@@ -88,12 +89,12 @@ struct JellyfinPlaybackRepository: PlaybackRepositoryProtocol {
         _ session: UserSession,
         _ kind: String
     ) async throws {
+        let body = PlaybackMapper.body(from: report)
+
         do {
-            try await client.post(
-                path,
-                body: PlaybackMapper.body(from: report),
-                auth: context(session)
-            )
+            try await translatingJellyfinErrors {
+                try await client.post(path, body: body, auth: context(session))
+            }
         } catch {
             AppLogger.network
                 .error("playback \(kind) report failed for item \(report.itemID): \(error)")

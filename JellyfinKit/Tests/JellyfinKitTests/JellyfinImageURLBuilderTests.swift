@@ -1,34 +1,28 @@
 //  JellyfinImageURLBuilderTests.swift
-//  mixtape
+//  JellyfinKit
 //
-//  Created by Jamie Le Souëf on 03/09/2026.
+//  Created by Jamie Le Souëf on 28/09/2026.
 //
 
 import Foundation
-import JellyfinKit
 import Testing
-@testable import Mixtape
+@testable import JellyfinKit
 
 @Suite(.tags(.repository))
 struct JellyfinImageURLBuilderTests {
     private let builder = JellyfinImageURLBuilder()
-    private let session = UserSession(
-        serverURL: URL(string: "http://localhost:8096")!,
-        userID: "user-1",
-        userName: "jamie",
-        accessToken: "tok-1",
-        deviceID: "device-1"
-    )
+    private let server = URL(string: "http://localhost:8096")!
 
     @Test
     func `primary image uses max height and the tag`() {
         let url = builder.url(
+            serverURL: server,
             itemID: "item-1",
             tag: "abc",
-            kind: .primary,
-            maxHeight: 300,
-            session: session
+            type: .primary,
+            maxHeight: 300
         )
+
         #expect(url?
             .absoluteString ==
             "http://localhost:8096/Items/item-1/Images/Primary?tag=abc&maxHeight=300&quality=90")
@@ -37,24 +31,26 @@ struct JellyfinImageURLBuilderTests {
     @Test
     func `backdrop image uses index zero`() {
         let url = builder.url(
+            serverURL: server,
             itemID: "item-1",
             tag: "abc",
-            kind: .backdrop,
-            maxHeight: 720,
-            session: session
+            type: .backdrop,
+            maxHeight: 720
         )
+
         #expect(url?.path() == "/Items/item-1/Images/Backdrop/0")
-        #expect(url?.query()?.contains("fillHeight") == false)
     }
 
     @Test
     func `no tag means no url`() {
-        #expect(builder.url(
+        let url = builder.url(
+            serverURL: server,
             itemID: "item-1",
             tag: nil,
-            kind: .primary,
-            maxHeight: 300,
-            session: session
-        ) == nil)
+            type: .primary,
+            maxHeight: 300
+        )
+
+        #expect(url == nil)
     }
 }

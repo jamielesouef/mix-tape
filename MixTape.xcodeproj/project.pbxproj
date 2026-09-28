@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4A4B00000000000000000004 /* JellyfinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4A4B00000000000000000002 /* JellyfinKit */; };
+		4A4B00000000000000000005 /* JellyfinKitTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 4A4B00000000000000000003 /* JellyfinKitTestSupport */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		65C09784CE101961AB25BBD6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -66,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4A4B00000000000000000004 /* JellyfinKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4A4B00000000000000000005 /* JellyfinKitTestSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,6 +135,9 @@
 				AD00000000000000000001 /* source */,
 			);
 			name = Mixtape;
+			packageProductDependencies = (
+				4A4B00000000000000000002 /* JellyfinKit */,
+			);
 			productName = Mixtape;
 			productReference = 000000000000000000000120 /* Mixtape.app */;
 			productType = "com.apple.product-type.application";
@@ -170,6 +180,9 @@
 				AD000000000000000000AA /* tests */,
 			);
 			name = MixtapeTests;
+			packageProductDependencies = (
+				4A4B00000000000000000003 /* JellyfinKitTestSupport */,
+			);
 			productName = MixtapeTests;
 			productReference = AD000000000000000000A7 /* MixtapeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -206,6 +219,9 @@
 			);
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4A4B00000000000000000001 /* XCLocalSwiftPackageReference "JellyfinKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -659,6 +675,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		4A4B00000000000000000001 /* XCLocalSwiftPackageReference "JellyfinKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = JellyfinKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4A4B00000000000000000002 /* JellyfinKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JellyfinKit;
+		};
+		4A4B00000000000000000003 /* JellyfinKitTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JellyfinKitTestSupport;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }

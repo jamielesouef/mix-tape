@@ -12,7 +12,8 @@ This document describes the architecture as built. `../jellyfin-openapi.json` is
 | Toolchain | Xcode 26, Swift 6.2 |
 | Swift language mode | 6 |
 | Third-party dependencies | none |
-| App target | `Mixtape` — one target over `source/`, built from `MixTape.xcodeproj` directly, no local SPM package |
+| App target | `Mixtape` — one target over `source/`, in `MixTape.xcodeproj`, opened through `Mixtape.xcworkspace` |
+| Local package | `JellyfinKit/` — the Jellyfin API client (HTTP client, DTOs, `JellyfinError`, image URLs), linked by the app; `JellyfinKitTestSupport` linked by the test bundles |
 | Info.plist | `UIBackgroundModes` = `audio`; `NSAppTransportSecurity.NSAllowsArbitraryLoads` = true, because a LAN Jellyfin server on plain HTTP is the normal case |
 | Project format | `MixTape.xcodeproj` at `objectVersion = 77` |
 
@@ -58,7 +59,9 @@ There is no ViewModel layer.
 
 ## Six layers, one direction, one target
 
-The six layers used to be six separate SPM library targets under a local package, `MixtapeKit`, with a second app target for tvOS. Both are gone (decisions 52–53) — tvOS moved to `archive/tvOS/`, and the six targets collapsed into six plain folders under `source/`, compiled into the one `Mixtape` app target. The compiler can no longer enforce the folder edges on its own, so `scripts/check-layer-imports.sh` is the backstop — it checks the one part a grep can see, that `Domain` and `UseCase` stay free of UI and platform frameworks. The rest of the edges are on review.
+The six layers used to be six separate SPM library targets under a local package, `MixtapeKit`, with a second app target for tvOS. Both are gone (decisions 52–53) — tvOS moved to `archive/tvOS/`, and the six targets collapsed into six plain folders under `source/`, compiled into the one `Mixtape` app target. The compiler can no longer enforce the folder edges on its own, so `scripts/check-layer-imports.sh` is the backstop — it checks the parts a grep can see: `Domain` and `UseCase` stay free of UI and platform frameworks, and only `Data` and `App` import `JellyfinKit`. The rest of the edges are on review.
+
+The Jellyfin API client sits outside the app module, in the local package `JellyfinKit`. It holds the transport and the wire types and throws `JellyfinError`. The repositories and mappers in `source/Data` adapt it to the Domain.
 
 | Folder | Holds | Depends on |
 |---|---|---|
@@ -215,8 +218,8 @@ There is no `/Items/{itemId}/PlaybackInfo` round-trip. Music streaming builds it
 
 | Command | Checks |
 |---|---|
-| `xcodebuild build -project MixTape.xcodeproj -scheme Mixtape -destination 'generic/platform=iOS Simulator'` | Compiles under Swift 6 language mode |
-| `xcodebuild test -project MixTape.xcodeproj -scheme Mixtape -skip-testing:MixtapeUITests` | Unit tests |
+| `xcodebuild build -workspace Mixtape.xcworkspace -scheme Mixtape -destination 'generic/platform=iOS Simulator'` | Compiles under Swift 6 language mode |
+| `xcodebuild test -workspace Mixtape.xcworkspace -scheme Mixtape -skip-testing:MixtapeUITests` | Unit tests — `MixtapeTests` and `JellyfinKitTests` |
 | `./scripts/check-layer-imports.sh` | Layer edges the compiler can no longer express |
 | `./scripts/check-glass-fallback.sh` | Every glass surface reads Reduce Transparency |
 | `swiftformat --lint .` | Formatting — currently fails; see the follow-ups in CLAUDE.md |

@@ -44,6 +44,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "JellyfinKitTests"
+               BuildableName = "JellyfinKitTests"
+               BlueprintName = "JellyfinKitTests"
+               ReferencedContainer = "container:JellyfinKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "0B02110A39621D4101399232"
                BuildableName = "MixtapeUITests.xctest"
                BlueprintName = "MixtapeUITests"

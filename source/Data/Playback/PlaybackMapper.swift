@@ -4,6 +4,8 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
+import JellyfinKit
+
 enum PlaybackMapper {
     static func body(from report: PlaybackReport) -> PlaybackReportBody {
         PlaybackReportBody(

@@ -72,12 +72,26 @@ Six layer folders under `source/`, all compiled into the one app target
 The edges are still the rule — `Presentation` never reaches into `Data`,
 `UseCase` or `Infrastructure`; `UseCase` never imports SwiftUI or Observation;
 `AppContainer.swift` is the only place that wires all six — but nothing but
-review enforces the folder edges now. `scripts/check-layer-imports.sh` still
-enforces the one part a grep can see: `Domain` and `UseCase` stay framework-free.
+review enforces the folder edges now. `scripts/check-layer-imports.sh`
+enforces the parts a grep can see: `Domain` and `UseCase` stay framework-free,
+and only `Data` and `App` import `JellyfinKit`.
+
+The Jellyfin API client is the one exception to one-module: `JellyfinKit/`, a
+local SPM package. It holds `JellyfinHTTPClient`, `AuthContext`, the DTOs and
+request bodies, `JellyfinError` and `JellyfinImageURLBuilder`. It imports
+Foundation only and knows no Mixtape type. The repositories and mappers stay in
+`source/Data`: they are the adapter that turns DTOs into Domain entities and
+`JellyfinError` into `MixtapeError` (via `translatingJellyfinErrors`). Do not
+move a Domain type into the package, or make the package throw `MixtapeError`.
+
+Open and build `Mixtape.xcworkspace`, not the project: it holds
+`MixTape.xcodeproj` and `JellyfinKit`.
 
 The tree is `source/` (`App`, `Domain`, `UseCase`, `Infrastructure`, `Data`,
 `Services`, `Presentation`), `tests/` (one bundle, folders mirroring `source/`),
-`uitest/` (XCUITest) and `archive/tvOS/` (decision 52).
+`uitest/` (XCUITest), `JellyfinKit/` (`Sources/JellyfinKit`,
+`Sources/JellyfinKitTestSupport`, `Tests/JellyfinKitTests`) and `archive/tvOS/`
+(decision 52).
 
 Repositories are stateless `Sendable` structs; caching is an injected
 collaborator, never hidden inside one. Infrastructure is stateless or
@@ -228,8 +242,15 @@ Repositories are tested against a stubbed `URLProtocol` — never a live server.
 All unit tests are one Xcode test target, `MixtapeTests`, over the whole of
 `tests/` — folders named `tests/Domain`, `tests/UseCase`, etc. to match
 `source/` (decision 54), but one target, not five (decision 55). It loads into
-the app as its test host, so every file uses `@testable import Mixtape` — one
-module, one import (decisions 52 and 53).
+the app as its test host, so every file uses `@testable import Mixtape`
+(decisions 52 and 53). Files that build a `JellyfinHTTPClient` or a `StubServer`
+also `import JellyfinKit` and `import JellyfinKitTestSupport`.
+
+The package has its own bundle, `JellyfinKitTests`, for the client itself. It is
+a testable in the `Mixtape` scheme, so the one `xcodebuild test` runs both
+bundles and the gate counts both. `StubServer` and `StubURLProtocol` live in the
+`JellyfinKitTestSupport` library so both bundles share them. Nothing but a
+test bundle may link that library.
 
 **No XCUITest.** The `MixtapeUITests` target stays wired up and its stub file
 stays in place, but no UI test is written and `gate.sh` skips the bundle. Do not
@@ -287,8 +308,9 @@ Run this before handing work back. One command:
 
 It runs, in order, and stops at the first failure:
 
-1. `xcodebuild build` for the `Mixtape` scheme.
-2. `xcodebuild test` for it, unit tests only — `-skip-testing:MixtapeUITests`.
+1. `xcodebuild build` for the `Mixtape` scheme, from `Mixtape.xcworkspace`.
+2. `xcodebuild test` for it, unit tests only — `MixtapeTests` and
+   `JellyfinKitTests`, with `-skip-testing:MixtapeUITests`.
    Skipping the UI bundle is the *only* permitted exclusion. The script reads
    the result bundle and fails if failed or skipped is anything but zero —
    silencing a test is never a way to make this pass.

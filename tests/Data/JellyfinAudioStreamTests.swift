@@ -5,6 +5,8 @@
 //
 
 import Foundation
+import JellyfinKit
+import JellyfinKitTestSupport
 import Testing
 @testable import Mixtape
 
@@ -92,7 +94,11 @@ struct JellyfinAudioStreamTests {
 
     private func repository() -> JellyfinPlaybackRepository {
         JellyfinPlaybackRepository(
-            client: JellyfinHTTPClient(session: StubServer().session, deviceName: "Test iPhone"),
+            client: JellyfinHTTPClient(
+                session: StubServer().session,
+                clientName: "mixtape",
+                deviceName: "Test iPhone"
+            ),
             appVersion: "1.0"
         )
     }

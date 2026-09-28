@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import JellyfinKit
 
 struct JellyfinAuthRepository: AuthRepositoryProtocol {
     // MARK: - Properties
@@ -24,10 +25,10 @@ struct JellyfinAuthRepository: AuthRepositoryProtocol {
     // MARK: - AuthRepositoryProtocol
 
     func serverIdentity(at url: URL) async throws -> ServerIdentity {
-        let dto: PublicSystemInfoDTO = try await client.get(
-            "/System/Info/Public",
-            auth: context(baseURL: url)
-        )
+        let dto: PublicSystemInfoDTO = try await translatingJellyfinErrors {
+            try await client.get("/System/Info/Public", auth: context(baseURL: url))
+        }
+
         return try AuthMapper.serverIdentity(from: dto, baseURL: url)
     }
 
@@ -36,33 +37,46 @@ struct JellyfinAuthRepository: AuthRepositoryProtocol {
         password: String,
         server: ServerIdentity
     ) async throws -> UserSession {
-        let dto: AuthenticationResultDTO = try await client.post(
-            "/Users/AuthenticateByName",
-            body: AuthenticateUserByNameBody(username: userName, password: password),
-            auth: context(baseURL: server.baseURL)
-        )
+        let body = AuthenticateUserByNameBody(username: userName, password: password)
+
+        let dto: AuthenticationResultDTO = try await translatingJellyfinErrors {
+            try await client.post(
+                "/Users/AuthenticateByName",
+                body: body,
+                auth: context(baseURL: server.baseURL)
+            )
+        }
+
         return try AuthMapper.userSession(from: dto, serverURL: server.baseURL, deviceID: deviceID)
     }
 
     func isQuickConnectEnabled(server: ServerIdentity) async throws -> Bool {
-        try await client.get("/QuickConnect/Enabled", auth: context(baseURL: server.baseURL))
+        try await translatingJellyfinErrors {
+            try await client.get("/QuickConnect/Enabled", auth: context(baseURL: server.baseURL))
+        }
     }
 
     func initiateQuickConnect(server: ServerIdentity) async throws -> QuickConnectHandshake {
-        let dto: QuickConnectResultDTO = try await client.post(
-            "/QuickConnect/Initiate",
-            body: EmptyBody(),
-            auth: context(baseURL: server.baseURL)
-        )
+        let dto: QuickConnectResultDTO = try await translatingJellyfinErrors {
+            try await client.post(
+                "/QuickConnect/Initiate",
+                body: EmptyBody(),
+                auth: context(baseURL: server.baseURL)
+            )
+        }
+
         return try AuthMapper.handshake(from: dto)
     }
 
     func quickConnectState(secret: String, server: ServerIdentity) async throws -> Bool {
-        let dto: QuickConnectResultDTO = try await client.get(
-            "/QuickConnect/Connect",
-            query: [URLQueryItem(name: "secret", value: secret)],
-            auth: context(baseURL: server.baseURL)
-        )
+        let dto: QuickConnectResultDTO = try await translatingJellyfinErrors {
+            try await client.get(
+                "/QuickConnect/Connect",
+                query: [URLQueryItem(name: "secret", value: secret)],
+                auth: context(baseURL: server.baseURL)
+            )
+        }
+
         return dto.authenticated
     }
 
@@ -70,11 +84,14 @@ struct JellyfinAuthRepository: AuthRepositoryProtocol {
         secret: String,
         server: ServerIdentity
     ) async throws -> UserSession {
-        let dto: AuthenticationResultDTO = try await client.post(
-            "/Users/AuthenticateWithQuickConnect",
-            body: QuickConnectSecretBody(secret: secret),
-            auth: context(baseURL: server.baseURL)
-        )
+        let dto: AuthenticationResultDTO = try await translatingJellyfinErrors {
+            try await client.post(
+                "/Users/AuthenticateWithQuickConnect",
+                body: QuickConnectSecretBody(secret: secret),
+                auth: context(baseURL: server.baseURL)
+            )
+        }
+
         return try AuthMapper.userSession(from: dto, serverURL: server.baseURL, deviceID: deviceID)
     }
 
