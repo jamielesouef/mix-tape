@@ -66,6 +66,8 @@ enum LibraryMapper {
             parentPrimaryImageTag: dto.albumPrimaryImageTag,
             albumID: dto.albumId,
             container: dto.container,
+            genre: dto.genres?.first,
+            playCount: dto.userData?.playCount ?? 0,
             playback: PlaybackState(position: position)
         )
     }

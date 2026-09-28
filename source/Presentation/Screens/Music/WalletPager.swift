@@ -17,6 +17,11 @@ struct WalletPager: Equatable {
         self.columns = columns
     }
 
+    init(albums: [MediaItem], columns: Int) {
+        self.albums = albums
+        self.columns = columns
+    }
+
     var pageCount: Int {
         WalletPosition.pageCount(albumCount: albums.count, columns: columns)
     }

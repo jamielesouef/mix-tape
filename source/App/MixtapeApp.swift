@@ -17,6 +17,10 @@ struct MixtapeApp: App {
                 .environment(\.libraryService, container.libraryService)
                 .environment(\.imageService, container.imageService)
                 .environment(\.musicPlayerService, container.musicPlayerService)
+                .environment(\.settingsService, container.settingsService)
+                .environment(\.downloadsService, container.downloadsService)
+                .environment(\.walletsService, container.walletsService)
+                .environment(\.searchService, container.searchService)
         }
     }
 }

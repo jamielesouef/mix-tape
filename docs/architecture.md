@@ -166,17 +166,49 @@ Every service is an `@Observable final class` with `private(set)` state.
 | `SessionService` | `state` (loading, signedOut, signedIn), `serverIdentity`, `quickConnect`, `error`, `isBusy`. The only writer of session state and the single handler of an expired session |
 | `LibraryService` | `libraries`, a per-library page cache, per-item details and per-album track lists. Pages of 60 items, advanced by `startIndex` |
 | `ImageService` | Album-art URLs plus an in-memory `NSCache` capped at 120 MB |
-| `MusicPlayerService` | `album`, `queue`, `currentIndex`, `status`, `position`, `finishedAlbumID` |
+| `MusicPlayerService` | `album`, `queue`, `sequence`, `currentIndex`, `status`, `position`, `finishedAlbumID` |
+| `SettingsService` | `settings: LocalSettings` — album order, when-an-album-ends, streaming quality, downloads Wi-Fi-only. `UserDefaults`-backed |
+| `DownloadsService` | `downloads: [String: DownloadState]` keyed by album id. Owns an `AlbumDownloadManager` (transfers) and a `DownloadFileStore` (on-disk layout) |
+| `WalletsService` | `wallets: LoadState<[Wallet]>`, `randomWalletMode`. Composes `LibraryService`'s loaded albums with the generated genre/most-played/random wallets, the Downloaded wallet, and locally-persisted personal wallets |
+| `SearchService` | `query`, `result: LoadState<SearchResult>`, `isOffline`. Debounces, then filters to downloaded-only when `NetworkPathMonitor` reports no connection |
 
-### The queue is the album
+### The queue is the album — with one gated exception
 
-`MusicPlayerService.queue` holds the tracks of exactly one album. `play(album:tracks:startingAt:)` is the only way tracks enter it, and it replaces the queue. When the last track ends, playback stops, the now-playing surface dismisses, and the wallet pages back to the sleeve the album came from and pulses it home. `claimFinish(albumID:)` and `acknowledgeFinish()` hand that navigational event to whichever wallet is on screen.
+`MusicPlayerService.queue` holds the tracks of exactly one album at any
+instant. `play(album:tracks:startingAt:sequence:)` is the only way tracks
+enter it, and it replaces the queue wholesale. `sequence` is the wallet order
+captured at that same call — the albums after this one, for `Continue
+Through Wallet` to read later; it is never appended to afterward. In `Stop
+After Album` (the default), the last track ending is a navigational event
+exactly as before: playback stops, the now-playing surface dismisses, and the
+wallet pages back to the sleeve the album came from and pulses it home. In
+`Continue Through Wallet`, that same ending instead fetches the next album in
+`sequence` and swaps `queue` to its tracks, starting from track zero; the
+navigational event only fires once `sequence` is exhausted, for whichever
+album played last. `claimFinish(albumID:)` and `acknowledgeFinish()` hand
+that event to whichever wallet is on screen, unchanged.
+
+## The mock server seam
+
+`AppContainer.backend` picks between `MockServer*` and `Jellyfin*`
+repositories, both behind the same `*RepositoryProtocol` in
+`source/UseCase/Protocols` — the seam is that protocol boundary, not a
+separate package. It defaults to `.mockServer`. `MockServerDataset` is the
+fixed catalogue; `MockServerImageURLBuilder` points every image at
+placecats.com; `MockServerPlaybackRepository` streams the same bundled
+sample, `source/Data/MockServer/Resources/file_example_MP3_700KB.mp3`, for
+every track. `MockServerSearchRepository` backs search under both `backend`
+values — a real `/Items?searchTerm=` implementation does not exist yet.
+Wallet generation, downloads, and local settings are not part of this seam at
+all: they run identically regardless of `backend`.
 
 ## Presentation
 
 Views live in `source/Presentation/Screens/<Feature>/`, one view per file, filename matching the type. Cross-screen pieces sit in `Shared/`.
 
-`RootScreen` switches on `SessionService.state`: `SplashScreen` while restoring, `SignInFlow` when signed out, `RootTabScreen` when signed in. `RootTabScreen` carries three tabs — Libraries, Music, Settings — with the mini player docked in the tab bar's bottom accessory whenever music is active, and `NowPlayingScreen` presented as a sheet from that root so it outlives the mini player. A movie or TV library on the server shows as unsupported in the library list rather than being browsable — this app only understands music libraries.
+`HomeScreen` switches on `SessionService.state`: `SplashScreen` while restoring, `SignInFlow` when signed out, `RootTabScreen` when signed in. Per `features.md`'s "keep navigation minimal, with an overflow menu for search, order, settings, and sign-out," `RootTabScreen` carries one tab — `WalletsHomeScreen` — so the mini player can dock in `tabViewBottomAccessory` (iOS 26.1) without a second tab competing for the same space; `NowPlayingScreen` is presented as a sheet from that root so it outlives the mini player. `WalletsHomeScreen`'s overflow menu reaches Search (a sheet), the album order preference, Settings (pushed), and sign-out. A Jellyfin library that is not music shows nowhere in this flow — this app only understands music libraries, surfaced one wallet per music library rather than as a separate Libraries tab.
+
+The older `LibraryListScreen` / `MusicTabScreen` / `LibraryDestination` screens, from before wallets folded library browsing into the wallet shelf, are still in the tree and still compile, but nothing navigates to them any more. Removing them is a follow-up, not done as part of this change.
 
 Chrome is Liquid Glass through one modifier. `source/Presentation/Shared/GlassChrome.swift` reads `\.accessibilityReduceTransparency` and paints an opaque background instead of `.glassEffect` when the setting is on; every glass surface goes through it, and `scripts/check-glass-fallback.sh` checks that.
 

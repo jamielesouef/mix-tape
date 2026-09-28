@@ -45,13 +45,21 @@ rewrite it. Do not add CI workflows, and do not restore the deleted ones.
 ## The product rule that gets "fixed" by mistake
 
 On iOS the music half is a CD wallet, not a music browser. **The queue is the
-album.** `MusicPlayerService.queue` is exactly one album's tracks. No append API,
-no add-to-queue affordance, no shuffle, no repeat, no autoplay into anything.
-End of the last track is a navigational event: playback stops, now-playing
-dismisses, the wallet returns to the page that album came from.
+album.** `MusicPlayerService.queue` is, at every instant, exactly one album's
+tracks — never two albums' tracks merged into one array. No append API, no
+add-to-queue affordance, no shuffle, no repeat.
 
-These are absent, not disabled, not deferred to V2. Do not add them. Do not add
-an abstraction that only a cross-album queue would use.
+The one deliberate exception, added for `features.md`: `MusicPlayerService`
+also holds `sequence`, the albums after the played one in the wallet it was
+played from, captured once at play-start. When the "When an Album Ends"
+preference is `continueThroughWallet`, ending an album fetches the next
+album in `sequence` and starts *it* from track zero — `queue` is swapped
+wholesale to that album's tracks, not appended to. Ending the last album in
+the captured sequence is still the same navigational event as before:
+playback stops, now-playing dismisses, the wallet returns to the page that
+album came from. `Stop After Album` (the default) never consults `sequence`
+at all. Do not add anything beyond this one gated path — no general
+cross-album queue, no shuffle, no repeat, no autoplay outside this preference.
 
 The tvOS build is gone (decision 52). Its files sit in `archive/tvOS/`, out of
 the project. Do not revive them as part of an unrelated change.
@@ -282,17 +290,43 @@ denied on this machine. Enter credentials on the iOS simulator with
 
 ## What stays out
 
-The app is built. Adding a feature is a decision, not a default — none of the
-following is in the codebase, and none gets an abstraction, a protocol method,
-or a TODO until you are asked for it by name:
+`features.md` is the current source of truth for product scope (superseding
+the older exclusion list this section used to carry). Downloads and offline
+playback, search, personal/generated/Downloaded wallets, and Settings beyond
+sign-out are now in the codebase — see `source/Services/Downloads`,
+`source/Services/Search`, `source/Services/Wallets`, `source/Services/Settings`,
+and `source/Presentation/Screens/{Music,Search,Settings}`.
 
-downloads and offline playback · multi-server or multi-user switching · search ·
-SyncPlay · AirPlay/Cast UI beyond what the system gives free · collections,
-playlists, favourites, watched toggling · widgets · settings beyond sign out ·
-localisation beyond `en`.
+Still out, and still a decision rather than a default:
 
-The absences in "The product rule that gets 'fixed' by mistake" are a different
-category: engineering doc §1.1 rules them out permanently, not just for now.
+multi-server or multi-user switching · SyncPlay · AirPlay/Cast UI beyond what
+the system gives free · favourites, watched toggling, playlists as a concept
+distinct from wallets · widgets · localisation beyond `en`.
+
+The absences in "The product rule that gets 'fixed' by mistake" are a
+different category: they are permanent except for the one gated exception
+documented there, not just out for now.
+
+## The mock server seam
+
+The whole app runs against `MockServer*` repositories by default —
+`AppContainer.backend` is the one line that would switch it to the real
+`Jellyfin*` repositories. Both sides implement the same `*RepositoryProtocol`
+in `source/UseCase/Protocols`; that protocol boundary is the seam, not a
+separate package — a second SPM package was considered and rejected because
+`JellyfinKit` is the one exception to one-module (see above), and the
+protocol boundary already gives every mock/real swap point the app needs.
+
+`source/Data/MockServer/MockServerDataset.swift` holds the fixed catalogue —
+five artists, five albums each, six tracks per album. Every album image comes
+from placecats.com (`MockServerImageURLBuilder`); every track streams the
+same bundled sample, `source/Data/MockServer/Resources/file_example_MP3_700KB.mp3`
+(`MockServerPlaybackRepository`). `MockServerSearchRepository` backs search in
+both backends — a real `/Items?searchTerm=` implementation is a follow-up, not
+yet written. Wallet generation, downloads, and settings are not mocked at all:
+they run the same code regardless of `backend`, since they sit above the
+repository seam (Wallets composes `LibraryRepositoryProtocol` output; Downloads
+is local file I/O; Settings is local `UserDefaults`).
 
 There is no CI and no XCUITest. Their seams stay intact — accessibility
 identifiers on every screen, `./scripts/gate.sh` callable by a workflow — so do

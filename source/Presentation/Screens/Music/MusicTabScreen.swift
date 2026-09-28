@@ -26,7 +26,11 @@ struct MusicTabScreen: View {
                     RetryView(error: error) { await libraryService.loadHome() }
                 case let .loaded(libraries):
                     if let music = libraries.first(where: { $0.kind == .music }) {
-                        WalletScreen(library: music)
+                        WalletScreen(wallet: Wallet(
+                            id: "library-\(music.id)",
+                            name: music.name,
+                            kind: .library(id: music.id)
+                        ))
                     } else {
                         ContentUnavailableView(
                             "No music library",
@@ -52,7 +56,9 @@ struct MusicTabScreen: View {
 
 #if DEBUG
     #Preview("loaded") {
-        MusicTabScreen().environment(\.libraryService, MockLibraryService.loaded())
+        MusicTabScreen()
+            .environment(\.libraryService, MockLibraryService.loaded())
+            .environment(\.walletsService, MockWalletsService.loaded())
     }
 
     #Preview("empty") {

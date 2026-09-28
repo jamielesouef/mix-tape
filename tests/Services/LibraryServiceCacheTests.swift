@@ -26,6 +26,7 @@ struct LibraryServiceCacheTests {
             accessToken: "token-2",
             deviceID: "device-2"
         )
+
         let authRepository = MockAuthRepository(authenticateResult: { userName, _, _ in
             userName == "riley" ? userB : userA
         })
@@ -39,6 +40,7 @@ struct LibraryServiceCacheTests {
             signOut: SignOutUseCase(store: store),
             serverIdentity: server
         )
+
         let calls = Recorder()
         let repository = MockLibraryRepository(librariesResult: { session in
             calls.append(session.userID)

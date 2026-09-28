@@ -41,6 +41,7 @@ struct JellyfinAuthRepositoryTests {
                     .utf8
             )
         )
+
         let identity = try await repository.serverIdentity(at: baseURL)
         #expect(identity == server)
         #expect(stub.lastRequest?.url?.path() == "/System/Info/Public")
@@ -103,6 +104,7 @@ struct JellyfinAuthRepositoryTests {
             status: 200,
             body: Data(#"{"Authenticated":false,"Secret":"s3cret","Code":"426349"}"#.utf8)
         )
+
         let handshake = try await repository.initiateQuickConnect(server: server)
         #expect(handshake == QuickConnectHandshake(secret: "s3cret", code: "426349"))
         #expect(stub.lastRequest?.httpMethod == "POST")

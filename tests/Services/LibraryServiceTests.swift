@@ -229,6 +229,7 @@ struct LibraryServiceTests {
                 return MockLibraryRepository.sampleTracks
             }
         )
+
         let service = LibraryServiceFixture.makeService(repository: repository)
         await service.loadTracks(albumID: "album-1")
         await service.loadTracks(albumID: "album-1")

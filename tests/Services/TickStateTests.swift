@@ -37,6 +37,7 @@ struct TickStateTests {
             reportInterval: reportInterval,
             stallThreshold: stallThreshold
         )
+
         let tick = state.advance(
             position: .seconds(2),
             interval: interval,

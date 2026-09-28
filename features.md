@@ -1,79 +1,157 @@
-# mixtape features
-
-## v1
-
-## Launch
-
-- Show a loading screen while restoring the saved session.
-- Stay signed in between launches using securely stored session details.
-- Return to sign-in when the session expires.
-
-## Server Entry
-
-- Enter a Jellyfin server address, including a local HTTP server and custom port.
-- Validate the server before continuing to sign-in.
-- Enable Connect when an address is entered and disable it while connecting.
-- Show connection progress and readable validation errors.
-- Present a minimal welcome screen with the mixtape name and server-address prompt
-
-## Sign In
-
-- Sign in with a username and password.
-- Hide the password while typing.
-- Show the selected server's name above the sign-in form.
-- Show sign-in progress and authentication errors.
-- Offer Quick Connect as an alternative to password sign-in.
-- Change the server before signing in.
-
-## Quick Connect
-
-- Display a sign-in code with instructions for approving it in Jellyfin.
-- Wait for approval and complete sign-in automatically.
-- Retry after a failed Quick Connect attempt.
-- Cancel Quick Connect and return to password sign-in.
-
-## Wallets
-
-- Show as horizontal scrolling list with title
-- Show a + card at the end to add to the wallet
-- Shows thumbnail with album and artist underneath
-- Show curated wallets based on genera
-- Show curated wallets based on most played
-- Show "Random" creates random, single wallet
-  - Options random
-  - Options random + least played
-- Open each music library as its own album wallet tapping on wallet title
-- Show loading progress, an empty-library message, and retryable errors.
-
-## Music / Album Wallet
-
-- Open the first music library from the Music screen.
-- Browse album artwork in a CD wallet with rounded plastic sleeves and a light sheen.
-- Swipe horizontally through fixed pages of four albums on compact screens or nine on regular-width screens.
-- Keep empty sleeves visible on partially filled pages.
-- Show the current page and total page count below the wallet.
-- Load more albums as the listener pages through the library.
-- Open an album by tapping its sleeve, with an artwork transition into Album Detail.
-- Return to the finished album's wallet page and briefly highlight its sleeve.
-- Use placeholder artwork when an album cover is unavailable.
-- Show empty-wallet and missing-music-library messages, loading progress, and retryable errors.
-- Remove the sleeve sheen when Reduce Transparency is enabled.
-
-## Mini Player
-
-- Show the current track's artwork and title in a compact playback bar.
-- Play or pause without opening the full player.
-- Request the Now Playing sheet by tapping the artwork or track title.
-- Hide the bar when playback is no longer active.
-
-## Lock Screen / System Playback Controls
-
-- Show track title, artist, artwork, duration, and playback progress in the system Now Playing display.
-- Control play, pause, previous track, and next track from system or remote controls.
-- Disable the next-track command at the end of the album.
-
-## Settings
-
-- Show the connected server name and signed-in username.
-- Sign out and clear the saved session.
-- Stop playback and clear session-specific cached data on sign-out.
+- **mixtape v1**
+  - A Jellyfin music app built around album artwork, swipe browsing, and playlists called Wallets.
+  - Browse freely while listening; only an explicit playback action changes the music.
+- **Launch and session**
+  - Show a loading screen while restoring the saved session.
+  - Stay signed in between launches using securely stored session details.
+  - Return to sign-in when the server confirms the session is no longer valid.
+  - Open in offline mode when the server is unreachable and a saved session exists.
+  - Keep downloaded music available offline without requiring a server connection.
+- **Server entry**
+  - Present a minimal welcome screen with the mixtape name and server-address prompt.
+  - Accept Jellyfin server addresses, including local HTTP addresses and custom ports.
+  - Validate the server before continuing to sign-in.
+  - Enable Connect when an address is entered and disable it while connecting.
+  - Show connection progress and readable validation errors.
+- **Sign-in**
+  - Show the selected server’s name above the sign-in form.
+  - Sign in with a username and password, with the password hidden while typing.
+  - Show sign-in progress and authentication errors.
+  - Offer Quick Connect as an alternative to password sign-in.
+  - Allow changing the server before signing in.
+- **Quick Connect**
+  - Display a sign-in code with instructions for approving it in Jellyfin.
+  - Wait for approval and complete sign-in automatically.
+  - Allow retrying after a failed or expired attempt.
+  - Allow cancelling and returning to password sign-in.
+- **Wallets**
+  - Treat wallets as collections of albums.
+  - Show each wallet as a titled, horizontally scrolling row.
+  - Show album thumbnails with the album title and artist underneath.
+  - Open a wallet’s full CD wallet view by tapping its title.
+  - Create, name, rename, and delete personal wallets.
+  - Show a + card at the end of each editable wallet to add albums.
+  - Allow removing albums from personal wallets without deleting server media.
+  - Show automatically generated wallets based on genre and most-played music.
+  - Maintain one Random wallet, with options for fully random selections or random selections favouring least-played albums.
+  - Allow regenerating the Random wallet without changing active playback.
+  - Show each Jellyfin music library as its own album wallet.
+  - Include a Downloaded wallet for offline listening.
+  - Show loading progress, empty states, and retryable errors.
+- **Music / album wallet**
+  - Default to the first music library when opening the library wallet.
+  - Display album artwork in a CD wallet with rounded plastic sleeves and a light sheen.
+  - Swipe horizontally through fixed pages of four albums on compact screens or nine on regular-width screens.
+  - Keep empty sleeves visible on partially filled pages.
+  - Show the current page and total page count below the wallet.
+  - Load more albums as the listener pages through the library.
+  - Randomise album order or sort by album title or artist.
+  - Open an album by tapping its sleeve, with an artwork transition into Album Detail.
+  - Preserve the album’s wallet page when returning from Album Detail.
+  - On natural album completion in Stop After Album mode, return to its wallet page and briefly highlight its sleeve.
+  - Mark the currently playing album and downloaded albums on their sleeves.
+  - Use placeholder artwork when a cover is unavailable.
+  - Show empty-wallet and missing-music-library messages, loading progress, and retryable errors.
+  - Remove sleeve sheen when Reduce Transparency is enabled.
+- **Album detail and browsing**
+  - Display one album at a time with full-screen artwork.
+  - Show artist, album title, release year, track count, and total duration.
+  - Swipe left and right between albums in the current wallet.
+  - Show the album’s position within the wallet.
+  - Allow browsing other albums, opening track lists, searching, and changing wallets without interrupting playback.
+  - Keep the album being viewed separate from the album being played.
+  - Keep controls associated with the displayed album visually separate from information about current playback.
+- **Playback controls**
+  - Position the primary playback controls in a vertical stack at the bottom right for one-handed use.
+  - Provide a distinct Play/Pause button that controls the current playback session.
+  - Provide a separate Play/Replace button that starts the displayed album and replaces the current playback sequence.
+  - Use a combined replace/play icon for Play/Replace, with an accessible label explaining the action.
+  - Show Play/Replace when viewing an album different from the one currently playing.
+  - Show a normal Play action for the displayed album when no playback session exists.
+  - Avoid duplicating Play and Play/Pause actions when viewing the currently playing album.
+  - Provide a separate Stop action that ends the playback session and hides the mini-player.
+  - Start an album from its first track when Play or Play/Replace is selected.
+  - Do not show volume icons or in-app volume controls.
+- **Mini-player**
+  - Show a compact mini-player at the top, below the status bar, once playback starts.
+  - Keep it visible throughout the signed-in browsing experience, including on the album currently playing.
+  - Show the current track’s artwork, title, and artist.
+  - Keep it visible while paused so the listener can resume using the playback controls.
+  - Update it immediately when another album or track replaces playback.
+  - Open Now Playing when the mini-player is tapped.
+  - Keep the primary playback buttons in the bottom-right stack rather than duplicating them in the mini-player.
+  - Hide it when playback is explicitly stopped or naturally finishes with nothing queued next.
+- **Now Playing and track list**
+  - Show the current track title, artist, album, artwork, and track number within the album.
+  - Show elapsed and remaining time, with a seek slider.
+  - Swipe up from Album Detail to reveal the displayed album’s track list.
+  - Show album details above the track list.
+  - List track numbers, titles, and durations.
+  - Tap a track to start it, replacing current playback if necessary, then continue through the remainder of that album.
+  - Highlight the currently playing track when it appears in the displayed list.
+  - Keep the top mini-player visible while viewing tracks.
+- **Playback sequence**
+  - Play album tracks in order.
+  - Offer a When an Album Ends preference with Stop After Album and Continue Through Wallet options.
+  - Default to Stop After Album.
+  - In Continue Through Wallet mode, play the next album after the current album finishes.
+  - Capture the wallet order when playback starts so browsing, sorting, or regenerating a wallet does not unexpectedly change the playback sequence.
+  - End playback after the final album in the captured sequence.
+  - Keep browsing available regardless of the album-end preference.
+- **Search**
+  - Open search from the overflow menu.
+  - Search albums and tracks on the connected server.
+  - Group results into albums and tracks.
+  - Show artwork, title, artist, and release year for album results.
+  - Show track title, album, and duration for track results.
+  - Open albums or start playback directly from results.
+  - Treat playback from search as an explicit replacement of the current playback sequence.
+  - Play an album selected from search through to its end; selecting a track plays from that track through the rest of its album.
+  - Allow clearing the query and cancelling search.
+  - Show loading progress, no-results messages, and retryable errors.
+  - Limit offline search to downloaded music and make the offline state clear.
+- **Downloads**
+  - Provide an album download icon in the right-side menu/control area.
+  - Apply the download action to the album being viewed, even when another album is playing.
+  - Download complete albums for v1.
+  - Show a downward-arrow icon when the album is available to download.
+  - Show a progress circle around the icon while downloading.
+  - Allow tapping an active download to view progress and cancel it.
+  - Show a waiting state when a download is waiting for Wi-Fi.
+  - Replace the download arrow with a checkmark when the album is fully downloaded.
+  - Show a retry state when downloading fails.
+  - Resume interrupted downloads without downloading completed files again.
+  - Use downloaded audio automatically when available.
+  - Make fully downloaded albums available through the Downloaded wallet.
+  - Offer Remove Download through a menu rather than immediately deleting on a checkmark tap.
+  - Explain insufficient-storage errors and allow retrying after space is freed.
+- **Download management**
+  - Provide a Downloads section in Settings.
+  - List downloaded albums and active, waiting, or failed downloads.
+  - Show total storage used and storage used by each album.
+  - Allow cancelling active downloads, retrying failed downloads, and removing downloaded albums.
+  - Offer Wi-Fi-only downloads.
+  - Offer Remove All Downloads with confirmation.
+  - Remove only local downloaded copies; preserve the server’s media and wallet membership.
+- **Lock screen and system playback**
+  - Continue playback while the app is backgrounded or the device is locked.
+  - Show track title, artist, artwork, duration, and progress in the system Now Playing display.
+  - Support play, pause, previous track, and next track through system and remote controls.
+  - Disable Next at the end of the available playback sequence.
+  - Clear active system playback information when playback stops.
+- **Navigation and appearance**
+  - Use a dark, artwork-focused interface with translucent controls and accent colours.
+  - Keep navigation minimal, with an overflow menu for search, order, settings, and sign-out.
+  - Maintain a clear visual distinction between browsing actions and playback actions.
+  - Provide accessible labels for icon-only controls, including Play/Replace and download states.
+  - Respect Reduce Motion for artwork transitions and playback indicators.
+- **Settings and sign-out**
+  - Show the connected server name and signed-in username.
+  - Choose the default album browsing order.
+  - Configure what happens when an album ends.
+  - Select streaming quality.
+  - Manage downloads and the Wi-Fi-only download preference.
+  - Refresh the music library and show its album count.
+  - Sign out and clear securely stored session details.
+  - Stop playback and clear session-specific cached data on sign-out.
+  - Remove local downloads associated with the signed-out account, explaining this before sign-out when downloads exist.

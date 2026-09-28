@@ -24,7 +24,7 @@ struct HomeScreen: View {
             case .signedOut:
                 SignInFlow()
             case .signedIn:
-                Text("Hi")
+                RootTabScreen()
             }
         }
         .task {
@@ -50,5 +50,6 @@ struct HomeScreen: View {
         HomeScreen()
             .environment(\.sessionService, MockSessionService.signedIn())
             .environment(\.libraryService, MockLibraryService.loaded())
+            .environment(\.walletsService, MockWalletsService.loaded())
     }
 #endif

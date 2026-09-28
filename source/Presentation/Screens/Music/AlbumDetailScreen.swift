@@ -4,6 +4,7 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
+import Foundation
 import SwiftUI
 
 struct AlbumDetailScreen: View {
@@ -12,9 +13,13 @@ struct AlbumDetailScreen: View {
     @Environment(\.libraryService) private var libraryService: LibraryService
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     let album: MediaItem
+    let sequence: [MediaItem]
 
-    init(album: MediaItem) {
+    // MARK: - Initialization
+
+    init(album: MediaItem, sequence: [MediaItem] = []) {
         self.album = album
+        self.sequence = sequence
     }
 
     // MARK: - Body
@@ -38,13 +43,13 @@ struct AlbumDetailScreen: View {
                     Text(subtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Button("Play", systemImage: "play.fill") { play(startingAt: 0) }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(loadedTracks.isEmpty)
-                        .accessibilityIdentifier(AlbumDetailIdentifiers.playButton)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical)
+                .overlay(alignment: .bottomTrailing) {
+                    PlaybackControlStack(album: album, sequence: sequence, tracks: loadedTracks)
+                        .padding()
+                }
             }
             Section("Tracks") {
                 switch libraryService.tracks[album.id] {
@@ -72,6 +77,11 @@ struct AlbumDetailScreen: View {
             }
         }
         .navigationTitle(album.name)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                DownloadIconButton(album: album, tracks: loadedTracks)
+            }
+        }
         .task { await libraryService.loadTracks(albumID: album.id) }
     }
 
@@ -84,11 +94,27 @@ struct AlbumDetailScreen: View {
         return []
     }
 
-    /// Artist and year, with the separator dropped when either one is missing.
+    private var totalDuration: Duration? {
+        guard loadedTracks.isEmpty == false else {
+            return nil
+        }
+
+        return loadedTracks.reduce(Duration.zero) { $0 + ($1.runtime ?? .zero) }
+    }
+
+    /// Artist, year, track count, and total duration, with separators dropped for whatever is
+    /// missing.
     private var subtitle: String {
-        [album.albumArtist, album.productionYear.map { $0.formatted(.number.grouping(.never)) }]
-            .compactMap(\.self)
-            .joined(separator: " · ")
+        var parts = [album.albumArtist, album.productionYear.map { $0.formatted(.number.grouping(.never)) }]
+
+        if loadedTracks.isEmpty == false {
+            parts.append("\(loadedTracks.count) tracks")
+        }
+        if let totalDuration {
+            parts.append(totalDuration.formatted(.time(pattern: .minuteSecond)))
+        }
+
+        return parts.compactMap(\.self).joined(separator: " · ")
     }
 
     private func play(startingAt index: Int) {
@@ -98,7 +124,7 @@ struct AlbumDetailScreen: View {
             return
         }
 
-        Task { await music.play(album: album, tracks: tracks, startingAt: index) }
+        Task { await music.play(album: album, tracks: tracks, startingAt: index, sequence: sequence) }
     }
 }
 
@@ -107,9 +133,11 @@ struct AlbumDetailScreen: View {
 #if DEBUG
     #Preview("loaded") {
         NavigationStack {
-            AlbumDetailScreen(album: MockMedia.albums[0])
+            AlbumDetailScreen(album: MockMedia.albums[0], sequence: [MockMedia.albums[1]])
         }
         .environment(\.libraryService, MockLibraryService.loaded())
+        .environment(\.downloadsService, MockDownloadsService.idle())
+        .environment(\.musicPlayerService, MockMusicPlayerService.idle())
     }
 
     #Preview("empty") {
@@ -117,6 +145,8 @@ struct AlbumDetailScreen: View {
             AlbumDetailScreen(album: MockMedia.albums[0])
         }
         .environment(\.libraryService, MockLibraryService.empty())
+        .environment(\.downloadsService, MockDownloadsService.idle())
+        .environment(\.musicPlayerService, MockMusicPlayerService.idle())
     }
 
     #Preview("failure") {
@@ -124,5 +154,7 @@ struct AlbumDetailScreen: View {
             AlbumDetailScreen(album: MockMedia.albums[0])
         }
         .environment(\.libraryService, MockLibraryService.failed())
+        .environment(\.downloadsService, MockDownloadsService.idle())
+        .environment(\.musicPlayerService, MockMusicPlayerService.idle())
     }
 #endif

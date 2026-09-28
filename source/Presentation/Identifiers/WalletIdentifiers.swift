@@ -9,6 +9,8 @@ enum WalletIdentifiers {
     static let pageIndicator = "wallet.pageIndicator"
     static let emptyLabel = "wallet.emptyLabel"
     static let retryButton = "wallet.retryButton"
+    static let addAlbumsButton = "wallet.addAlbumsButton"
+    static let addAlbumsDoneButton = "wallet.addAlbumsDoneButton"
 
     static func page(_ index: Int) -> String {
         "wallet.page.\(index)"
@@ -16,5 +18,9 @@ enum WalletIdentifiers {
 
     static func sleeve(_ albumID: String) -> String {
         "wallet.sleeve.\(albumID)"
+    }
+
+    static func addAlbumRow(_ albumID: String) -> String {
+        "wallet.addAlbumRow.\(albumID)"
     }
 }

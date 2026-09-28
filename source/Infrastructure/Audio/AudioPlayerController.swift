@@ -60,6 +60,7 @@ final class AudioPlayerController: AudioPlayerControlling {
             url: url,
             options: [AVURLAssetPreferPreciseDurationAndTimingKey: true]
         )
+
         let item = AVPlayerItem(asset: asset)
 
         player.replaceCurrentItem(with: item)

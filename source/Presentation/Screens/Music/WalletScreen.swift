@@ -9,7 +9,7 @@ import SwiftUI
 struct WalletScreen: View {
     // MARK: - Properties
 
-    @Environment(\.libraryService) private var libraryService: LibraryService
+    @Environment(\.walletsService) private var walletsService: WalletsService
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
     @Environment(\.horizontalSizeClass) private var sizeClass: UserInterfaceSizeClass?
     @Environment(\.scenePhase) private var scenePhase: ScenePhase
@@ -19,47 +19,29 @@ struct WalletScreen: View {
     @State private var pulledAlbum: MediaItem?
     @State private var pulsingAlbumID: String?
     @State private var isVisible = false
-    let library: Library
+    @State private var isPresentingAddAlbums = false
+    let wallet: Wallet
 
     // MARK: - Initialization
 
-    init(library: Library) {
-        self.library = library
+    init(wallet: Wallet) {
+        self.wallet = wallet
     }
 
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 12) {
-            TabView(selection: $pageIndex) {
-                ForEach(0 ..< pageCount, id: \.self) { page in
-                    WalletPage(
-                        albums: albums(onPage: page),
-                        columns: columns,
-                        pulsingAlbumID: pulsingAlbumID,
-                        namespace: sleeves
-                    ) { pulledAlbum = $0 }
-                        .tag(page)
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier(WalletIdentifiers.page(page))
-                        .task {
-                            if page == pageCount - 1 {
-                                await libraryService.loadMore(libraryID: library.id)
-                            }
-                        }
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .accessibilityIdentifier(WalletIdentifiers.pager)
-
-            WalletFooter(phase: phase, pageIndex: pageIndex, pageCount: pageCount) {
-                Task { await libraryService.loadLibrary(id: library.id) }
-            }
-        }
-        .padding(.bottom)
-        .navigationTitle(library.name)
+        WalletPagerSection(
+            pageIndex: $pageIndex,
+            isPresentingAddAlbums: $isPresentingAddAlbums,
+            wallet: wallet,
+            pulsingAlbumID: pulsingAlbumID,
+            namespace: sleeves,
+            columns: columns,
+            onSelect: { pulledAlbum = $0 }
+        )
         .navigationDestination(item: $pulledAlbum) { album in
-            AlbumDetailScreen(album: album)
+            AlbumDetailScreen(album: album, sequence: sequence(after: album))
                 .navigationTransition(.zoom(sourceID: album.id, in: sleeves))
                 .onChange(of: music.finishedAlbumID) { _, finished in
                     if finished == album.id {
@@ -67,7 +49,6 @@ struct WalletScreen: View {
                     }
                 }
         }
-        .task { await libraryService.loadLibrary(id: library.id) }
         .onAppear {
             isVisible = true
             returnToSleeveIfFinished(animated: scenePhase == .active)
@@ -86,7 +67,7 @@ struct WalletScreen: View {
         .onChange(of: pageCount) { _, count in
             pageIndex = min(pageIndex, count - 1)
         }
-        .onChange(of: pager.albums.count) { _, _ in
+        .onChange(of: albums.count) { _, _ in
             returnToSleeveIfFinished(animated: scenePhase == .active)
         }
     }
@@ -97,20 +78,24 @@ struct WalletScreen: View {
         sizeClass == .regular ? 3 : 2
     }
 
-    private var pager: WalletPager {
-        WalletPager(state: libraryService.pages[library.id], columns: columns)
+    private var albums: [MediaItem] {
+        walletsService.albums(for: wallet)
     }
 
-    private var phase: ContentPhase<Page<MediaItem>> {
-        ContentPhase(libraryService.pages[library.id]) { $0.items.isEmpty }
+    private var pager: WalletPager {
+        WalletPager(albums: albums, columns: columns)
     }
 
     private var pageCount: Int {
         pager.pageCount
     }
 
-    private func albums(onPage page: Int) -> [MediaItem] {
-        pager.albums(onPage: page)
+    private func sequence(after album: MediaItem) -> [MediaItem] {
+        guard let index = albums.firstIndex(where: { $0.id == album.id }) else {
+            return []
+        }
+
+        return Array(albums[(index + 1)...])
     }
 
     private func returnToSleeveIfFinished(animated: Bool) {
@@ -123,10 +108,7 @@ struct WalletScreen: View {
         guard isVisible else {
             return
         }
-
-        // The album's page has not loaded yet, so page it in and let the next change retry.
         guard case let .honour(page) = WalletReturn(finished: albumID, pager: pager) else {
-            Task { await libraryService.loadMore(libraryID: library.id) }
             return
         }
         guard music.claimFinish(albumID: albumID) else {
@@ -171,24 +153,25 @@ struct WalletScreen: View {
 
 #if DEBUG
     #Preview("loaded — full and partial pages") {
+        let service = MockWalletsService.loaded()
         NavigationStack {
-            WalletScreen(library: MockMedia.libraries[2])
+            WalletScreen(wallet: MockWalletsService.previewWallet)
         }
-        .environment(\.libraryService, MockLibraryService.loaded())
+        .environment(\.walletsService, service)
         .environment(\.imageService, MockImageService.make())
     }
 
     #Preview("empty") {
         NavigationStack {
-            WalletScreen(library: MockMedia.libraries[2])
+            WalletScreen(wallet: MockWalletsService.previewWallet)
         }
-        .environment(\.libraryService, MockLibraryService.empty())
+        .environment(\.walletsService, MockWalletsService.empty())
     }
 
     #Preview("failure") {
         NavigationStack {
-            WalletScreen(library: MockMedia.libraries[2])
+            WalletScreen(wallet: MockWalletsService.previewWallet)
         }
-        .environment(\.libraryService, MockLibraryService.failed())
+        .environment(\.walletsService, MockWalletsService.failed())
     }
 #endif

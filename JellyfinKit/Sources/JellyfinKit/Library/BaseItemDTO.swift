@@ -20,6 +20,7 @@ public struct BaseItemDTO: Decodable, Sendable {
     public let container: String?
     public let imageTags: [String: String]?
     public let backdropImageTags: [String]?
+    public let genres: [String]?
     public let userData: UserItemDataDTO?
 
     enum CodingKeys: String, CodingKey {
@@ -38,6 +39,7 @@ public struct BaseItemDTO: Decodable, Sendable {
         case container = "Container"
         case imageTags = "ImageTags"
         case backdropImageTags = "BackdropImageTags"
+        case genres = "Genres"
         case userData = "UserData"
     }
 }

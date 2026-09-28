@@ -61,7 +61,9 @@ struct MusicPlayerReportingTests {
             reportStart: ReportPlaybackStartUseCase(repository: repository),
             reportProgress: ReportPlaybackProgressUseCase(repository: repository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-            sessionService: MockSessionService.signedOut()
+            sessionService: MockSessionService.signedOut(),
+            settingsService: MockSettingsService.make(),
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: MockLibraryRepository())
         )
         await service.play(album: album, tracks: tracks, startingAt: 0)
         #expect(service.status == .idle)
@@ -89,7 +91,9 @@ struct MusicPlayerReportingTests {
             reportStart: ReportPlaybackStartUseCase(repository: repository),
             reportProgress: ReportPlaybackProgressUseCase(repository: repository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-            sessionService: sessionService
+            sessionService: sessionService,
+            settingsService: MockSettingsService.make(),
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: MockLibraryRepository())
         )
         sessionService.onSessionEnded = { session in service.endSession(session) }
         await service.play(album: album, tracks: tracks, startingAt: 0)
@@ -128,13 +132,16 @@ struct MusicPlayerReportingTests {
                 reports.append("stopped \(report.itemID)")
             }
         )
+
         let service = MusicPlayerService(
             controller: controller,
             buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: repository),
             reportStart: ReportPlaybackStartUseCase(repository: repository),
             reportProgress: ReportPlaybackProgressUseCase(repository: repository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-            sessionService: MockSessionService.signedIn()
+            sessionService: MockSessionService.signedIn(),
+            settingsService: MockSettingsService.make(),
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: MockLibraryRepository())
         )
         await service.play(album: album, tracks: threeTracks, startingAt: 0)
         await service.next()
@@ -163,7 +170,9 @@ struct MusicPlayerReportingTests {
             reportStart: ReportPlaybackStartUseCase(repository: repository),
             reportProgress: ReportPlaybackProgressUseCase(repository: repository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-            sessionService: MockSessionService.signedIn()
+            sessionService: MockSessionService.signedIn(),
+            settingsService: MockSettingsService.make(),
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: MockLibraryRepository())
         )
         await service.play(album: album, tracks: tracks, startingAt: 0)
         await service.next()

@@ -10,12 +10,26 @@ import UIKit
 
 @MainActor
 struct AppContainer {
+    /// The one switch between a real Jellyfin server and the bundled mock server. Every
+    /// repository sits behind the same `*RepositoryProtocol` seam either way — this line is
+    /// the only thing that changes which side of it the app talks to.
+    private static let backend: ServerBackend = .mockServer
+
+    private enum ServerBackend {
+        case liveJellyfin
+        case mockServer
+    }
+
     // MARK: - Properties
 
     let sessionService: SessionService
     let libraryService: LibraryService
     let imageService: ImageService
     let musicPlayerService: MusicPlayerService
+    let settingsService: SettingsService
+    let downloadsService: DownloadsService
+    let walletsService: WalletsService
+    let searchService: SearchService
 
     // MARK: - Initialization
 
@@ -38,21 +52,48 @@ struct AppContainer {
             libraryRepository: repositories.library,
             sessionService: sessionService
         )
-        imageService = Self.makeImageService(sessionService: sessionService)
+        imageService = Self.makeImageService(
+            builder: repositories.imageURLBuilder,
+            sessionService: sessionService
+        )
+        settingsService = SettingsService(store: UserDefaultsLocalSettingsStore())
 
-        musicPlayerService = Self.makeMusicPlayerService(
+        let networkMonitor = NetworkPathMonitor()
+
+        downloadsService = Self.makeDownloadsService(
             playbackRepository: repositories.playback,
             sessionService: sessionService,
-            imageService: imageService
+            settingsService: settingsService,
+            networkMonitor: networkMonitor
         )
 
-        let libraries = libraryService
-        let music = musicPlayerService
+        musicPlayerService = Self.makeMusicPlayerService(
+            repositories: repositories,
+            sessionService: sessionService,
+            settingsService: settingsService,
+            imageService: imageService,
+            downloadsService: downloadsService
+        )
 
-        sessionService.onSessionEnded = { session in
-            libraries.endSession()
-            music.endSession(session)
-        }
+        walletsService = Self.makeWalletsService(
+            libraryService: libraryService,
+            downloadsService: downloadsService,
+            settingsService: settingsService
+        )
+        searchService = Self.makeSearchService(
+            searchRepository: repositories.search,
+            sessionService: sessionService,
+            downloadsService: downloadsService,
+            networkMonitor: networkMonitor
+        )
+
+        Self.wireSessionTeardown(
+            sessionService: sessionService,
+            libraryService: libraryService,
+            musicPlayerService: musicPlayerService,
+            walletsService: walletsService,
+            downloadsService: downloadsService
+        )
     }
 
     // MARK: - Private
@@ -79,9 +120,11 @@ struct AppContainer {
     }
 
     private struct Repositories {
-        let auth: JellyfinAuthRepository
-        let library: JellyfinLibraryRepository
-        let playback: JellyfinPlaybackRepository
+        let auth: any AuthRepositoryProtocol
+        let library: any LibraryRepositoryProtocol
+        let playback: any PlaybackRepositoryProtocol
+        let search: any SearchRepositoryProtocol
+        let imageURLBuilder: any ImageURLBuilderProtocol
     }
 
     private static func makeRepositories(
@@ -89,19 +132,28 @@ struct AppContainer {
         deviceID: String,
         appVersion: String
     ) -> Repositories {
-        Repositories(
-            auth: JellyfinAuthRepository(
-                client: client,
-                deviceID: deviceID,
-                appVersion: appVersion
-            ),
-            library: JellyfinLibraryRepository(client: client, appVersion: appVersion),
-            playback: JellyfinPlaybackRepository(client: client, appVersion: appVersion)
-        )
+        switch backend {
+        case .liveJellyfin:
+            Repositories(
+                auth: JellyfinAuthRepository(client: client, deviceID: deviceID, appVersion: appVersion),
+                library: JellyfinLibraryRepository(client: client, appVersion: appVersion),
+                playback: JellyfinPlaybackRepository(client: client, appVersion: appVersion),
+                search: MockServerSearchRepository(),
+                imageURLBuilder: JellyfinImageURLBuilder()
+            )
+        case .mockServer:
+            Repositories(
+                auth: MockServerAuthRepository(),
+                library: MockServerLibraryRepository(),
+                playback: MockServerPlaybackRepository(),
+                search: MockServerSearchRepository(),
+                imageURLBuilder: MockServerImageURLBuilder()
+            )
+        }
     }
 
     private static func makeSessionService(
-        authRepository: JellyfinAuthRepository,
+        authRepository: any AuthRepositoryProtocol,
         sessionStore: KeychainSessionStore
     ) -> SessionService {
         SessionService(
@@ -121,7 +173,7 @@ struct AppContainer {
     }
 
     private static func makeLibraryService(
-        libraryRepository: JellyfinLibraryRepository,
+        libraryRepository: any LibraryRepositoryProtocol,
         sessionService: SessionService
     ) -> LibraryService {
         LibraryService(
@@ -133,17 +185,30 @@ struct AppContainer {
         )
     }
 
-    private static func makeImageService(sessionService: SessionService) -> ImageService {
-        ImageService(builder: JellyfinImageURLBuilder(), sessionService: sessionService)
+    private static func makeImageService(
+        builder: any ImageURLBuilderProtocol,
+        sessionService: SessionService
+    ) -> ImageService {
+        ImageService(builder: builder, sessionService: sessionService)
     }
 
     private static func makeMusicPlayerService(
-        playbackRepository: JellyfinPlaybackRepository,
+        repositories: Repositories,
         sessionService: SessionService,
-        imageService: ImageService
+        settingsService: SettingsService,
+        imageService: ImageService,
+        downloadsService: DownloadsService
     ) -> MusicPlayerService {
+        let playbackRepository = repositories.playback
         let artworkProvider: @Sendable (MediaItem) async -> UIImage? = { track in
             await imageService.image(for: track, kind: .primary, maxHeight: artworkHeight)
+        }
+        let localAudioURLProvider: @Sendable (MediaItem) async -> URL? = { track in
+            guard let albumID = track.albumID else {
+                return nil
+            }
+
+            return await downloadsService.localAudioURL(albumID: albumID, trackID: track.id)
         }
 
         return MusicPlayerService(
@@ -153,7 +218,78 @@ struct AppContainer {
             reportProgress: ReportPlaybackProgressUseCase(repository: playbackRepository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: playbackRepository),
             sessionService: sessionService,
-            artworkProvider: artworkProvider
+            settingsService: settingsService,
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: repositories.library),
+            artworkProvider: artworkProvider,
+            localAudioURLProvider: localAudioURLProvider
         )
+    }
+
+    private static func makeDownloadsService(
+        playbackRepository: any PlaybackRepositoryProtocol,
+        sessionService: SessionService,
+        settingsService: SettingsService,
+        networkMonitor: NetworkPathMonitor
+    ) -> DownloadsService {
+        let fileStore = DownloadFileStore()
+
+        return DownloadsService(
+            manager: AlbumDownloadManager(fileStore: fileStore),
+            fileStore: fileStore,
+            buildAudioStreamURL: BuildAudioStreamURLUseCase(repository: playbackRepository),
+            networkMonitor: networkMonitor,
+            sessionService: sessionService,
+            settingsService: settingsService
+        )
+    }
+
+    private static func makeWalletsService(
+        libraryService: LibraryService,
+        downloadsService: DownloadsService,
+        settingsService: SettingsService
+    ) -> WalletsService {
+        let walletsStore = UserDefaultsWalletsStore()
+
+        return WalletsService(
+            libraryService: libraryService,
+            downloadsService: downloadsService,
+            settingsService: settingsService,
+            loadPersonalWallets: LoadPersonalWalletsUseCase(store: walletsStore),
+            savePersonalWallets: SavePersonalWalletsUseCase(store: walletsStore),
+            loadRandomWalletMode: LoadRandomWalletModeUseCase(store: walletsStore),
+            saveRandomWalletMode: SaveRandomWalletModeUseCase(store: walletsStore)
+        )
+    }
+
+    private static func makeSearchService(
+        searchRepository: any SearchRepositoryProtocol,
+        sessionService: SessionService,
+        downloadsService: DownloadsService,
+        networkMonitor: NetworkPathMonitor
+    ) -> SearchService {
+        SearchService(
+            search: SearchLibraryUseCase(repository: searchRepository),
+            sessionService: sessionService,
+            downloadsService: downloadsService,
+            networkMonitor: networkMonitor
+        )
+    }
+
+    /// `SessionService` holds no reference to the other services; this is the one place all
+    /// six layers are visible, so it is the one place that can fan a session ending out to
+    /// each service's own teardown.
+    private static func wireSessionTeardown(
+        sessionService: SessionService,
+        libraryService: LibraryService,
+        musicPlayerService: MusicPlayerService,
+        walletsService: WalletsService,
+        downloadsService: DownloadsService
+    ) {
+        sessionService.onSessionEnded = { session in
+            libraryService.endSession()
+            musicPlayerService.endSession(session)
+            walletsService.endSession()
+            Task { await downloadsService.endSession() }
+        }
     }
 }

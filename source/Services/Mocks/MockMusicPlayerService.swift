@@ -10,7 +10,9 @@
     enum MockMusicPlayerService {
         static func make(
             repository: MockPlaybackRepository = MockPlaybackRepository(),
-            sessionService: SessionService = MockSessionService.signedIn()
+            sessionService: SessionService = MockSessionService.signedIn(),
+            settingsService: SettingsService = MockSettingsService.make(),
+            libraryRepository: MockLibraryRepository = MockLibraryRepository()
         ) -> MusicPlayerService {
             MusicPlayerService(
                 controller: MockAudioPlayerController(),
@@ -18,7 +20,9 @@
                 reportStart: ReportPlaybackStartUseCase(repository: repository),
                 reportProgress: ReportPlaybackProgressUseCase(repository: repository),
                 reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
-                sessionService: sessionService
+                sessionService: sessionService,
+                settingsService: settingsService,
+                fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository)
             )
         }
 

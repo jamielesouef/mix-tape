@@ -19,6 +19,8 @@ struct MediaItem: Sendable, Identifiable, Hashable {
     let parentPrimaryImageTag: String?
     let albumID: String?
     let container: String?
+    let genre: String?
+    let playCount: Int
     let playback: PlaybackState
 
     init(
@@ -36,6 +38,8 @@ struct MediaItem: Sendable, Identifiable, Hashable {
         parentPrimaryImageTag: String?,
         albumID: String? = nil,
         container: String? = nil,
+        genre: String? = nil,
+        playCount: Int = 0,
         playback: PlaybackState
     ) {
         self.id = id
@@ -52,6 +56,8 @@ struct MediaItem: Sendable, Identifiable, Hashable {
         self.parentPrimaryImageTag = parentPrimaryImageTag
         self.albumID = albumID
         self.container = container
+        self.genre = genre
+        self.playCount = playCount
         self.playback = playback
     }
 }

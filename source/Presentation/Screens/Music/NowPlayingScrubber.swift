@@ -10,22 +10,31 @@ struct NowPlayingScrubber: View {
     // MARK: - Properties
 
     @Environment(\.musicPlayerService) private var music: MusicPlayerService
-    @State private var draggedSeconds: Double?
+    @State private var displaySeconds: Double = 0
+    @State private var isDragging = false
     let track: MediaItem
 
     // MARK: - Body
 
     var body: some View {
-        Slider(value: scrubPosition, in: 0 ... max(trackSeconds, 1)) { isDragging in
-            guard isDragging == false, let draggedSeconds else {
+        Slider(value: $displaySeconds, in: 0 ... max(trackSeconds, 1)) { dragging in
+            isDragging = dragging
+
+            if dragging == false {
+                music.seek(to: .seconds(displaySeconds))
+            }
+        }
+        .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
+        .task(id: track.id) {
+            displaySeconds = playedSeconds
+        }
+        .onChange(of: music.position) { _, _ in
+            guard isDragging == false else {
                 return
             }
 
-            music.seek(to: .seconds(draggedSeconds))
-
-            self.draggedSeconds = nil
+            displaySeconds = playedSeconds
         }
-        .accessibilityIdentifier(NowPlayingIdentifiers.scrubber)
     }
 
     // MARK: - Private
@@ -36,14 +45,8 @@ struct NowPlayingScrubber: View {
 
     /// While a drag is in progress the thumb follows the finger, not the player, so that
     /// position updates arriving mid-drag do not yank it back.
-    private var scrubPosition: Binding<Double> {
-        Binding(
-            get: {
-                let played = Double(music.position.components.seconds)
-                return draggedSeconds ?? min(played, trackSeconds)
-            },
-            set: { draggedSeconds = $0 }
-        )
+    private var playedSeconds: Double {
+        min(Double(music.position.components.seconds), trackSeconds)
     }
 }
 

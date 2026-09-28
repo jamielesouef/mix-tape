@@ -67,6 +67,16 @@ excluded: # case-sensitive paths to ignore during linting. Takes precedence over
   - .build
   - build
   - DerivedData
+  # Out of the project (decision 52) — CLAUDE.md says not to touch these as part of
+  # an unrelated change, and they hold no build target these rules could protect.
+  - archive
+  # A standalone dev-machine probe script (CLAUDE.md, "The development server"), not
+  # part of any Swift target — it is meant to print for a human reading the terminal.
+  - scripts
+  # MixtapeUITests' stub is XCTest by Apple's own XCUITest requirement; CLAUDE.md says
+  # it stays wired up as-is and no UI test gets written. `no_xctest` governs the app
+  # and unit-test code that has a Swift Testing alternative — this file has none.
+  - uitest
 
 line_length: 150
 

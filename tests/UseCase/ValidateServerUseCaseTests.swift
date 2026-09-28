@@ -40,6 +40,7 @@ struct ValidateServerUseCaseTests {
             failing: ["https"],
             failure: .transport("secure connection failed")
         )
+
         let identity =
             try await ValidateServerUseCase(repository: repository)(urlText: " localhost:8096/ ")
         #expect(recorder.urls == ["https://localhost:8096", "http://localhost:8096"])

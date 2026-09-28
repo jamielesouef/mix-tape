@@ -36,6 +36,12 @@ final class MusicPlayerService {
     private(set) var position: Duration = .zero
     private(set) var finishedAlbumID: String?
 
+    /// The albums after `album` in the wallet order captured when playback started — read
+    /// only by `advanceOrFinish` when continuing past the end of an album, per
+    /// `WhenAlbumEndsPreference.continueThroughWallet`. Never appended to after play-start:
+    /// this is a captured sequence, not a queue a listener can add to.
+    private(set) var sequence: [MediaItem] = []
+
     // MARK: - Computed properties
 
     var current: MediaItem? {
@@ -46,12 +52,19 @@ final class MusicPlayerService {
         return queue[currentIndex]
     }
 
+    /// Whether Next has anywhere to go — a later track in this album, or, in Continue
+    /// Through Wallet mode, another album still in the captured sequence.
     var hasNextTrack: Bool {
         guard let currentIndex else {
             return false
         }
 
-        return currentIndex + 1 < queue.count
+        if currentIndex + 1 < queue.count {
+            return true
+        }
+
+        return settingsService.settings.whenAlbumEnds == .continueThroughWallet
+            && sequence.isEmpty == false
     }
 
     var isActive: Bool {
@@ -63,6 +76,9 @@ final class MusicPlayerService {
     private let controller: any AudioPlayerControlling
     private let telemetry: PlaybackTelemetry
     private let sessionService: SessionService
+    private let settingsService: SettingsService
+    private let fetchAlbumTracks: FetchAlbumTracksUseCase
+    private let localAudioURLProvider: (@Sendable (MediaItem) async -> URL?)?
 
     // MARK: - Initialization
 
@@ -73,11 +89,17 @@ final class MusicPlayerService {
         reportProgress: ReportPlaybackProgressUseCase,
         reportStopped: ReportPlaybackStoppedUseCase,
         sessionService: SessionService,
+        settingsService: SettingsService,
+        fetchAlbumTracks: FetchAlbumTracksUseCase,
         clock: any Clock<Duration> = ContinuousClock(),
-        artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil
+        artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil,
+        localAudioURLProvider: (@Sendable (MediaItem) async -> URL?)? = nil
     ) {
         self.controller = controller
         self.sessionService = sessionService
+        self.settingsService = settingsService
+        self.fetchAlbumTracks = fetchAlbumTracks
+        self.localAudioURLProvider = localAudioURLProvider
 
         telemetry = PlaybackTelemetry(
             reporter: PlaybackReporter(
@@ -110,7 +132,16 @@ final class MusicPlayerService {
 
     // MARK: - Public API
 
-    func play(album: MediaItem, tracks: [MediaItem], startingAt index: Int) async {
+    /// - Parameter sequence: The albums after `album` in the wallet it was played from, in
+    ///   wallet order. Captured once, here, so a later regenerate or re-sort of that wallet
+    ///   cannot change a sequence already in flight. Empty when the album was not played from
+    ///   a wallet (search results, for instance) — there is nothing to continue into.
+    func play(
+        album: MediaItem,
+        tracks: [MediaItem],
+        startingAt index: Int,
+        sequence: [MediaItem] = []
+    ) async {
         guard tracks.isEmpty == false, tracks.indices.contains(index) else {
             return
         }
@@ -119,6 +150,7 @@ final class MusicPlayerService {
 
         self.album = album
         queue = tracks
+        self.sequence = sequence
         finishedAlbumID = nil
         claimedFinishID = nil
 
@@ -219,11 +251,11 @@ private extension MusicPlayerService {
         telemetry.beginSession()
         telemetry.clearArtwork()
 
-        let stream = telemetry.audioStream(for: track, session: session)
+        let stream = await downloadedStream(for: track) ?? telemetry.audioStream(for: track, session: session)
 
         controller.load(url: stream.url)
         controller.play()
-        controller.setNextTrackEnabled(index + 1 < queue.count)
+        controller.setNextTrackEnabled(hasNextTrack)
 
         status = .playing
 
@@ -233,15 +265,56 @@ private extension MusicPlayerService {
         await refreshNowPlayingAsync(generation: generation)
     }
 
-    /// Advances to the track after `index`, or ends the album when it was the last one.
+    /// Advances to the track after `index`; ends the album when it was the last one, unless
+    /// `WhenAlbumEndsPreference.continueThroughWallet` and the captured sequence has another
+    /// album, in which case that album starts from its own first track instead.
     func advanceOrFinish(from index: Int) async {
         enqueueStoppedReportForCurrent()
 
         if index + 1 < queue.count {
             await start(index: index + 1)
-        } else {
-            finish()
+            return
         }
+
+        guard let next = await popNextAlbumIfContinuing() else {
+            finish()
+            return
+        }
+
+        album = next.album
+        queue = next.tracks
+        claimedFinishID = nil
+
+        await start(index: 0)
+    }
+
+    /// A downloaded track plays from disk, offline or not, per "use downloaded audio
+    /// automatically when available" — checked ahead of the network stream, never as a
+    /// fallback from it.
+    func downloadedStream(for track: MediaItem) async -> AudioStream? {
+        guard let localAudioURLProvider, let url = await localAudioURLProvider(track) else {
+            return nil
+        }
+
+        return AudioStream(url: url, playMethod: .directPlay)
+    }
+
+    /// Fetches the next album's tracks and removes it from `sequence` only when it will
+    /// actually be played — a fetch failure leaves `sequence` untouched and ends the album
+    /// normally instead of silently skipping to the album after.
+    func popNextAlbumIfContinuing() async -> (album: MediaItem, tracks: [MediaItem])? {
+        guard settingsService.settings.whenAlbumEnds == .continueThroughWallet,
+              let session,
+              let next = sequence.first,
+              let tracks = try? await fetchAlbumTracks(albumID: next.id, session: session),
+              tracks.isEmpty == false
+        else {
+            return nil
+        }
+
+        sequence.removeFirst()
+
+        return (next, tracks)
     }
 
     func handleFailure(_ error: MixtapeError) {
@@ -306,6 +379,7 @@ private extension MusicPlayerService {
         position = .zero
         currentIndex = nil
         claimedFinishID = nil
+        sequence = []
 
         if clearingQueue {
             album = nil

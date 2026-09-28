@@ -9,7 +9,7 @@ import SwiftUI
 /// The status line under the wallet's pager: a spinner while the first page loads, the failure
 /// and its retry, the empty notice, or which page of the wallet is open.
 struct WalletFooter: View {
-    let phase: ContentPhase<Page<MediaItem>>
+    let phase: ContentPhase<[MediaItem]>
     let pageIndex: Int
     let pageCount: Int
     let retry: () -> Void
@@ -27,7 +27,7 @@ struct WalletFooter: View {
                 .buttonStyle(.bordered)
                 .accessibilityIdentifier(WalletIdentifiers.retryButton)
         case .empty:
-            Text("No albums in this library yet.")
+            Text("No albums in this wallet yet.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier(WalletIdentifiers.emptyLabel)
@@ -46,7 +46,7 @@ struct WalletFooter: View {
     #Preview("loaded") {
         VStack {
             WalletFooter(
-                phase: .loaded(Page(items: MockMedia.albums, totalCount: 5, startIndex: 0)),
+                phase: .loaded(MockMedia.albums),
                 pageIndex: 0,
                 pageCount: 3,
                 retry: {}

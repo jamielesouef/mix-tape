@@ -33,6 +33,7 @@ public struct JellyfinHTTPClient: Sendable {
             auth: auth,
             body: nil
         )
+
         let data = try await perform(request, path: path)
 
         return try decode(T.self, from: data)
@@ -51,6 +52,7 @@ public struct JellyfinHTTPClient: Sendable {
             auth: auth,
             body: encode(body)
         )
+
         let data = try await perform(request, path: path)
 
         return try decode(T.self, from: data)

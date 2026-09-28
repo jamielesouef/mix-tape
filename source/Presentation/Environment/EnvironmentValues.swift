@@ -12,4 +12,8 @@ extension EnvironmentValues {
     @Entry var libraryService: LibraryService = MainActor.assumeIsolated { .placeholder }
     @Entry var musicPlayerService: MusicPlayerService = MainActor.assumeIsolated { .placeholder }
     @Entry var sessionService: SessionService = MainActor.assumeIsolated { .placeholder }
+    @Entry var settingsService: SettingsService = MainActor.assumeIsolated { .placeholder }
+    @Entry var downloadsService: DownloadsService = MainActor.assumeIsolated { .placeholder }
+    @Entry var walletsService: WalletsService = MainActor.assumeIsolated { .placeholder }
+    @Entry var searchService: SearchService = MainActor.assumeIsolated { .placeholder }
 }

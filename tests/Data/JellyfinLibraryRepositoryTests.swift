@@ -71,6 +71,7 @@ struct JellyfinLibraryRepositoryTests {
             ], "TotalRecordCount": 2}
             """#
         )
+
         let libraries = try await repository.libraries(session: session)
         #expect(libraries.map(\.kind) == [.unsupported, .unsupported])
     }
@@ -120,6 +121,7 @@ struct JellyfinLibraryRepositoryTests {
              "UserData": {"PlaybackPositionTicks": 300000000}}
             """#
         )
+
         let item = try await repository.item(id: "album-1", session: session)
         #expect(item.name == "Even In Arcadia")
         #expect(item.playback.position == .seconds(30))

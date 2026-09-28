@@ -14,6 +14,8 @@ enum MusicPlayerFixture {
     static func makeService(
         reports: ReportLog = ReportLog(),
         controller: StubAudioPlayerController,
+        settingsService: SettingsService = MockSettingsService.make(),
+        libraryRepository: MockLibraryRepository = MockLibraryRepository(),
         clock: any Clock<Duration> = ContinuousClock(),
         artworkProvider: (@Sendable (MediaItem) async -> UIImage?)? = nil
     ) -> MusicPlayerService {
@@ -31,6 +33,8 @@ enum MusicPlayerFixture {
             reportProgress: ReportPlaybackProgressUseCase(repository: repository),
             reportStopped: ReportPlaybackStoppedUseCase(repository: repository),
             sessionService: MockSessionService.signedIn(),
+            settingsService: settingsService,
+            fetchAlbumTracks: FetchAlbumTracksUseCase(repository: libraryRepository),
             clock: clock,
             artworkProvider: artworkProvider
         )

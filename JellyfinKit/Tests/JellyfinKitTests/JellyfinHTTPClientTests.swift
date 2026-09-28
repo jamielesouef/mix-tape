@@ -139,11 +139,13 @@ struct JellyfinHTTPClientTests {
             status: 200,
             body: Data(#"{"ServerName":"mixtape","Version":"10.11.11"}"#.utf8)
         )
+
         let quoted = JellyfinHTTPClient(
             session: stub.session,
             clientName: "mixtape",
             deviceName: #"Jamie's "iPhone" \ test"#
         )
+
         let _: PascalCaseFixture = try await quoted.get("/System/Info", auth: signedIn)
         let header = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
         let expectedHeader = #"MediaBrowser Client="mixtape", "#
@@ -161,6 +163,7 @@ struct JellyfinHTTPClientTests {
             status: 200,
             body: Data(#"{"ServerName":"mixtape","Version":"10.11.11","Id":"abc"}"#.utf8)
         )
+
         let decoded = try await get("/System/Info/Public")
         #expect(decoded == PascalCaseFixture(serverName: "mixtape", version: "10.11.11"))
     }
