@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:mixtape}/Server",
+            "name": "Debug Server (Server)",
+            "target": "Server",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Server (Server)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:mixtape}/Server",
+            "name": "Release Server (Server)",
+            "target": "Server",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Server (Server)"
+        }
+    ]
+}

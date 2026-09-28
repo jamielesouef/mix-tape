@@ -59,3 +59,7 @@ fastlane/test_output
 *.vsix
 .vscode-test/
 *.code-workspace
+
+.gate-out
+.gate-out.prev
+archive
