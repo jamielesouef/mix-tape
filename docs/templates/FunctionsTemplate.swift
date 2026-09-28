@@ -49,6 +49,7 @@ enum ExampleFunctionShapes {
 
     static func makeRequest(url: URL, body: some Encodable) throws(ExampleFeatureError) -> URLRequest {
         let payload: Data
+        
         do {
             payload = try APICoding.makeEncoder().encode(body)
         } catch {
