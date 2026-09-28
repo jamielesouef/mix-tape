@@ -5,7 +5,8 @@
 # import on its own. They are now six folders inside one app module, so the compiler
 # enforces nothing and this script is the only check left. It can still catch the
 # framework rule -- Domain and UseCase must stay free of UI and platform frameworks --
-# but a Presentation file importing a Data type is now invisible to every tool here.
+# but a Presentation file importing a Data type is now invisible to every tool here. The one
+# exception is JellyfinKit, a real package, whose importers this script does check.
 #
 # Exit 0 when clean, 1 with the offending lines when a forbidden import exists.
 set -u
@@ -28,6 +29,14 @@ forbid() {
 frameworks='SwiftUI|Observation|UIKit|AVFoundation|MobileVLCKit'
 forbid "$SRC/Domain" "$frameworks"
 forbid "$SRC/UseCase" "$frameworks"
+
+# JellyfinKit is a separate module, so this edge is visible to a grep: only Data (the
+# repositories) and App (the composition root) may see the server's wire types.
+forbid "$SRC/Domain" JellyfinKit
+forbid "$SRC/UseCase" JellyfinKit
+forbid "$SRC/Services" JellyfinKit
+forbid "$SRC/Presentation" JellyfinKit
+forbid "$SRC/Infrastructure" JellyfinKit
 
 [ "$status" -eq 0 ] && echo "layer imports OK"
 exit "$status"

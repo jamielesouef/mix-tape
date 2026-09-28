@@ -20,3 +20,5 @@
 2026-09-14T16:43:52 d9b8264 tests=- FAIL test (log: .gate-out/test.log)
 2026-09-14T16:45:11 d9b8264 tests=171/0/0 PASS
 2026-09-14T16:46:41 d9b8264 tests=171/0/0 PASS
+2026-09-28T13:41:15 225d18c tests=- FAIL build (log: .gate-out/build.log)
+2026-09-28T13:41:27 225d18c tests=178/0/0 PASS

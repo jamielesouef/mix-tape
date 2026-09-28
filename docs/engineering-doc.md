@@ -70,50 +70,40 @@ Per Appendix A "Platform baseline", plus:
 
 ## 3. Package and target layout
 
-One local SPM package, `MixtapeKit`, with six library targets matching Appendix A. Two thin app targets that contain only `App.swift`, the asset catalog and the Info.plist.
+`Mixtape.xcworkspace` holds two things: `MixTape.xcodeproj`, one iOS app target over the six layer folders in `source/`, and `JellyfinKit`, a local SPM package that the project links. The layers are folders in the one app module, not SPM targets (decision 53), so their edges are on review, backed by `scripts/check-layer-imports.sh`. `JellyfinKit` is a real module boundary, and the compiler enforces it.
 
 ```
 mixtape/
-├─ Mixtape.xcodeproj
-├─ Apps/
-│  ├─ MixtapeiOS/          # App target: MixtapeApp.swift, Assets, Info.plist
-│  └─ MixtapeTV/           # App target: MixtapeApp.swift, Assets, Info.plist
-├─ MixtapeKit/
+├─ Mixtape.xcworkspace       # MixTape.xcodeproj + JellyfinKit
+├─ MixTape.xcodeproj         # Mixtape (app), MixtapeTests, MixtapeUITests
+├─ source/
+│  ├─ App/                   # MixtapeApp.swift, AppContainer.swift, Assets, Info.plist
+│  ├─ Domain/
+│  ├─ UseCase/
+│  ├─ Infrastructure/
+│  ├─ Data/                  # repositories, DTO → Domain mappers, JellyfinError → MixtapeError
+│  ├─ Services/
+│  └─ Presentation/
+├─ tests/                    # MixtapeTests, folders mirror source/
+├─ uitest/                   # MixtapeUITests (not run)
+├─ JellyfinKit/
 │  ├─ Package.swift
-│  └─ Sources/
-│     ├─ MixtapeDomain/
-│     ├─ MixtapeUseCase/
-│     ├─ MixtapeServices/
-│     ├─ MixtapeInfrastructure/
-│     ├─ MixtapeData/
-│     └─ MixtapePresentation/
+│  ├─ Sources/
+│  │  ├─ JellyfinKit/             # HTTP client, auth header, DTOs, request bodies, JellyfinError, image URLs
+│  │  └─ JellyfinKitTestSupport/  # StubServer + StubURLProtocol, linked by both test bundles
 │  └─ Tests/
-│     ├─ MixtapeDomainTests/
-│     ├─ MixtapeUseCaseTests/
-│     ├─ MixtapeServicesTests/
-│     ├─ MixtapeDataTests/
-│     └─ MixtapePresentationTests/      # slice 013: pure presentation helpers, no view rendering
+│     └─ JellyfinKitTests/
 └─ scripts/
-   ├─ check-layer-imports.sh            # layer edges the gate enforces (§13 step 1)
-   ├─ check-glass-fallback.sh           # every Material site reads Reduce Transparency (slice 012)
-   ├─ gate.sh                           # the slice gate, counted against docs/slices/test-count.txt (slice 013)
+   ├─ check-layer-imports.sh            # framework edges, and who may import JellyfinKit
+   ├─ check-glass-fallback.sh           # every Material site reads Reduce Transparency
+   ├─ gate.sh                           # the gate: build, both test bundles, layer, glass, lint
    ├─ jf-probe.swift                    # server-observable acceptance checks (decision 47)
-   ├─ sim-type.sh                       # types a credential into the iOS simulator without echoing it (decision 46)
-   └─ tv-remote.sh + tvkey.m            # Siri Remote presses for the Apple TV simulator (decision 49)
+   └─ sim-type.sh                       # types a credential into the iOS simulator without echoing it (decision 46)
 ```
 
-Dependency edges declared in `Package.swift` — nothing else is permitted to import across layers:
+`JellyfinKit` speaks the server's API and nothing else. It imports Foundation only, knows no Mixtape type, and throws `JellyfinError`, never `MixtapeError`. The app's `Data` layer adapts it: repositories call the client, mappers turn DTOs into Domain entities, and `translatingJellyfinErrors` rethrows `JellyfinError` as `MixtapeError`, so every repository protocol still throws domain errors only.
 
-| Target | Depends on |
-|---|---|
-| `MixtapeDomain` | — |
-| `MixtapeUseCase` | `MixtapeDomain` |
-| `MixtapeInfrastructure` | `MixtapeDomain` |
-| `MixtapeData` | `MixtapeUseCase`, `MixtapeDomain`, `MixtapeInfrastructure` |
-| `MixtapeServices` | `MixtapeUseCase`, `MixtapeDomain` |
-| `MixtapePresentation` | `MixtapeServices`, `MixtapeDomain` |
-
-`MixtapePresentation` must **not** list `MixtapeData`, `MixtapeUseCase` or `MixtapeInfrastructure` as dependencies. The composition root in the app target is the only place that sees all six.
+Only `Data` and `App` may `import JellyfinKit`; `check-layer-imports.sh` fails if `Domain`, `UseCase`, `Services`, `Presentation` or `Infrastructure` does. `Presentation` must not reach into `Data`, `UseCase` or `Infrastructure`. The composition root, `AppContainer.swift`, is the only place that sees all six layers and the package.
 
 ---
 
@@ -208,7 +198,7 @@ enum QuickConnectUIState: Sendable, Equatable {
 }
 ```
 
-`AuthContext` (the header inputs: base URL, device ID, app version, optional token) lives in `MixtapeInfrastructure` beside `JellyfinHTTPClient`, not in Domain — it is a transport concern.
+`AuthContext` (the header inputs: base URL, device ID, app version, optional token) lives in `JellyfinKit` beside `JellyfinHTTPClient`, not in Domain — it is a transport concern.
 
 ### Errors
 
@@ -378,7 +368,7 @@ Stateless or actor-isolated. No plain class with mutable state.
 
 | Type | Notes |
 |---|---|
-| `JellyfinHTTPClient` | `struct`, `Sendable`. Wraps `URLSession`. Builds the auth header, encodes/decodes JSON, maps status codes to `MixtapeError`. |
+| `JellyfinHTTPClient` | In `JellyfinKit`, not this layer. `struct`, `Sendable`. Wraps `URLSession`. Builds the auth header, encodes/decodes JSON, maps status codes to `JellyfinError`. |
 | `KeychainStore` | `struct`, `Sendable`. Generic `Data` get/set/delete for one service+account pair. |
 | `AudioPlayerController` | `@MainActor final class`. `AVPlayer` for audio + `AVAudioSession` + now-playing wiring. |
 | `AppLogger` | `struct` over `os.Logger`, one subsystem, categories `network`, `playback`, `auth`. |
@@ -387,11 +377,11 @@ Stateless or actor-isolated. No plain class with mutable state.
 ### HTTP client contract
 
 ```swift
-struct JellyfinHTTPClient: Sendable {
-    let session: URLSession
-    func get<T: Decodable & Sendable>(_ path: String, query: [URLQueryItem], auth: AuthContext) async throws -> T
-    func post<Body: Encodable & Sendable, T: Decodable & Sendable>(_ path: String, body: Body, query: [URLQueryItem], auth: AuthContext) async throws -> T
-    func post<Body: Encodable & Sendable>(_ path: String, body: Body, query: [URLQueryItem], auth: AuthContext) async throws
+public struct JellyfinHTTPClient: Sendable {
+    public init(session: URLSession, clientName: String, deviceName: String)
+    public func get<T: Decodable & Sendable>(_ path: String, query: [URLQueryItem], auth: AuthContext) async throws -> T
+    public func post<Body: Encodable & Sendable, T: Decodable & Sendable>(_ path: String, body: Body, query: [URLQueryItem], auth: AuthContext) async throws -> T
+    public func post<Body: Encodable & Sendable>(_ path: String, body: Body, query: [URLQueryItem], auth: AuthContext) async throws
 }
 ```
 
@@ -405,7 +395,7 @@ Do not use `X-Emby-Authorization`; Jellyfin is removing it.
 
 `DeviceId` is a UUID generated once and stored in the Keychain alongside the token. It must survive app restarts — Jellyfin keys sessions off it. `Device` is `UIDevice.current.name`.
 
-Status code mapping: `401` → `.invalidCredentials` on the auth endpoints, `.sessionExpired` elsewhere. `404`/`5xx` → `.transport`. `URLError.cannotFindHost`/`.cannotConnectToHost`/`.timedOut` → `.serverUnreachable`.
+Status code mapping, as `JellyfinError`: `401` → `.invalidCredentials` on the auth endpoints, `.quickConnectUnavailable` on the Quick Connect endpoints, `.unauthorized` elsewhere. `404`/`5xx` → `.transport`. `URLError.cannotFindHost`/`.cannotConnectToHost`/`.timedOut` → `.serverUnreachable`. `Data` translates each case to the `MixtapeError` of the same name, except `.unauthorized`, which becomes `.sessionExpired`.
 
 JSON decoding: Jellyfin returns PascalCase. Use explicit `CodingKeys` on every DTO — no `.convertFromSnakeCase`, no key strategy.
 
@@ -413,7 +403,7 @@ JSON decoding: Jellyfin returns PascalCase. Use explicit `CodingKeys` on every D
 
 ## 8. Data (`MixtapeData`) and the Jellyfin API contract
 
-Repositories are stateless `Sendable` structs holding a `JellyfinHTTPClient`. DTOs are `internal`, live beside the repository that uses them, and are mapped to Domain types in a `*Mapper.swift`. No DTO ever crosses out of `MixtapeData`.
+Repositories are stateless `Sendable` structs holding a `JellyfinHTTPClient`. DTOs and request bodies are `public` in `JellyfinKit` and are mapped to Domain types in a `*Mapper.swift` in `Data`. No DTO ever crosses out of `Data` — no other layer may import `JellyfinKit`.
 
 Base path: all paths below are relative to `serverURL`. Do **not** prefix `/emby`.
 
@@ -592,7 +582,8 @@ Tag suites by layer: `.domain`, `.useCase`, `.service`, `.repository`.
 - **UseCase**: every use case against `Mock*` repositories — success, `.sessionExpired`, `.serverUnreachable`.
 - **Services**: `SessionService` restore/sign-in/expiry transitions; Quick Connect poll success, cancellation, and timeout (inject a clock, do not sleep); `LibraryService` paging including the short-page stop condition.
 - **`MusicPlayerService` — the §1.1 invariants get their own suite**: `next()` past the final track stops rather than advancing; `play(album:…)` called twice replaces the queue rather than appending; `finishedAlbumID` is set exactly once at end-of-album and cleared by `acknowledgeFinish()`; `previous()` restarts the track above 3 s and steps back below it. These are the tests that stop someone helpfully adding a cross-album queue later.
-- **Data**: DTO → Domain mapping against captured JSON fixtures in `Tests/MixtapeDataTests/Fixtures/`. Repositories tested with a stubbed `URLProtocol`, never a live server.
+- **Data**: DTO → Domain mapping against captured JSON fixtures in `tests/Data/Fixtures/`. Repositories tested with a stubbed `URLProtocol`, never a live server.
+- **JellyfinKit**: `JellyfinKitTests` covers the client — status-code and `URLError` mapping, the authorization header, request assembly — and the image URL builder, all against `StubServer`.
 
 **XCUITest**, one happy path: launch with a stubbed session via a launch argument (`-uitest-signed-in`), open the Music tab, open the first album, tap Play, assert the now-playing view exists. Driven entirely off accessibility identifiers.
 

@@ -4,6 +4,8 @@
 //  Created by Jamie Le Souëf on 03/09/2026.
 //
 
+import JellyfinKit
+
 enum LibraryMapper {
     static func library(from dto: BaseItemDTO) -> Library {
         let kind: LibraryKind =

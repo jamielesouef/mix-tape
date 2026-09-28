@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import JellyfinKit
 
 enum AuthMapper {
     static func serverIdentity(

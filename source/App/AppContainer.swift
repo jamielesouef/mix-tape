@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import JellyfinKit
 import UIKit
 
 @MainActor
@@ -72,6 +73,7 @@ struct AppContainer {
 
         return JellyfinHTTPClient(
             session: URLSession(configuration: configuration),
+            clientName: "mixtape",
             deviceName: DeviceName.current
         )
     }

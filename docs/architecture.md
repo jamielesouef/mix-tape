@@ -6,9 +6,11 @@ Mix Tape's architecture follows the Swift MV template from the trimr project.
 
 ## Project structure
 
-Superseded by engineering doc §3 and by decisions 52–55, which this block has been rewritten to match. The layout is one iOS app target over six layer folders, one unit-test target and one UI-test target:
+Superseded by engineering doc §3 and by decisions 52–55, which this block has been rewritten to match. The layout is one iOS app target over six layer folders, one unit-test target and one UI-test target, plus the `JellyfinKit` package, all in `Mixtape.xcworkspace`:
 
 ```text
+Mixtape.xcworkspace  # MixTape.xcodeproj + JellyfinKit
+JellyfinKit/         # local SPM package: the Jellyfin API client, its tests, StubServer
 source/
 ├── App/             # MixtapeApp.swift, AppContainer.swift, Assets, Info.plist
 ├── Domain/
@@ -28,7 +30,7 @@ scripts/
 └── sim-type.sh              # credential entry on the iOS simulator (decision 46)
 ```
 
-The layers are folders inside one app module, not SPM targets, so the compiler no longer enforces the dependency edges — review does. `check-layer-imports.sh` still enforces the part a grep can see: `Domain` and `UseCase` import no UI or platform framework.
+The layers are folders inside one app module, not SPM targets, so the compiler no longer enforces the dependency edges — review does. `check-layer-imports.sh` still enforces the parts a grep can see: `Domain` and `UseCase` import no UI or platform framework, and only `Data` and `App` import `JellyfinKit`. `JellyfinKit` is the one real module boundary. It knows no Mixtape type, and `Data` adapts it to the Domain.
 
 The layer and feature organisation below applies inside each source target. `AppDomain`, `AppServices` and the other `App*` names in this document are the generic template's names for those layers; this project spells them `Mixtape*`.
 

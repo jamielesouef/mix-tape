@@ -58,10 +58,10 @@ run() {
 }
 
 step=build
-run xcodebuild build -project MixTape.xcodeproj -scheme Mixtape \
+run xcodebuild build -workspace Mixtape.xcworkspace -scheme Mixtape \
     -destination 'generic/platform=iOS Simulator' -quiet
 step=test
-run xcodebuild test -project MixTape.xcodeproj -scheme Mixtape \
+run xcodebuild test -workspace Mixtape.xcworkspace -scheme Mixtape \
     -destination "platform=iOS Simulator,id=$ios" \
     -skip-testing:MixtapeUITests -resultBundlePath "$out/Mixtape.xcresult" -quiet
 

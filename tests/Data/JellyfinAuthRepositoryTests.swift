@@ -5,6 +5,8 @@
 //
 
 import Foundation
+import JellyfinKit
+import JellyfinKitTestSupport
 import Testing
 @testable import Mixtape
 
@@ -13,7 +15,11 @@ struct JellyfinAuthRepositoryTests {
     private let stub = StubServer()
     private var repository: JellyfinAuthRepository {
         JellyfinAuthRepository(
-            client: JellyfinHTTPClient(session: stub.session, deviceName: "Test iPhone"),
+            client: JellyfinHTTPClient(
+                session: stub.session,
+                clientName: "mixtape",
+                deviceName: "Test iPhone"
+            ),
             deviceID: "device-1",
             appVersion: "1.0"
         )

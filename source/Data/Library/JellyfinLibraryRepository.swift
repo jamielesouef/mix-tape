@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import JellyfinKit
 
 struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
     // MARK: - Properties
@@ -24,11 +25,10 @@ struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
     // MARK: - LibraryRepositoryProtocol
 
     func libraries(session: UserSession) async throws -> [Library] {
-        let dto: ItemsResultDTO = try await client.get(
-            "/UserViews",
-            query: [user(session)],
-            auth: context(session)
-        )
+        let dto: ItemsResultDTO = try await translatingJellyfinErrors {
+            try await client.get("/UserViews", query: [user(session)], auth: context(session))
+        }
+
         return (dto.items ?? []).map(LibraryMapper.library)
     }
 
@@ -38,46 +38,49 @@ struct JellyfinLibraryRepository: LibraryRepositoryProtocol {
         page: PageRequest,
         session: UserSession
     ) async throws -> Page<MediaItem> {
-        let dto: ItemsResultDTO = try await client.get(
-            "/Items",
-            query: [
-                user(session),
-                URLQueryItem(name: "parentId", value: libraryID),
-                URLQueryItem(name: "includeItemTypes", value: Self.itemType(kind)),
-                URLQueryItem(name: "recursive", value: "true"),
-                URLQueryItem(name: "sortBy", value: "SortName"),
-                URLQueryItem(name: "sortOrder", value: "Ascending"),
-                URLQueryItem(name: "fields", value: Self.listFields),
-                URLQueryItem(name: "imageTypeLimit", value: "1"),
-                URLQueryItem(name: "enableImageTypes", value: "Primary,Backdrop"),
-                URLQueryItem(name: "startIndex", value: String(page.startIndex)),
-                URLQueryItem(name: "limit", value: String(page.limit))
-            ],
-            auth: context(session)
-        )
+        let query = [
+            user(session),
+            URLQueryItem(name: "parentId", value: libraryID),
+            URLQueryItem(name: "includeItemTypes", value: Self.itemType(kind)),
+            URLQueryItem(name: "recursive", value: "true"),
+            URLQueryItem(name: "sortBy", value: "SortName"),
+            URLQueryItem(name: "sortOrder", value: "Ascending"),
+            URLQueryItem(name: "fields", value: Self.listFields),
+            URLQueryItem(name: "imageTypeLimit", value: "1"),
+            URLQueryItem(name: "enableImageTypes", value: "Primary,Backdrop"),
+            URLQueryItem(name: "startIndex", value: String(page.startIndex)),
+            URLQueryItem(name: "limit", value: String(page.limit))
+        ]
+
+        let dto: ItemsResultDTO = try await translatingJellyfinErrors {
+            try await client.get("/Items", query: query, auth: context(session))
+        }
+
         return LibraryMapper.page(from: dto, requested: page)
     }
 
     func item(id: String, session: UserSession) async throws -> MediaItem {
-        let dto: BaseItemDTO = try await client.get(
-            "/Items/\(id)",
-            query: [user(session), URLQueryItem(name: "fields", value: "Overview,MediaSources")],
-            auth: context(session)
-        )
+        let query = [user(session), URLQueryItem(name: "fields", value: "Overview,MediaSources")]
+
+        let dto: BaseItemDTO = try await translatingJellyfinErrors {
+            try await client.get("/Items/\(id)", query: query, auth: context(session))
+        }
+
         return try LibraryMapper.detail(from: dto)
     }
 
     func tracks(albumID: String, session: UserSession) async throws -> [MediaItem] {
-        let dto: ItemsResultDTO = try await client.get(
-            "/Items",
-            query: [
-                user(session),
-                URLQueryItem(name: "parentId", value: albumID),
-                URLQueryItem(name: "includeItemTypes", value: "Audio"),
-                URLQueryItem(name: "sortBy", value: "ParentIndexNumber,IndexNumber,SortName")
-            ],
-            auth: context(session)
-        )
+        let query = [
+            user(session),
+            URLQueryItem(name: "parentId", value: albumID),
+            URLQueryItem(name: "includeItemTypes", value: "Audio"),
+            URLQueryItem(name: "sortBy", value: "ParentIndexNumber,IndexNumber,SortName")
+        ]
+
+        let dto: ItemsResultDTO = try await translatingJellyfinErrors {
+            try await client.get("/Items", query: query, auth: context(session))
+        }
+
         return LibraryMapper.items(from: dto)
     }
 
